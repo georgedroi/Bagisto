@@ -14,6 +14,7 @@
             ...media.images,
             ...media.videos
         ]"
+        :placeholder-url="placeholderUrl"
         @click="isImageZooming = ! isImageZooming"
     >
         <x-shop::shimmer.products.gallery />
@@ -81,7 +82,7 @@
         app.component("v-product-carousel", {
             template: '#v-product-carousel-template',
 
-            props: ['options'],
+            props: ['options', 'placeholderUrl'],
 
             data() {
                 return {
@@ -133,6 +134,15 @@
             },
 
             methods: {
+                onMediaError(event) {
+                    if (
+                        event?.target
+                        && event.target.src !== this.placeholderUrl
+                    ) {
+                        event.target.src = this.placeholderUrl;
+                    }
+                },
+
                 init() {
                     this.direction = document.dir;
 
