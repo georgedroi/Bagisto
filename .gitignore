@@ -45,3 +45,13 @@ skills-lock.json
 /vendor
 yarn.lock
 yarn-error.log
+
+# Local development secrets, backups and verification artifacts
+.env.*
+!.env.example
+!.env.local.example
+/.local/
+/local-artifacts/
+/local-backups/
+*.pem
+*.key
