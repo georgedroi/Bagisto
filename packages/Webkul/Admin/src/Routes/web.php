@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\MediaAssetController;
 use Illuminate\Support\Facades\Route;
+
 use Webkul\Core\Http\Middleware\NoCacheMiddleware;
 
 /**
@@ -9,6 +11,12 @@ use Webkul\Core\Http\Middleware\NoCacheMiddleware;
 require 'auth-routes.php';
 
 Route::group(['middleware' => ['admin', NoCacheMiddleware::class], 'prefix' => config('app.admin_url')], function () {
+    Route::prefix('media')->controller(MediaAssetController::class)->group(function () {
+        Route::get('', 'index')->name('admin.media.index');
+        Route::post('assets', 'store')->name('admin.media.assets.store');
+        Route::delete('assets/{asset}', 'destroy')->name('admin.media.assets.delete');
+    });
+
     /**
      * Sales routes.
      */

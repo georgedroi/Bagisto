@@ -49,6 +49,8 @@ return [
      * Application service providers.
      */
     AppServiceProvider::class,
+    App\Providers\ManPleasureAdminServiceProvider::class,
+    App\Providers\ManPleasureStorefrontServiceProvider::class,
 
     /**
      * Webkul's service providers.

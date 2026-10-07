@@ -14,6 +14,20 @@ set -e
 
 APP_DIR="/var/www/bagisto"
 
+if [[ "${APP_ENV:-production}" == "production" ]]; then
+    : "${DB_HOST:?DB_HOST is required in production}"
+    : "${DB_DATABASE:?DB_DATABASE is required in production}"
+    : "${DB_USERNAME:?DB_USERNAME is required in production}"
+    : "${DB_PASSWORD:?DB_PASSWORD is required in production}"
+    : "${APP_KEY:?APP_KEY is required in production}"
+    : "${APP_URL:?APP_URL is required in production}"
+
+    if [[ "${APP_DEBUG:-false}" != "false" ]]; then
+        echo "APP_DEBUG must be false in production." >&2
+        exit 1
+    fi
+fi
+
 # shellcheck source=/dev/null
 source "/usr/local/share/bagisto/db/engine.sh"
 
@@ -28,7 +42,7 @@ DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-$(db_default_port)}"
 DB_DATABASE="${DB_DATABASE:-bagisto}"
 DB_USERNAME="${DB_USERNAME:-bagisto}"
-DB_PASSWORD="${DB_PASSWORD:-bagisto}"
+DB_PASSWORD="${DB_PASSWORD-}"
 DB_CONNECTION="${DB_CONNECTION:-$(db_connection)}"
 
 uses_bundled_database() {
