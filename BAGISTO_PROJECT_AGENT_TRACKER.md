@@ -35,12 +35,12 @@
 **Store type:** Adult wellness / adult product e-commerce  
 **Project Start Time:** 2026-10-06 11:35 MYT (UTC+08:00)  
 **Project Start ISO Timestamp:** `2026-10-06T11:35:00+08:00`  
-**Current Phase:** Phase 2 - Storefront Theme & UI (Complete)
-**Current Task:** Phase 2 close-out complete
-**Overall Status:** Phase 1 complete; Phase 2 in progress; homepage patch and nine browser workflows verified
-**Last Updated:** 2026-10-07T07:56:59+08:00
-**Last Updated ISO Timestamp:** 2026-10-07T07:56:59+08:00
-**Updated By:** ChatGPT - Phase 2 close-out verification
+**Current Phase:** Phase 3 - Categories & Product Architecture (Ready to Start)
+**Current Task:** Finalize Phase 2 housekeeping checkpoint before Phase 3
+**Overall Status:** Phases 0, 1 and 2 complete; Phase 3 ready to start after clean housekeeping commit
+**Last Updated:** 2026-10-07T08:21:50+08:00
+**Last Updated ISO Timestamp:** 2026-10-07T08:21:50+08:00
+**Updated By:** ChatGPT - Phase 2 housekeeping / Phase 3 handoff
 
 ### Overall Progress
 
@@ -48,7 +48,7 @@
 |---|---|---:|
 | 0. Planning & Architecture | Completed | 100% |
 | 1. Local Environment & Installation | Completed | 100% |
-| 2. Storefront Theme & UI | In Progress | Not estimated |
+| 2. Storefront Theme & UI | Completed | 100% |
 | 3. Categories & Product Architecture | Not Started | 0% |
 | 4. Admin Product Management | Not Started | 0% |
 | 5. Media Bank | Not Started | 0% |
@@ -151,8 +151,8 @@ Example:
 |---|---|---|---|
 | 0. Planning & Architecture | 2026-10-06T11:35:00+08:00 | 2026-10-06T17:47:06+08:00 | ChatGPT |
 | 1. Local Environment & Installation | 2026-10-06T17:49:47+08:00 | | ChatGPT |
-| 2. Storefront Theme & UI | | | |
-| 3. Categories & Product Architecture | | | |
+| 2. Storefront Theme & UI | | 2026-10-07T07:56:59+08:00 | ChatGPT |
+| 3. Categories & Product Architecture | Not Started | 0% |
 | 4. Admin Product Management | | | |
 | 5. Media Bank | | | |
 | 6. SEO | | | |
@@ -1026,11 +1026,11 @@ _Add commands, file paths, issues, package versions, and decisions here._
 
 # CURRENT HANDOFF
 
-**Current Phase:** Phase 2 - Storefront Theme & UI (Complete)
-**Current Task:** Phase 2 close-out complete
+**Current Phase:** Phase 3 - Categories & Product Architecture (Ready to Start)
+**Current Task:** Finalize Phase 2 housekeeping checkpoint before Phase 3
 **Last Completed Task:** Phase 1 runtime, browser workflows and database persistence verified  
 **Current Blocker:** None reported  
-**Next Recommended Task:** Read CODEX_HANDOVER.md and begin the next planned project phase
+**Next Recommended Task:** Begin Phase 3 - Categories & Product Architecture from the clean committed checkpoint
 **Important Files Changed:** None  
 **Important Commands Run:** None  
 **Pending Testing:** Phase 2 implementation has not yet been tested  
@@ -1976,3 +1976,6 @@ In ParseErrorException.php line 44:
 - 2026-10-07T07:56:59+08:00: PHASE 2 COMPLETE: responsive catalog/product rendering, links, prices, Add-to-Cart/cart persistence, sorting, filtering, pagination/load-more, gallery switching/zoom, configurable options/variant price/gallery, mobile broken-media fallback, browser/network cleanliness, production Shop build, permanent storefront Playwright regression with negative proof, and fixture cleanup to catalog count 0 are verified.
 - 2026-10-07T07:56:59+08:00: Phase 2 permanent changes at close-out: packages/Webkul/Shop/src/Resources/views/products/view/gallery/mobile.blade.php plus Shop E2E regression files tests/e2e-pw/tests/catalog/product-gallery.spec.ts and pages/shop/catalog/ProductGalleryPage.ts. No staging or commit performed.
 
+- 2026-10-07T08:11:17+08:00: ManPleasure translation syntax verification PASSED using authoritative Docker PHP runtime for all resources/lang/vendor/shop/*/manpleasure.php files.
+
+- 2026-10-07T08:21:50+08:00: Phase 2 housekeeping: retained the Docker-local Laravel runtime-directory permission fix, normalized ManPleasure application translations to lang/en/manpleasure.php, retained the ManPleasure Blade localization changes, removed generated Shop Vite hash churn from the working tree, and prepared the project for a clean Phase 3 handoff.

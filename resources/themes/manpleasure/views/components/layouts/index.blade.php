@@ -102,18 +102,11 @@
             href="#main"
             class="skip-to-main-content-link"
         >
-            Skip to main content
+            {{ trans('manpleasure.skip-content') }}
         </a>
-
-        <!-- Built With Bagisto -->
         <div id="app">
-            <!-- Flash Message Blade Component -->
             <x-shop::flash-group />
-
-            <!-- Confirm Modal Blade Component -->
             <x-shop::modal.confirm />
-
-            <!-- Page Header Blade Component -->
             @if ($hasHeader)
                 <x-shop::layouts.header />
             @endif
@@ -126,29 +119,20 @@
             @endif
 
             {!! view_render_event('bagisto.shop.layout.content.before') !!}
-
-            <!-- Page Content Blade Component -->
             <main id="main" class="bg-white">
                 {{ $slot }}
             </main>
 
             {!! view_render_event('bagisto.shop.layout.content.after') !!}
-
-
-            <!-- Page Services Blade Component -->
             @if ($hasFeature)
                 <x-shop::layouts.services />
             @endif
-
-            <!-- Page Footer Blade Component -->
             @if ($hasFooter)
                 <x-shop::layouts.footer />
             @endif
         </div>
 
         {!! view_render_event('bagisto.shop.layout.body.after') !!}
-
-        <!-- WebMCP Tool Registration For AI Agents -->
         <x-shop::layouts.webmcp />
 
         @stack('scripts')

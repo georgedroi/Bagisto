@@ -36,33 +36,22 @@ Update the tracker after every meaningful change, test, blocker, or decision.
 ### Phase 0 — Planning & Architecture
 **Status:** COMPLETE
 
-Completed decisions include:
-
-- Bagisto chosen over Medusa for this project.
-- Local-first development selected.
-- VPS deployment will happen later.
-- Custom storefront required.
-- Lazada-style admin/product editor required.
-- Media Bank required.
-- Strong SEO required.
-- Privacy/discreet-shopping features required.
-- Payment integration must remain modular.
-- Security hardening required.
-- Preferred VPS candidate researched separately; not needed for local development yet.
-
 ### Phase 1 — Local Environment & Installation
-**Status:** ~96% COMPLETE
+**Status:** COMPLETE
 
-The Docker environment has already been installed and verified.
+The Docker-local Bagisto installation, storefront, admin runtime, database, migrations and local development environment have been verified.
 
-Remaining Phase 1 acceptance check:
+### Phase 2 — Storefront Theme & UI
+**Status:** COMPLETE
 
-- Open storefront in browser.
-- Open admin login in browser.
-- Confirm both render correctly.
-- If both pass, mark Phase 1 100% complete.
+Phase 2 passed its close-out gates, including catalog/product rendering, cart flow, sorting/filtering/pagination, gallery behavior, configurable-product behavior, responsive storefront verification, mobile broken-media fallback, Shop production build, permanent Playwright regression coverage, negative regression proof, and fixture cleanup.
 
-Do NOT reinstall Bagisto.
+The permanent mobile-gallery regression fix and test coverage were pushed in checkpoint `c24a38ffd3`.
+
+### Phase 3 — Categories & Product Architecture
+**Status:** READY TO START
+
+Begin Phase 3 only from a clean committed working tree.
 
 ---
 
@@ -222,113 +211,70 @@ Reasons:
 
 ## 9. Git State
 
-Repository working tree was checked with:
+Authoritative branch:
+
+`main`
+
+Phase 2 pushed checkpoint:
+
+`c24a38ffd3` — `Complete Phase 2 storefront verification and gallery regression fix`
+
+Do not reset the branch or overwrite committed work.
+
+Before every new phase or major change:
 
 ```powershell
 git status --short
-```
+git log -1 --oneline
 
-Result:
 
-No output — working tree clean.
 
-Exact repository identity:
-
-```text
-Bagisto base: v2.4.12
-Current: v2.4.12-2-gb8491a4
-```
-
-Existing work is committed.
-
-Do not reset the branch or overwrite local commits.
+The Phase 2 housekeeping changes described in this handoff should be committed and pushed before beginning Phase 3.
 
 ---
 
 ## 10. Next Immediate Task
 
-Complete Phase 1 browser acceptance test.
+Finalize the Phase 2 housekeeping checkpoint, then begin:
 
-### Step 1 — Ensure Docker is running
+**Phase 3 — Categories & Product Architecture**
 
-```powershell
-cd "D:\CHATGPT PROJECTS\Bagisto"
-docker compose -f compose.local.yaml up -d
-docker compose -f compose.local.yaml ps
-```
+Before Phase 3 implementation:
 
-### Step 2 — Verify Laravel inside the app container
+1. Confirm `git status --short` is clean.
+2. Confirm the latest housekeeping commit is pushed to `origin/main`.
+3. Reread `BAGISTO_PROJECT_AGENT_TRACKER.md`.
+4. Reread this handover.
+5. Review the existing Bagisto category, attribute-family, attribute, product-type, configurable-product, inventory and channel structures.
+6. Define the ManPleasure category hierarchy and product architecture before creating production catalog data.
+7. Update the tracker after every meaningful decision, change or verification.
 
-```powershell
-docker compose -f compose.local.yaml exec -T app php artisan about
-```
-
-### Step 3 — Open storefront
-
-`http://localhost:8088`
-
-Confirm:
-
-- page loads
-- no Laravel exception
-- header renders
-- banners render
-- footer renders
-- CSS/JS assets load
-- no obvious broken layout
-
-### Step 4 — Open admin login
-
-`http://localhost:8088/admin/login`
-
-Local admin credentials are stored locally in:
-
-`.local\admin-credentials.json`
-
-Do not print or expose the password in chat/logs.
-
-Confirm:
-
-- login page loads
-- admin login succeeds
-- dashboard renders
-- session persists
-- logout works
-
-### Step 5 — Update tracker
-
-If both storefront and admin are working:
-
-- mark Phase 1 as 100% complete
-- add completion timestamp
-- update change log
-- update current handoff
-- set Current Phase to Phase 2
+Do not begin the Phase 4 admin redesign until Phase 3 structure is stable unless the project owner changes priority.
 
 ---
 
-## 11. Phase 2 Direction
+## 11. Phase 2 Completion / Phase 3 Direction
 
-After Phase 1 is formally complete, begin:
+Phase 2 storefront work is complete and verified.
 
-**Phase 2 — Storefront Theme & UI**
+Phase 3 should establish the catalog domain model before admin redesign work begins.
 
-Primary goals:
+Primary Phase 3 goals:
 
-- premium/discreet lifestyle visual direction
-- responsive desktop/tablet/mobile design
-- custom header/navigation
-- hero banner
-- categories
-- best sellers
-- new arrivals
-- promotional sections
-- product listing page
-- product detail page
-- wishlist/cart/account UI
-- mobile responsiveness
+- define production category hierarchy
+- define attribute families
+- define reusable product attributes
+- define simple/configurable product conventions
+- define variation strategy
+- define SKU conventions
+- define URL-key conventions
+- define inventory assumptions
+- define product naming conventions
+- define category/product SEO ownership boundaries
+- define image/media requirements that Phase 4 and Phase 5 must support
+- verify the architecture with controlled test products before production data entry
 
-Do not begin Phase 4 admin redesign before Phase 2 and Phase 3 structure are stable unless the project owner explicitly changes priority.
+Prefer native Bagisto catalog structures and supported extension points over unnecessary core modifications.
 
 ---
 
@@ -527,12 +473,17 @@ If both work, finalize Phase 1.
 
 ## 19. Current Handoff Summary
 
-**Current Phase:** Phase 1 — Local Environment & Installation  
-**Progress:** ~96%  
-**Current state:** Docker runtime and persistent DB restored and verified  
-**Working tree:** clean  
-**Current blocker:** none  
-**Immediate next task:** browser verification of storefront + admin  
-**Expected next phase:** Phase 2 — Storefront Theme & UI
+**Current Phase:** Phase 3 - Categories & Product Architecture (Ready to Start)
+**Phase 0:** Complete
+**Phase 1:** Complete
+**Phase 2:** Complete
+**Phase 2 verified completion:** 2026-10-07T07:56:59+08:00
+**Last pushed Phase 2 checkpoint:** `c24a38ffd3`
+**Current blocker:** None
+**Current housekeeping:** Docker-local permission fix + ManPleasure localization cleanup ready for commit
+**Immediate next task:** Commit/push housekeeping, confirm clean tree, then begin Phase 3 architecture discovery
+**Expected following phase:** Phase 4 - Admin Product Management
 
-Do not reinstall or reinitialize the project.
+Do not reinstall or reinitialize Bagisto.
+
+Continue updating `BAGISTO_PROJECT_AGENT_TRACKER.md` after every meaningful change, test, blocker or decision.
