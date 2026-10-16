@@ -74,6 +74,8 @@ Route::prefix('catalog')->group(function () {
 
         Route::post('mass-update', 'massUpdate')->name('admin.catalog.categories.mass_update');
 
+        Route::post('organize', 'organize')->name('admin.catalog.categories.organize');
+
         Route::get('search', 'search')->name('admin.catalog.categories.search');
 
         Route::get('tree', 'tree')->name('admin.catalog.categories.tree');

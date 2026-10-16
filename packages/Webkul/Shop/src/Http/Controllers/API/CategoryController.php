@@ -33,19 +33,11 @@ class CategoryController extends APIController
      */
     public function index(): JsonResponse
     {
-        /**
-         * These are the default parameters. By default, only the enabled category
-         * will be shown in the current locale.
-         */
         $defaultParams = [
             'status' => 1,
             'locale' => app()->getLocale(),
         ];
 
-        /**
-         * Category listings are cached per catalog version, so repeated
-         * storefront visits skip the database entirely.
-         */
         $data = $this->catalogApiCache->remember('categories', request()->all(), function () use ($defaultParams) {
             $categories = $this->categoryRepository->getAll(array_merge($defaultParams, request()->all()));
 
@@ -54,17 +46,17 @@ class CategoryController extends APIController
                 ->getData(true);
         });
 
-        return response()->json($data)->withHeaders($this->catalogCacheHeaders());
+        return response()->json($data)->header('Cache-Control', 'private, no-store');
     }
 
     /**
      * Get all categories in tree format.
      */
-    public function tree(): JsonResource
+    public function tree(): JsonResponse
     {
         $categories = $this->categoryRepository->getVisibleCategoryTree(core()->getCurrentChannel()->root_category_id);
 
-        return CategoryTreeResource::collection($categories);
+        return CategoryTreeResource::collection($categories)->response()->header('Cache-Control', 'private, no-store');
     }
 
     /**

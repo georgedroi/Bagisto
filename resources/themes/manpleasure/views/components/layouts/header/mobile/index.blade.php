@@ -472,6 +472,8 @@
             data() {
                 return  {
                     categories: [],
+                    categoryRequestPending: false,
+                    isLoading: true,
                     currentViewLevel: 'main',
                     currentSecondLevelCategory: null,
                     currentParentCategory: null
@@ -480,6 +482,13 @@
 
             mounted() {
                 this.initCategories();
+                window.addEventListener('pageshow', this.refreshCategories);
+                document.addEventListener('visibilitychange', this.refreshCategories);
+            },
+
+            beforeUnmount() {
+                window.removeEventListener('pageshow', this.refreshCategories);
+                document.removeEventListener('visibilitychange', this.refreshCategories);
             },
 
             computed: {
@@ -490,27 +499,27 @@
 
             methods: {
                 initCategories() {
-                    try {
-                        const stored = localStorage.getItem('categories');
-
-                        if (stored) {
-                            this.categories = JSON.parse(stored);
-                            this.isLoading = false;
-                            return;
-                        }
-
-                    } catch (e) {}
-
                     this.getCategories();
                 },
+
+                refreshCategories() {
+                    if (document.visibilityState === 'visible') this.getCategories();
+                },
+
                 getCategories() {
-                    this.$axios.get("{{ route('shop.api.categories.tree') }}")
+                    if (this.categoryRequestPending) return;
+                    this.categoryRequestPending = true;
+                    this.$axios.get("{{ route('shop.api.categories.tree') }}", { headers: { 'Cache-Control': 'no-cache' } })
                         .then(response => {
                             this.categories = response.data.data;
-                            localStorage.setItem('categories', JSON.stringify(this.categories));
+                            this.currentViewLevel = 'main';
+                            this.currentSecondLevelCategory = null;
+                            this.currentParentCategory = null;
                         })
-                        .catch(error => {
-                            console.log(error);
+                        .catch(() => {})
+                        .finally(() => {
+                            this.isLoading = false;
+                            this.categoryRequestPending = false;
                         });
                 },
 

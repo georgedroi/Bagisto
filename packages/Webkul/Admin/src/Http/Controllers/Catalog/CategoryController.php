@@ -2,6 +2,7 @@
 
 namespace Webkul\Admin\Http\Controllers\Catalog;
 
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\View\View;
 use Webkul\Admin\DataGrids\Catalog\CategoryDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Admin\Http\Requests\CategoryMoveRequest;
 use Webkul\Admin\Http\Requests\CategoryRequest;
 use Webkul\Admin\Http\Requests\MassDestroyRequest;
 use Webkul\Admin\Http\Requests\MassUpdateRequest;
@@ -42,10 +44,42 @@ class CategoryController extends Controller
             return datagrid(CategoryDataGrid::class)->process();
         }
 
-        return view('admin::catalog.categories.index', [
-            'categories' => request()->query('view') === 'list'
-                ? collect()
-                : $this->categoryRepository->getCategoryTree(),
+        $snapshot = request()->query('view') === 'list'
+            ? ['categories' => collect()]
+            : $this->categoryRepository->getAdminTreeSnapshot($this->channelRepository->pluck('root_category_id')->all());
+
+        return view('admin::catalog.categories.index', $snapshot);
+    }
+
+    /**
+     * Save a tree move without modifying category content or product assignments.
+     */
+    public function organize(CategoryMoveRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $roots = $this->channelRepository->pluck('root_category_id')->all();
+
+        try {
+            $changed = $this->categoryRepository->organizeTree(
+                (int) $data['category_id'],
+                (int) $data['parent_id'],
+                isset($data['before_id']) ? (int) $data['before_id'] : null,
+                $data['revision'],
+                $roots
+            );
+        } catch (DomainException $exception) {
+            return new JsonResponse([
+                'message' => trans('admin::category-tree.error-'.$exception->getMessage()),
+            ], $exception->getMessage() === 'stale' ? 409 : 422);
+        }
+
+        foreach ($changed as $category) {
+            Event::dispatch('catalog.category.update.after', $category);
+        }
+
+        return new JsonResponse([
+            'message' => trans('admin::category-tree.saved'),
+            'html' => view('admin::catalog.categories.tree', $this->categoryRepository->getAdminTreeSnapshot($roots))->render(),
         ]);
     }
 
@@ -271,24 +305,6 @@ class CategoryController extends Controller
     }
 
     /**
-     * Check whether the current category is deletable or not.
-     *
-     * This method will fetch all root category ids from the channel. If `id` is present,
-     * then it is not deletable.
-     *
-     * @param  Category  $category
-     * @return bool
-     */
-    private function isCategoryDeletable($category)
-    {
-        if ($category->id === 1) {
-            return false;
-        }
-
-        return ! $this->channelRepository->pluck('root_category_id')->contains($category->id);
-    }
-
-    /**
      * Get all categories in tree format.
      */
     public function tree(): JsonResource
@@ -311,5 +327,23 @@ class CategoryController extends Controller
         ]);
 
         return response()->json($categories);
+    }
+
+    /**
+     * Check whether the current category is deletable or not.
+     *
+     * This method will fetch all root category ids from the channel. If `id` is present,
+     * then it is not deletable.
+     *
+     * @param  Category  $category
+     * @return bool
+     */
+    private function isCategoryDeletable($category)
+    {
+        if ($category->id === 1) {
+            return false;
+        }
+
+        return ! $this->channelRepository->pluck('root_category_id')->contains($category->id);
     }
 }

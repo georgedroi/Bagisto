@@ -533,6 +533,7 @@
             data() {
                 return {
                     isLoading: true,
+                    categoryRequestPending: false,
                     categories: [],
                     isDrawerActive: false,
                     currentViewLevel: 'main',
@@ -543,44 +544,42 @@
 
             mounted() {
                 this.initCategories();
+                window.addEventListener('pageshow', this.refreshCategories);
+                document.addEventListener('visibilitychange', this.refreshCategories);
 
                 window.addEventListener('resize', this.positionMegaMenus);
             },
 
             beforeUnmount() {
                 window.removeEventListener('resize', this.positionMegaMenus);
+                window.removeEventListener('pageshow', this.refreshCategories);
+                document.removeEventListener('visibilitychange', this.refreshCategories);
             },
 
             methods: {
                 initCategories() {
-                    try {
-                        const stored = localStorage.getItem('categories');
-
-                        if (stored) {
-                            this.categories = JSON.parse(stored);
-                            this.isLoading = false;
-
-                            this.$nextTick(this.positionMegaMenus);
-
-                            return;
-                        }
-
-                    } catch (e) {}
-
                     this.getCategories();
                 },
 
-                getCategories() {
-                    this.$axios.get("{{ route('shop.api.categories.tree') }}")
-                        .then(response => {
-                            this.isLoading = false;
-                            this.categories = response.data.data;
-                            localStorage.setItem('categories', JSON.stringify(this.categories));
+                refreshCategories() {
+                    if (document.visibilityState === 'visible') this.getCategories();
+                },
 
+                getCategories() {
+                    if (this.categoryRequestPending) return;
+                    this.categoryRequestPending = true;
+                    this.$axios.get("{{ route('shop.api.categories.tree') }}", { headers: { 'Cache-Control': 'no-cache' } })
+                        .then(response => {
+                            this.categories = response.data.data;
+                            this.currentViewLevel = 'main';
+                            this.currentSecondLevelCategory = null;
+                            this.currentParentCategory = null;
                             this.$nextTick(this.positionMegaMenus);
                         })
-                        .catch(error => {
-                            console.log(error);
+                        .catch(() => {})
+                        .finally(() => {
+                            this.isLoading = false;
+                            this.categoryRequestPending = false;
                         });
                 },
 

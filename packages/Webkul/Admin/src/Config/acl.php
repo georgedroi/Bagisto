@@ -400,6 +400,7 @@ return [
         'route' => [
             'admin.catalog.categories.edit',
             'admin.catalog.categories.update',
+            'admin.catalog.categories.organize',
             'admin.catalog.categories.mass_update',
         ],
         'sort' => 2,

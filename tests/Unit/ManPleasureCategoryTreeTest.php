@@ -16,8 +16,9 @@ beforeEach(function () {
     $this->previousContainer = Container::getInstance();
     $this->application = new Application;
     $this->categories = Mockery::mock(CategoryRepository::class);
+    $this->channels = Mockery::mock(ChannelRepository::class);
     $this->controller = new CategoryController(
-        Mockery::mock(ChannelRepository::class),
+        $this->channels,
         $this->categories,
         Mockery::mock(AttributeRepository::class),
     );
@@ -30,18 +31,20 @@ afterEach(function () {
 
 it('loads the full repository tree without filtering hidden categories or paginating', function () {
     $tree = collect([(object) ['id' => 1, 'status' => 1, 'children' => collect([(object) ['id' => 2, 'status' => 0]])]]);
-    $this->categories->shouldReceive('getCategoryTree')->once()->withNoArgs()->andReturn($tree);
+    $snapshot = ['categories' => $tree, 'revision' => str_repeat('a', 64), 'channelRootIds' => [1]];
+    $this->channels->shouldReceive('pluck')->once()->with('root_category_id')->andReturn(collect([1]));
+    $this->categories->shouldReceive('getAdminTreeSnapshot')->once()->with([1])->andReturn($snapshot);
     $this->application->instance('request', Request::create('/admin/catalog/categories'));
     $view = Mockery::mock(View::class);
     $factory = Mockery::mock(ViewFactory::class);
-    $factory->shouldReceive('make')->once()->with('admin::catalog.categories.index', ['categories' => $tree], [])->andReturn($view);
+    $factory->shouldReceive('make')->once()->with('admin::catalog.categories.index', $snapshot, [])->andReturn($view);
     $this->application->instance(ViewFactory::class, $factory);
 
     expect($this->controller->index())->toBe($view);
 });
 
 it('keeps table view available without fetching an unnecessary category tree', function () {
-    $this->categories->shouldNotReceive('getCategoryTree');
+    $this->categories->shouldNotReceive('getAdminTreeSnapshot');
     $this->application->instance('request', Request::create('/admin/catalog/categories?view=list'));
     $view = Mockery::mock(View::class);
     $factory = Mockery::mock(ViewFactory::class);
@@ -54,7 +57,7 @@ it('keeps table view available without fetching an unnecessary category tree', f
 it('preserves the existing AJAX datagrid response and its action pipeline', function () {
     require_once dirname(__DIR__, 2).'/packages/Webkul/DataGrid/src/Http/helpers.php';
 
-    $this->categories->shouldNotReceive('getCategoryTree');
+    $this->categories->shouldNotReceive('getAdminTreeSnapshot');
     $request = Request::create('/admin/catalog/categories');
     $request->headers->set('X-Requested-With', 'XMLHttpRequest');
     $this->application->instance('request', $request);

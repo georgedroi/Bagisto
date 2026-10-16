@@ -8,6 +8,16 @@ use Spatie\ResponseCache\Hasher\DefaultHasher as BaseDefaultHasher;
 class DefaultHasher extends BaseDefaultHasher
 {
     /**
+     * Keep cached HTML within its code release so updated inline menus reach visitors.
+     */
+    public function getHashFor(Request $request): string
+    {
+        $releasePath = realpath(base_path()) ?: base_path();
+
+        return parent::getHashFor($request).'-'.substr(hash('sha256', $releasePath), 0, 16);
+    }
+
+    /**
      * Get the hash for the given request.
      */
     protected function getNormalizedRequestUri(Request $request): string

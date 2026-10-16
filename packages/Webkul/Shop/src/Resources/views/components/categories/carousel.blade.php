@@ -102,6 +102,7 @@
             data() {
                 return {
                     isLoading: true,
+                    categoryRequestPending: false,
 
                     categories: [],
 
@@ -113,17 +114,31 @@
 
             mounted() {
                 this.getCategories();
+                window.addEventListener('pageshow', this.refreshCategories);
+                document.addEventListener('visibilitychange', this.refreshCategories);
+            },
+
+            beforeUnmount() {
+                window.removeEventListener('pageshow', this.refreshCategories);
+                document.removeEventListener('visibilitychange', this.refreshCategories);
             },
 
             methods: {
-                getCategories() {
-                    this.$axios.get(this.src)
-                        .then(response => {
-                            this.isLoading = false;
+                refreshCategories() {
+                    if (document.visibilityState === 'visible') this.getCategories();
+                },
 
+                getCategories() {
+                    if (this.categoryRequestPending) return;
+                    this.categoryRequestPending = true;
+                    this.$axios.get(this.src, { headers: { 'Cache-Control': 'no-cache' } })
+                        .then(response => {
                             this.categories = response.data.data;
-                        }).catch(error => {
-                            console.log(error);
+                        })
+                        .catch(() => {})
+                        .finally(() => {
+                            this.isLoading = false;
+                            this.categoryRequestPending = false;
                         });
                 },
 
