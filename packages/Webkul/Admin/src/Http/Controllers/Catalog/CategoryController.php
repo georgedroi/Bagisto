@@ -32,9 +32,9 @@ class CategoryController extends Controller
     ) {}
 
     /**
-     * Display a listing of the resource.
+     * Display the complete category hierarchy or the existing datagrid.
      *
-     * @return View
+     * @return View|JsonResponse
      */
     public function index()
     {
@@ -42,7 +42,11 @@ class CategoryController extends Controller
             return datagrid(CategoryDataGrid::class)->process();
         }
 
-        return view('admin::catalog.categories.index');
+        return view('admin::catalog.categories.index', [
+            'categories' => request()->query('view') === 'list'
+                ? collect()
+                : $this->categoryRepository->getCategoryTree(),
+        ]);
     }
 
     /**
