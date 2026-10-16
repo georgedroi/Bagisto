@@ -45,6 +45,7 @@
             @lang($category->status ? 'admin::category-tree.visible' : 'admin::category-tree.hidden')
         </span>
 
+        <div class="mp-category-actions">
         @if (bouncer()->hasPermission('catalog.categories.edit'))
             @if (! $isProtected)
                 <button type="button" class="mp-category-move" data-category-move aria-label="{{ trans('admin::category-tree.move', ['name' => $category->name]) }}">@lang('admin::category-tree.move-button')</button>
@@ -57,6 +58,16 @@
                 @lang('admin::app.catalog.categories.index.datagrid.edit')
             </a>
         @endif
+        @if (bouncer()->hasPermission('catalog.categories.create'))
+            <a class="mp-category-add" data-category-add href="{{ route('admin.catalog.categories.create', ['parent_id' => $category->id]) }}"
+                aria-label="{{ trans('admin::category-tree.add-under', ['name' => $category->name]) }}">
+                @lang($isChannelRoot ? 'admin::category-tree.add-main' : 'admin::category-tree.add-subcategory')
+            </a>
+        @endif
+        @if (bouncer()->hasPermission('catalog.categories.delete') && ! $isProtected)
+            <button type="button" class="mp-category-delete" data-category-delete aria-label="{{ trans('admin::category-tree.delete', ['name' => $category->name]) }}">@lang('admin::category-tree.delete-button')</button>
+        @endif
+        </div>
     </div>
 
     @if ($category->children->isNotEmpty())

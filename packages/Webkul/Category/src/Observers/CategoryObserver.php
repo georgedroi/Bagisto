@@ -2,6 +2,7 @@
 
 namespace Webkul\Category\Observers;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Category\Models\Category;
 
@@ -15,7 +16,7 @@ class CategoryObserver
      */
     public function deleted($category)
     {
-        Storage::deleteDirectory('category/'.$category->id);
+        DB::afterCommit(fn () => Storage::deleteDirectory('category/'.$category->id));
     }
 
     /**

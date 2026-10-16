@@ -81,12 +81,12 @@ class Product
 
         $deletedIds = $this->getDeletedProductIds($product);
 
-        DeleteElasticSearchIndexJob::dispatch($deletedIds);
+        DeleteElasticSearchIndexJob::dispatch($deletedIds)->afterCommit();
 
         $reindexIds = array_values(array_diff($this->getAllRelatedProductIds($product), $deletedIds));
 
         if (! empty($reindexIds)) {
-            UpdateCreateElasticSearchIndexJob::dispatch($reindexIds);
+            UpdateCreateElasticSearchIndexJob::dispatch($reindexIds)->afterCommit();
         }
     }
 

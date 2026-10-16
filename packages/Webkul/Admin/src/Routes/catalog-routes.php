@@ -76,6 +76,10 @@ Route::prefix('catalog')->group(function () {
 
         Route::post('organize', 'organize')->name('admin.catalog.categories.organize');
 
+        Route::post('delete-preview', 'reviewDeletion')->name('admin.catalog.categories.delete_preview');
+
+        Route::post('delete-tree', 'deleteTree')->middleware('throttle:6,1')->name('admin.catalog.categories.delete_tree');
+
         Route::get('search', 'search')->name('admin.catalog.categories.search');
 
         Route::get('tree', 'tree')->name('admin.catalog.categories.tree');

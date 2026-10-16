@@ -1,10 +1,16 @@
-<section class="mp-category-tree" data-category-tree data-revision="{{ $revision }}"
+<section class="mp-category-tree" data-category-tree data-revision="{{ $revision }}" data-delete-category="{{ request()->integer('delete_category') }}"
     @if (bouncer()->hasPermission('catalog.categories.edit'))
-        data-move-url="{{ route('admin.catalog.categories.organize') }}" data-csrf="{{ csrf_token() }}"
+        data-move-url="{{ route('admin.catalog.categories.organize') }}"
+    @endif
+    @if (bouncer()->hasPermission('catalog.categories.delete'))
+        data-delete-preview-url="{{ route('admin.catalog.categories.delete_preview') }}" data-delete-url="{{ route('admin.catalog.categories.delete_tree') }}"
+    @endif
+    @if (bouncer()->hasPermission('catalog.categories.edit') || bouncer()->hasPermission('catalog.categories.delete'))
+        data-csrf="{{ csrf_token() }}"
     @endif
     v-pre>
     <div data-category-messages hidden
-        @foreach (['saving', 'saved', 'error-generic', 'error-stale', 'error-cycle', 'error-root', 'error-scope', 'error-invalid', 'drop-before', 'drop-inside', 'drop-after', 'last', 'move-title'] as $key)
+        @foreach (['saving', 'saved', 'error-generic', 'error-stale', 'error-cycle', 'error-root', 'error-scope', 'error-invalid', 'drop-before', 'drop-inside', 'drop-after', 'last', 'move-title', 'delete-title', 'delete-loading', 'delete-summary', 'delete-shared', 'delete-variants', 'delete-sample', 'delete-confirm', 'delete-confirm-products', 'delete-saving', 'error-delete-generic', 'delete-none', 'error-delete-password', 'error-delete-throttle'] as $key)
             data-{{ $key }}="{{ trans('admin::category-tree.'.$key) }}"
         @endforeach
     ></div>
@@ -65,6 +71,47 @@
                 <div class="mp-category-dialog-actions">
                     <button type="button" data-category-cancel>@lang('admin::category-tree.cancel')</button>
                     <button type="submit">@lang('admin::category-tree.save-move')</button>
+                </div>
+            </form>
+        </dialog>
+    @endif
+    @if (bouncer()->hasPermission('catalog.categories.delete'))
+        <dialog class="mp-category-dialog mp-category-delete-dialog" data-category-delete-dialog aria-labelledby="mp-delete-title">
+            <form data-category-delete-form>
+                <h2 id="mp-delete-title" data-category-delete-title>@lang('admin::category-tree.delete-title')</h2>
+                <p data-category-delete-summary aria-live="polite"></p>
+                <p class="mp-category-delete-warning">@lang('admin::category-tree.delete-branch-warning')</p>
+                <details data-category-delete-details hidden>
+                    <summary>@lang('admin::category-tree.delete-details')</summary>
+                    <p data-category-delete-sample></p>
+                    <strong>@lang('admin::category-tree.delete-categories')</strong>
+                    <ul data-category-delete-categories></ul>
+                    <strong>@lang('admin::category-tree.delete-products-list')</strong>
+                    <ul data-category-delete-products-list></ul>
+                </details>
+                <div data-category-delete-choices hidden>
+                    <p>@lang('admin::category-tree.delete-keep')</p>
+                    <p data-category-delete-shared></p>
+                    <p data-category-delete-variants></p>
+                    <label class="mp-category-check">
+                        <input type="checkbox" data-category-delete-products>
+                        <span>@lang('admin::category-tree.delete-products')</span>
+                    </label>
+                    <p data-category-delete-permission hidden>@lang('admin::category-tree.delete-product-permission')</p>
+                    <label class="mp-category-check mp-category-delete-warning" data-category-delete-ack-label hidden>
+                        <input type="checkbox" data-category-delete-ack>
+                        <span>@lang('admin::category-tree.delete-ack')</span>
+                    </label>
+                </div>
+                <label for="mp-category-delete-approver">@lang('admin::category-tree.delete-approver')</label>
+                <input type="email" id="mp-category-delete-approver" name="approver_email" data-category-delete-approver autocomplete="username" required maxlength="254">
+                <label for="mp-category-delete-password">@lang('admin::category-tree.delete-password')</label>
+                <input type="password" id="mp-category-delete-password" name="password" data-category-delete-password autocomplete="current-password" required maxlength="1024" aria-describedby="mp-delete-password-help">
+                <p id="mp-delete-password-help">@lang('admin::category-tree.delete-password-help')</p>
+                <p data-category-delete-error role="alert"></p>
+                <div class="mp-category-dialog-actions">
+                    <button type="button" data-category-delete-cancel>@lang('admin::category-tree.cancel')</button>
+                    <button type="submit" class="mp-category-danger" data-category-delete-confirm disabled>@lang('admin::category-tree.delete-button')</button>
                 </div>
             </form>
         </dialog>

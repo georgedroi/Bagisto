@@ -409,6 +409,8 @@ return [
         'name' => 'admin::app.acl.delete',
         'route' => [
             'admin.catalog.categories.delete',
+            'admin.catalog.categories.delete_preview',
+            'admin.catalog.categories.delete_tree',
             'admin.catalog.categories.mass_delete',
         ],
         'sort' => 3,

@@ -93,5 +93,27 @@
             .mp-category-drag, .mp-category-move { min-height: 36px; }
             .mp-category-feedback { padding-inline: 12px; }
         }
+        .mp-category-actions { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-inline-start: auto; max-width: 100%; }
+        .mp-category-actions .mp-category-edit { margin-inline-start: 0; }
+        .mp-category-add, .mp-category-delete { display: inline-flex; align-items: center; padding: 7px; border: 1px solid var(--mp-tree-border); border-radius: 5px; font-size: 12px; line-height: 1.3; text-decoration: none; background: var(--mp-tree-surface); cursor: pointer; }
+        .mp-category-add { color: #2563eb; }
+        .mp-category-delete { color: #b91c1c; }
+        .mp-category-delete-dialog { width: min(560px, calc(100vw - 24px)); }
+        .mp-category-delete-dialog details { border: 1px solid var(--mp-tree-border); border-radius: 6px; padding: 10px; margin-block: 12px; }
+        .mp-category-delete-dialog details ul { padding-inline-start: 20px; list-style: disc; max-height: 160px; overflow: auto; overflow-wrap: anywhere; }
+        .mp-category-delete-dialog details strong { display: block; margin-block: 10px 6px; }
+        .mp-category-delete-dialog .mp-category-check { display: flex; align-items: start; gap: 10px; line-height: 1.5; }
+        .mp-category-check input { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 2px; }
+        .mp-category-delete-warning, [data-category-delete-error] { color: #b91c1c; }
+        .mp-category-dialog-actions button.mp-category-danger { background: #b91c1c; color: white; border-color: #b91c1c; }
+        .mp-category-tree button:disabled { cursor: not-allowed; opacity: .55; }
+        .dark .mp-category-add { color: #a6ccff; }
+        .dark .mp-category-delete, .dark .mp-category-delete-warning, .dark [data-category-delete-error] { color: #fca5a5; }
+        @media (max-width: 640px) {
+            .mp-category-actions { flex-basis: 100%; margin-inline-start: 31px; max-width: calc(100% - 31px); }
+            .mp-category-add, .mp-category-delete { min-height: 36px; }
+            .mp-category-dialog-actions { flex-wrap: wrap; }
+        }
+        [data-category-delete-password], [data-category-delete-approver] { width: 100%; min-width: 0; border: 1px solid var(--mp-tree-border); border-radius: 6px; background: var(--mp-tree-surface); color: var(--mp-tree-text); padding: 10px; }
     </style>
 @endpushOnce

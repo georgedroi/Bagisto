@@ -68,3 +68,29 @@ it('preserves the existing AJAX datagrid response and its action pipeline', func
 
     expect($this->controller->index())->toBe($response);
 });
+
+it('preselects the clicked folder in the native category creation form', function () {
+    $this->categories->shouldReceive('getCategoryTree')->once()->andReturn(collect());
+    $this->categories->shouldReceive('findOrFail')->once()->with(7)->andReturn((object) ['id' => 7]);
+    $attributes = (new ReflectionProperty(CategoryController::class, 'attributeRepository'))->getValue($this->controller);
+    $attributes->shouldReceive('findWhere')->once()->with(['is_filterable' => 1])->andReturn(collect());
+    $this->application->instance('request', Request::create('/admin/catalog/categories/create?parent_id=7'));
+    $view = Mockery::mock(View::class);
+    $factory = Mockery::mock(ViewFactory::class);
+    $factory->shouldReceive('make')->once()->with('admin::catalog.categories.create', Mockery::on(fn ($data) => $data['selectedParentId'] === 7), [])->andReturn($view);
+    $this->application->instance(ViewFactory::class, $factory);
+    expect($this->controller->create())->toBe($view);
+});
+
+it('defaults a new main category to the configured store root', function () {
+    $this->categories->shouldReceive('getCategoryTree')->once()->andReturn(collect());
+    $this->channels->shouldReceive('pluck')->once()->with('root_category_id')->andReturn(collect([1]));
+    $attributes = (new ReflectionProperty(CategoryController::class, 'attributeRepository'))->getValue($this->controller);
+    $attributes->shouldReceive('findWhere')->once()->andReturn(collect());
+    $this->application->instance('request', Request::create('/admin/catalog/categories/create'));
+    $view = Mockery::mock(View::class);
+    $factory = Mockery::mock(ViewFactory::class);
+    $factory->shouldReceive('make')->once()->with('admin::catalog.categories.create', Mockery::on(fn ($data) => $data['selectedParentId'] === 1), [])->andReturn($view);
+    $this->application->instance(ViewFactory::class, $factory);
+    expect($this->controller->create())->toBe($view);
+});
