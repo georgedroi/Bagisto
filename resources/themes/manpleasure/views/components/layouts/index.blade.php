@@ -54,30 +54,7 @@
 
         @bagistoVite(['src/Resources/assets/css/app.css', 'src/Resources/assets/js/app.js'])
 
-        <link rel="stylesheet" href="{{ asset('themes/shop/manpleasure/storefront.css') }}">
-
-
-        <link
-            rel="preconnect"
-            href="https://fonts.googleapis.com"
-            crossorigin
-        />
-
-        <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossorigin
-        />
-
-        <link
-            rel="preload" as="style"
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap"
-        />
-
-        <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap"
-        />
+        <link rel="stylesheet" href="{{ asset('themes/shop/manpleasure/storefront.css') }}?v={{ filemtime(public_path('themes/shop/manpleasure/storefront.css')) }}">
 
         @stack('styles')
 
@@ -95,7 +72,7 @@
 
     </head>
 
-    <body>
+    <body class="mp-store">
         {!! view_render_event('bagisto.shop.layout.body.before') !!}
 
         <a
@@ -119,7 +96,7 @@
             @endif
 
             {!! view_render_event('bagisto.shop.layout.content.before') !!}
-            <main id="main" class="bg-white">
+            <main id="main" class="mp-main bg-white" data-page="{{ request()->route()?->getName() }}">
                 {{ $slot }}
             </main>
 
@@ -139,14 +116,7 @@
 
         {!! view_render_event('bagisto.shop.layout.vue-app-mount.before') !!}
         <script>
-            /**
-             * Mount the application as soon as the DOM is ready instead of waiting
-             * for the `load` event. All `Vue` components are registered through
-             * deferred `type="module"` scripts, which always finish executing
-             * before `DOMContentLoaded` fires, so every component is available
-             * by the time `app.mount()` runs. Mounting on `DOMContentLoaded`
-             * avoids blocking the storefront behind every image/font download.
-             */
+            
             function mountApp() {
                 app.mount("#app");
             }

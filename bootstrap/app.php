@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
+use Illuminate\Http\Request;
 use Webkul\Core\Http\Middleware\SecureHeaders;
 use Webkul\Installer\Http\Middleware\CanInstall;
 
@@ -42,14 +43,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->replaceInGroup('web', BaseEncryptCookies::class, EncryptCookies::class);
 
         $middleware->validateCsrfTokens(except: [
-            'stripe/*',
+            'stripe/webhook',
         ]);
 
-        $middleware->trustProxies(at: '*');
+        $middleware->trustProxies(
+            at: [],
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO,
+        );
     })
-    ->withSchedule(function (Schedule $schedule) {
-        //
-    })
-    ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+    ->withSchedule(function (Schedule $schedule) {})
+    ->withExceptions(function (Exceptions $exceptions) {})->create();

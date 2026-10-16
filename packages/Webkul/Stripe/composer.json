@@ -1,13 +1,15 @@
 {
-    "name": "bagisto/laravel-stripe-connect",
+    "name": "bagisto/laravel-stripe",
     "license": "MIT",
     "authors": [
         {
-            "name": "Bagisto",
+            "name": "Bagisto Team",
             "email": "support@bagisto.com"
         }
     ],
-    "require": {},
+    "require": {
+        "stripe/stripe-php": "^13.0"
+    },
     "autoload": {
         "psr-4": {
             "Webkul\\Stripe\\": "src/"
@@ -18,7 +20,9 @@
             "providers": [
                 "Webkul\\Stripe\\Providers\\StripeServiceProvider"
             ],
-            "aliases": {}
+            "aliases": {
+                "Stripe": "Webkul\\Stripe\\Facades\\Stripe"
+            }
         }
     },
     "minimum-stability": "dev"

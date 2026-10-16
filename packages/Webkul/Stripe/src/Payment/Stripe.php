@@ -37,8 +37,7 @@ class Stripe extends Payment
      */
     public function isAvailable()
     {
-        return parent::isAvailable()
-            && $this->hasValidCredentials();
+        return false;
     }
 
     /**

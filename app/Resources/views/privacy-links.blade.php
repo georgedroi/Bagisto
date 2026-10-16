@@ -1,7 +1,7 @@
-<div class="border-t border-[#e9decc] bg-[#F1EADF] px-[60px] py-3.5 text-center text-sm text-zinc-600 max-sm:px-4">
-    <span>Discreet shopping</span>
+<div class="mp-privacy-links border-t px-4 py-3.5 text-center text-sm">
+    <span>{{ trans('manpleasure.discreet-shopping') }}</span>
     <span class="mx-2">·</span>
-    <a href="{{ url('/page/privacy-policy') }}" class="underline">Privacy Policy</a>
+    <a href="{{ url('/page/privacy-policy') }}" class="underline">{{ trans('manpleasure.privacy-policy') }}</a>
     <span class="mx-2">·</span>
-    <a href="{{ url('/page/terms-conditions') }}" class="underline">Terms & Conditions</a>
+    <a href="{{ url('/page/terms-conditions') }}" class="underline">{{ trans('manpleasure.terms-conditions') }}</a>
 </div>

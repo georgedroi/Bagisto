@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
 use Stripe\Charge;
 use Stripe\Dispute;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Webkul\Checkout\Contracts\Cart as CartContract;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Checkout\Repositories\CartRepository;
@@ -43,6 +44,10 @@ class StripeController extends Controller
      */
     public function redirect(): RedirectResponse
     {
+        if (! $this->stripe->isAvailable()) {
+            throw new ServiceUnavailableHttpException;
+        }
+
         if (! $this->stripe->hasValidCredentials()) {
             session()->flash('error', trans('stripe::app.response.provide-credentials'));
 
@@ -73,6 +78,10 @@ class StripeController extends Controller
      */
     public function success(): RedirectResponse
     {
+        if (! $this->stripe->isAvailable()) {
+            throw new ServiceUnavailableHttpException;
+        }
+
         $sessionId = request()->query('session_id');
 
         if (! $sessionId) {
@@ -135,6 +144,10 @@ class StripeController extends Controller
      */
     public function webhook(): JsonResponse
     {
+        if (! $this->stripe->isAvailable()) {
+            throw new ServiceUnavailableHttpException;
+        }
+
         $event = $this->stripe->constructWebhookEvent(request()->getContent(), request()->header('Stripe-Signature'));
 
         if (! $event) {
