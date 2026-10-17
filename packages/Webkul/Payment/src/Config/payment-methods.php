@@ -1,7 +1,13 @@
 <?php
 
 use Webkul\Payment\Payment\CashOnDelivery;
+use Webkul\Payment\Payment\CreditDebitCards;
+use Webkul\Payment\Payment\DuitNowQR;
+use Webkul\Payment\Payment\DuitNowQRAuto;
+use Webkul\Payment\Payment\DuitNowQRManual;
+use Webkul\Payment\Payment\FPX;
 use Webkul\Payment\Payment\MoneyTransfer;
+use Webkul\Payment\Payment\TnGeWallet;
 
 return [
     'cashondelivery' => [
@@ -22,5 +28,65 @@ return [
         'active' => true,
         'generate_invoice' => false,
         'sort' => 8,
+    ],
+
+    'duitnowqr_manual' => [
+        'class' => DuitNowQRManual::class,
+        'code' => 'duitnowqr_manual',
+        'title' => 'DuitNow QR (Manual Bank Transfer / QR)',
+        'description' => 'Pay via DuitNow QR and upload your transfer receipt for verification.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 1,
+    ],
+
+    'duitnowqr' => [
+        'class' => DuitNowQR::class,
+        'code' => 'duitnowqr',
+        'title' => 'DuitNow QR',
+        'description' => 'Pay via DuitNow QR.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 2,
+    ],
+
+    'creditdebitcards' => [
+        'class' => CreditDebitCards::class,
+        'code' => 'creditdebitcards',
+        'title' => 'Credit / Debit Cards',
+        'description' => 'Pay securely with Visa or Mastercard.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 3,
+    ],
+
+    'fpx' => [
+        'class' => FPX::class,
+        'code' => 'fpx',
+        'title' => 'FPX Online Banking',
+        'description' => 'Pay directly via Malaysian online banking (FPX).',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 4,
+    ],
+
+    'duitnowqr_auto' => [
+        'class' => DuitNowQRAuto::class,
+        'code' => 'duitnowqr_auto',
+        'title' => 'DuitNow QR (Instant Automated)',
+        'description' => 'Instant payment via dynamic DuitNow QR code.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 5,
+    ],
+
+    'tngewallet' => [
+        'class' => TnGeWallet::class,
+        'code' => 'tngewallet',
+        'title' => 'Touch \'n Go eWallet',
+        'description' => 'Pay using Touch \'n Go eWallet.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 6,
     ],
 ];

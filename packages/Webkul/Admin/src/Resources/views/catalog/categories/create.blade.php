@@ -100,6 +100,7 @@
                                 name-field="parent_id"
                                 value-field="id"
                                 :items="json_encode($categories)"
+                                :value="json_encode((int) old('parent_id', $selectedParentId))"
                                 :fallback-locale="config('app.fallback_locale')"
                             />
                         </div>

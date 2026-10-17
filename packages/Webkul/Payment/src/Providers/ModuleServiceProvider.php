@@ -3,6 +3,7 @@
 namespace Webkul\Payment\Providers;
 
 use Webkul\Core\Providers\CoreModuleServiceProvider;
+use Webkul\Payment\Models\PaymentReceipt;
 
 class ModuleServiceProvider extends CoreModuleServiceProvider
 {
@@ -11,5 +12,7 @@ class ModuleServiceProvider extends CoreModuleServiceProvider
      *
      * @var array
      */
-    protected $models = [];
+    protected $models = [
+        PaymentReceipt::class,
+    ];
 }

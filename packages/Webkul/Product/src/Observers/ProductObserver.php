@@ -2,6 +2,7 @@
 
 namespace Webkul\Product\Observers;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Product\Contracts\Product;
 
@@ -15,6 +16,6 @@ class ProductObserver
      */
     public function deleted($product)
     {
-        Storage::deleteDirectory('product/'.$product->id);
+        DB::afterCommit(fn () => Storage::deleteDirectory('product/'.$product->id));
     }
 }

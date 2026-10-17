@@ -7,27 +7,35 @@ use Illuminate\Support\ServiceProvider;
 class StripeServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * Bootstrap services.
+     *
+     * @return void
      */
-    public function register(): void
+    public function boot()
+    {
+        $this->loadRoutesFrom(__DIR__.'/../Routes/web.php');
+
+        $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'stripe');
+
+        $this->app->register(EventServiceProvider::class);
+    }
+
+    /**
+     * Register services.
+     *
+     * @return void
+     */
+    public function register()
     {
         $this->registerConfig();
     }
 
     /**
-     * Bootstrap services.
+     * Register package config.
+     *
+     * @return void
      */
-    public function boot(): void
-    {
-        $this->loadRoutesFrom(__DIR__.'/../Routes/web.php');
-
-        $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'stripe');
-    }
-
-    /**
-     * Merge the stripe connect's configuration with the admin panel
-     */
-    protected function registerConfig(): void
+    protected function registerConfig()
     {
         $this->mergeConfigFrom(
             dirname(__DIR__).'/Config/payment-methods.php', 'payment_methods'

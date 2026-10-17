@@ -2,21 +2,30 @@
 
 namespace Webkul\Admin\Http\Controllers\Catalog;
 
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Spatie\ResponseCache\Facades\ResponseCache;
 use Webkul\Admin\DataGrids\Catalog\CategoryDataGrid;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Admin\Http\Requests\CategoryDeletePreviewRequest;
+use Webkul\Admin\Http\Requests\CategoryDeleteRequest;
+use Webkul\Admin\Http\Requests\CategoryMoveRequest;
 use Webkul\Admin\Http\Requests\CategoryRequest;
 use Webkul\Admin\Http\Requests\MassDestroyRequest;
 use Webkul\Admin\Http\Requests\MassUpdateRequest;
 use Webkul\Admin\Http\Resources\CategoryTreeResource;
 use Webkul\Attribute\Repositories\AttributeRepository;
-use Webkul\Category\Contracts\Category;
+use Webkul\Category\Repositories\CategoryDeletionRepository;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
+use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Shop\Helpers\CatalogApiCache;
 
 class CategoryController extends Controller
 {
@@ -32,9 +41,9 @@ class CategoryController extends Controller
     ) {}
 
     /**
-     * Display a listing of the resource.
+     * Display the complete category hierarchy or the existing datagrid.
      *
-     * @return View
+     * @return View|JsonResponse
      */
     public function index()
     {
@@ -42,7 +51,117 @@ class CategoryController extends Controller
             return datagrid(CategoryDataGrid::class)->process();
         }
 
-        return view('admin::catalog.categories.index');
+        $snapshot = request()->query('view') === 'list'
+            ? ['categories' => collect()]
+            : $this->categoryRepository->getAdminTreeSnapshot($this->channelRepository->pluck('root_category_id')->all());
+
+        return view('admin::catalog.categories.index', $snapshot);
+    }
+
+    /**
+     * Save a tree move without modifying category content or product assignments.
+     */
+    public function organize(CategoryMoveRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $roots = $this->channelRepository->pluck('root_category_id')->all();
+
+        try {
+            $changed = $this->categoryRepository->organizeTree(
+                (int) $data['category_id'],
+                (int) $data['parent_id'],
+                isset($data['before_id']) ? (int) $data['before_id'] : null,
+                $data['revision'],
+                $roots
+            );
+        } catch (DomainException $exception) {
+            return new JsonResponse([
+                'message' => trans('admin::category-tree.error-'.$exception->getMessage()),
+            ], $exception->getMessage() === 'stale' ? 409 : 422);
+        }
+
+        foreach ($changed as $category) {
+            Event::dispatch('catalog.category.update.after', $category);
+        }
+
+        return new JsonResponse([
+            'message' => trans('admin::category-tree.saved'),
+            'html' => view('admin::catalog.categories.tree', $this->categoryRepository->getAdminTreeSnapshot($roots))->render(),
+        ]);
+    }
+
+    /**
+     * Review the exact deletion scope without changing catalog data.
+     */
+    public function reviewDeletion(CategoryDeletePreviewRequest $request, CategoryDeletionRepository $deletions): JsonResponse
+    {
+        try {
+            $plan = $deletions->review((int) $request->validated('category_id'), $this->channelRepository->pluck('root_category_id')->all());
+        } catch (DomainException $exception) {
+            return new JsonResponse(['message' => trans('admin::category-tree.error-'.$exception->getMessage())], 422);
+        }
+
+        $token = Str::random(40);
+        $reviews = array_filter($request->session()->get('category_tree_delete', []), fn ($review) => $review['expires'] >= time());
+        $reviews = array_slice($reviews, -9, null, true);
+        $reviews[$token] = [
+            'id' => $plan['id'],
+            'revision' => $plan['revision'],
+            'expires' => time() + 600,
+        ];
+        $request->session()->put('category_tree_delete', $reviews);
+
+        return new JsonResponse([
+            'review' => array_intersect_key($plan, array_flip(['id', 'name', 'revision', 'category_count', 'product_count', 'assigned_count', 'variant_count', 'shared_count', 'categories', 'products'])),
+            'preview_token' => $token,
+            'can_delete_products' => bouncer()->hasPermission('catalog.products.delete'),
+        ]);
+    }
+
+    /**
+     * Delete only a reviewed branch and the explicitly selected product inventory.
+     */
+    public function deleteTree(CategoryDeleteRequest $request, CategoryDeletionRepository $deletions, ProductRepository $products, CatalogApiCache $catalogCache): JsonResponse
+    {
+        $data = $request->validated();
+        $reviewKey = 'category_tree_delete.'.$data['preview_token'];
+        $review = $request->session()->get($reviewKey);
+
+        if (! $review || $review['expires'] < time() || $review['id'] !== (int) $data['category_id'] || ! hash_equals($review['revision'], $data['revision'])) {
+            return new JsonResponse(['message' => trans('admin::category-tree.error-delete-review')], 409);
+        }
+
+        try {
+            $result = $deletions->deleteReviewed((int) $data['category_id'], $this->channelRepository->pluck('root_category_id')->all(), $data['revision'], $request->boolean('delete_products'), $this->categoryRepository, $products);
+        } catch (DomainException $exception) {
+            return new JsonResponse(['message' => trans('admin::category-tree.error-'.$exception->getMessage())], 409);
+        }
+
+        Log::notice('Category tree deletion approved', [
+            'actor_admin_id' => auth('admin')->id(),
+            'approver_admin_id' => $request->approvedBy(),
+            'category_ids' => $result['category_ids'],
+            'product_ids' => $result['product_ids'],
+        ]);
+
+        $request->session()->forget($reviewKey);
+
+        foreach ($result['product_ids'] as $id) {
+            Event::dispatch('catalog.product.delete.after', $id);
+        }
+
+        foreach ($result['category_ids'] as $id) {
+            Event::dispatch('catalog.category.delete.after', $id);
+        }
+
+        $catalogCache->flush();
+        ResponseCache::clear();
+
+        return new JsonResponse([
+            'message' => trans('admin::category-tree.deleted', ['categories' => count($result['category_ids']), 'products' => count($result['product_ids'])]),
+            'focus_id' => $result['parent_id'],
+            'html' => view('admin::catalog.categories.tree', $this->categoryRepository->getAdminTreeSnapshot($this->channelRepository->pluck('root_category_id')->all()))->render(),
+        ]);
     }
 
     /**
@@ -56,7 +175,11 @@ class CategoryController extends Controller
 
         $attributes = $this->attributeRepository->findWhere(['is_filterable' => 1]);
 
-        return view('admin::catalog.categories.create', compact('categories', 'attributes'));
+        $selectedParentId = request()->filled('parent_id')
+            ? (int) $this->categoryRepository->findOrFail(request()->integer('parent_id'))->id
+            : (int) $this->channelRepository->pluck('root_category_id')->first();
+
+        return view('admin::catalog.categories.create', compact('categories', 'attributes', 'selectedParentId'));
     }
 
     /**
@@ -158,80 +281,19 @@ class CategoryController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Refuse unreviewed deletion from older admin clients.
      */
     public function destroy(int $id): JsonResponse
     {
-        $category = $this->categoryRepository->findOrFail($id);
-
-        if (! $this->isCategoryDeletable($category)) {
-            return new JsonResponse([
-                'message' => trans('admin::app.catalog.categories.delete-category-root'),
-            ], 400);
-        }
-
-        try {
-            Event::dispatch('catalog.category.delete.before', $id);
-
-            $category->delete($id);
-
-            Event::dispatch('catalog.category.delete.after', $id);
-
-            return new JsonResponse([
-                'message' => trans('admin::app.catalog.categories.delete-success'),
-            ]);
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'message' => trans('admin::app.catalog.categories.delete-failed'),
-            ], 500);
-        }
+        return new JsonResponse(['message' => trans('admin::category-tree.error-delete-use-tree')], 409);
     }
 
     /**
-     * Remove the specified resources from database.
+     * Require a separate scope review and password confirmation for each branch.
      */
-    public function massDestroy(MassDestroyRequest $massDestroyRequest): JsonResponse
+    public function massDestroy(MassDestroyRequest $request): JsonResponse
     {
-        $suppressFlash = true;
-
-        $categoryIds = $massDestroyRequest->input('indices');
-
-        foreach ($categoryIds as $categoryId) {
-            $category = $this->categoryRepository->find($categoryId);
-
-            if (isset($category)) {
-                if (! $this->isCategoryDeletable($category)) {
-                    $suppressFlash = false;
-
-                    return new JsonResponse(['message' => trans('admin::app.catalog.categories.delete-category-root')], 400);
-                } else {
-                    try {
-                        $suppressFlash = true;
-
-                        Event::dispatch('catalog.category.delete.before', $categoryId);
-
-                        $this->categoryRepository->delete($categoryId);
-
-                        Event::dispatch('catalog.category.delete.after', $categoryId);
-                    } catch (\Exception $e) {
-                        return new JsonResponse([
-                            'message' => trans('admin::app.catalog.categories.delete-failed'),
-                        ], 500);
-                    }
-                }
-            }
-        }
-
-        if (
-            count($categoryIds) != 1
-            || $suppressFlash == true
-        ) {
-            return new JsonResponse([
-                'message' => trans('admin::app.catalog.categories.delete-success'),
-            ]);
-        }
-
-        return redirect()->route('admin.catalog.categories.index');
+        return new JsonResponse(['message' => trans('admin::category-tree.error-delete-use-tree')], 409);
     }
 
     /**
@@ -264,24 +326,6 @@ class CategoryController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
-    }
-
-    /**
-     * Check whether the current category is deletable or not.
-     *
-     * This method will fetch all root category ids from the channel. If `id` is present,
-     * then it is not deletable.
-     *
-     * @param  Category  $category
-     * @return bool
-     */
-    private function isCategoryDeletable($category)
-    {
-        if ($category->id === 1) {
-            return false;
-        }
-
-        return ! $this->channelRepository->pluck('root_category_id')->contains($category->id);
     }
 
     /**

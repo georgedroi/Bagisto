@@ -2,12 +2,14 @@
 
 namespace Webkul\Category\Repositories;
 
+use DomainException;
 use Illuminate\Container\Container;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Webkul\Category\Contracts\Category;
+use Webkul\Category\Helpers\CategoryTreeOrder;
 use Webkul\Category\Models\CategoryTranslationProxy;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Core\Helpers\MediaFileName;
@@ -75,7 +77,11 @@ class CategoryRepository extends Repository
             }
         }
 
-        return $queryBuilder->paginate($params['limit'] ?? 10);
+        $direction = ($params['sort'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+        return $queryBuilder->orderBy('categories.position', $direction)
+            ->orderBy('categories.id', $direction)
+            ->paginate($params['limit'] ?? 10);
     }
 
     /**
@@ -165,6 +171,58 @@ class CategoryRepository extends Repository
     }
 
     /**
+     * Render one consistent hierarchy and its concurrency revision.
+     */
+    public function getAdminTreeSnapshot(array $channelRootIds): array
+    {
+        $categories = $this->model->newQuery()->orderBy('position')->orderBy('id')->get();
+
+        return [
+            'revision' => CategoryTreeOrder::revision($categories),
+            'channelRootIds' => array_map('intval', $channelRootIds),
+            'categories' => $categories->toTree(),
+        ];
+    }
+
+    /**
+     * Move a complete subtree and persist deterministic sibling positions atomically.
+     */
+    public function organizeTree(int $id, int $parentId, ?int $beforeId, string $revision, array $channelRootIds): array
+    {
+        return DB::transaction(function () use ($id, $parentId, $beforeId, $revision, $channelRootIds) {
+            $categories = $this->model->newQuery()->orderBy('id')->lockForUpdate()->get();
+
+            if (! hash_equals(CategoryTreeOrder::revision($categories), $revision)) {
+                throw new DomainException('stale');
+            }
+
+            $orders = CategoryTreeOrder::plan($categories, $id, $parentId, $beforeId, $channelRootIds);
+            $node = $categories->find($id);
+            $oldParentId = (int) $node->parent_id;
+
+            if ($oldParentId !== $parentId) {
+                $node->appendToNode($categories->find($parentId))->saveOrFail();
+            }
+
+            $changedIds = [$id, $oldParentId, $parentId];
+
+            foreach ($orders as $order) {
+                foreach ($order as $position => $categoryId) {
+                    $category = $categories->find($categoryId);
+
+                    if ((int) $category->position !== $position + 1) {
+                        $category->position = $position + 1;
+                        $category->saveOrFail();
+                        $changedIds[] = $categoryId;
+                    }
+                }
+            }
+
+            return $this->model->newQuery()->whereIn('id', array_unique($changedIds))->get()->all();
+        });
+    }
+
+    /**
      * Get root categories.
      *
      * @return Collection
@@ -192,8 +250,8 @@ class CategoryRepository extends Repository
     public function getCategoryTree(?int $id = null)
     {
         return $id
-            ? $this->model::orderBy('position', 'ASC')->where('id', '!=', $id)->get()->toTree()
-            : $this->model::orderBy('position', 'ASC')->get()->toTree();
+            ? $this->model::orderBy('position', 'ASC')->orderBy('id', 'ASC')->where('id', '!=', $id)->get()->toTree()
+            : $this->model::orderBy('position', 'ASC')->orderBy('id', 'ASC')->get()->toTree();
     }
 
     /**
@@ -204,8 +262,8 @@ class CategoryRepository extends Repository
     public function getCategoryTreeWithoutDescendant(?int $id = null)
     {
         return $id
-            ? $this->model::orderBy('position', 'ASC')->where('id', '!=', $id)->whereNotDescendantOf($id)->get()->toTree()
-            : $this->model::orderBy('position', 'ASC')->get()->toTree();
+            ? $this->model::orderBy('position', 'ASC')->orderBy('id', 'ASC')->where('id', '!=', $id)->whereNotDescendantOf($id)->get()->toTree()
+            : $this->model::orderBy('position', 'ASC')->orderBy('id', 'ASC')->get()->toTree();
     }
 
     /**
@@ -217,8 +275,8 @@ class CategoryRepository extends Repository
     public function getVisibleCategoryTree($id = null)
     {
         return $id
-            ? $this->model::orderBy('position', 'ASC')->where('status', 1)->descendantsAndSelf($id)->toTree($id)
-            : $this->model::orderBy('position', 'ASC')->where('status', 1)->get()->toTree();
+            ? $this->model::orderBy('position', 'ASC')->orderBy('id', 'ASC')->where('status', 1)->descendantsAndSelf($id)->toTree($id)
+            : $this->model::orderBy('position', 'ASC')->orderBy('id', 'ASC')->where('status', 1)->get()->toTree();
     }
 
     /**
