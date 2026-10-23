@@ -20,7 +20,7 @@ tar --create --gzip --file "$archive" --directory "$project" \
     --exclude='public/storage' --exclude='database/seeders/ManPleasureQaProductSeeder.php' \
     --exclude='*/.git' --exclude='*/.local' \
     app bootstrap config database lang packages public resources routes \
-    artisan composer.json composer.lock package.json package-lock.json vite.config.js scripts/deploy \
+    artisan composer.json composer.lock package.json vite.config.js scripts/deploy \
     docker/production/mansecretpleasure "${extra[@]}"
 chmod 600 "$archive"
 sha256sum "$archive"
