@@ -8,7 +8,6 @@ output=${2:?Provide an output directory outside the project.}
 [[ "$tag" =~ ^msp-[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,4}$ ]]
 output=$(realpath -m "$output")
 case "$output/" in "$project/"*) printf '%s\n' 'Choose an output directory outside the project.' >&2; exit 1;; esac
-test ! -e "$project/release.json" || { printf '%s\n' 'Remove or preserve the existing generated release.json before packaging.' >&2; exit 1; }
 test -z "$(git -C "$project" status --porcelain --untracked-files=normal)" || { printf '%s\n' 'Commit the reviewed source before creating a published update release.' >&2; exit 1; }
 test -f "$project/app/Http/Controllers/Admin/SystemUpdateController.php"
 test -f "$project/routes/manpleasure-updates.php"
@@ -16,11 +15,29 @@ mkdir -p "$output"
 test ! -e "$output/manpleasure-release.json"
 test ! -e "$output/$tag.tar.gz"
 commit=$(git -C "$project" rev-parse HEAD)
+release_backup=""
+if test -e "$project/release.json"; then
+    backup_temp=$(mktemp)
+    if ! cp -p "$project/release.json" "$backup_temp"; then
+        rm -f "$backup_temp"
+        exit 1
+    fi
+    release_backup=$backup_temp
+fi
 metadata_created=0
 cleanup_release_metadata() {
+    status=$?
+    trap - EXIT
     if test "$metadata_created" = 1; then rm -f "$project/release.json"; fi
+    if test -n "$release_backup" && test -f "$release_backup"; then
+        cp -p "$release_backup" "$project/release.json"
+        rm -f "$release_backup"
+    fi
+    exit "$status"
 }
 trap cleanup_release_metadata EXIT
+if test -n "$release_backup"; then rm -f "$project/release.json"; fi
+metadata_created=1
 python3 - "$project/release.json" "$tag" "$commit" <<'PY'
 import json, pathlib, sys
 document = {"schema": 1, "updater_protocol": 1, "project": "mansecretpleasure", "release_id": sys.argv[2], "version": sys.argv[2][4:], "commit": sys.argv[3]}
