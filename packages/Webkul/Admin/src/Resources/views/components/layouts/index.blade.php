@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <html
-    class="{{ (request()->cookie('dark_mode') ?? 1) ? 'dark' : '' }}"
+    class="{{ (request()->cookie('dark_mode') ?? 0) ? 'dark' : '' }}"
     lang="{{ app()->getLocale() }}"
     dir="{{ core()->getCurrentLocale()->direction }}"
 >
@@ -43,7 +43,7 @@
     @bagistoVite(['src/Resources/assets/css/app.css', 'src/Resources/assets/js/app.js'])
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
         rel="stylesheet"
     />
 
@@ -78,6 +78,8 @@
 
     @stack('styles')
 
+    @include('manpleasure-admin::executive-layout-styles')
+
     <style>
         {!! core()->getConfigData('general.content.custom_scripts.custom_css') !!}
     </style>
@@ -104,7 +106,7 @@
             class="mp-admin-shell group/container {{ request()->cookie('sidebar_collapsed') ?? 0 ? 'sidebar-collapsed' : 'sidebar-not-collapsed' }} flex flex-col lg:flex-row gap-0 lg:gap-4"
             ref="appLayout"
         >
-            <div class="lg:fixed lg:top-[62px] lg:left-0 rtl:lg:right-0 rtl:lg:left-auto lg:z-10 w-full lg:w-auto">
+            <div class="mp-sidebar-container">
                 <x-admin::layouts.sidebar />
             </div>
 
@@ -114,22 +116,18 @@
                         {{ $slot }}
                     </div>
                 </div>
-
-                <div class="mt-auto">
-                    <div class="border-t bg-white py-2 text-center text-xs sm:text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                        @lang('admin::app.components.layouts.powered-by.description', [
-                            'bagisto' => '<a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://bagisto.com/en/">Bagisto</a>',
-                            'webkul' => '<a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://webkul.com/">Webkul</a>',
-                        ])
-                    </div>
-                </div>
             </div>
         </div>
+
+        @include('manpleasure-admin::executive-utility-dock')
 
         {!! view_render_event('bagisto.admin.layout.content.after') !!}
     </div>
 
     {!! view_render_event('bagisto.admin.layout.body.after') !!}
+
+    @include('manpleasure-admin::admin-navigation-script')
+    @include('manpleasure-admin::executive-layout-script')
 
     @stack('scripts')
 

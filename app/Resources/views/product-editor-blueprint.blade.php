@@ -39,26 +39,16 @@
     </div>
 </div>
 
-<div class="sticky bottom-4 z-10 mt-3 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-    <p class="text-xs text-gray-500 dark:text-gray-400" data-editor-message>Native Bagisto form submission remains enabled.</p>
-    <div class="flex gap-2">
-        <button type="button" class="secondary-button" data-editor-action="draft">Save Draft</button>
-        @if (! empty($product?->url_key))
-            <a href="{{ route('shop.product_or_category.index', $product->url_key) }}" target="_blank" class="secondary-button">Preview</a>
-        @else
-            <button type="button" class="secondary-button" data-editor-action="preview">Preview</button>
-        @endif
-        <button type="button" class="primary-button" data-editor-action="publish">Publish / Submit</button>
-    </div>
-</div>
-
 @pushOnce('scripts')
     <script type="module">
         const blueprint = document.querySelector('[data-editor-blueprint]');
 
         if (blueprint) {
             const form = blueprint.closest('form');
-            const message = blueprint.parentElement.querySelector('[data-editor-message]');
+            if (form) form.style.paddingBottom = '6rem';
+            const actions = form?.querySelector('[data-editor-actions]');
+
+            const message = actions?.querySelector('[data-editor-message]');
 
             const setStatus = (value) => {
                 const controls = form?.querySelectorAll('[name="status"], [name="status[]"]') || [];
@@ -76,19 +66,19 @@
                 });
             });
 
-            blueprint.parentElement.querySelector('[data-editor-action="draft"]')?.addEventListener('click', () => {
+            actions?.querySelector('[data-editor-action="draft"]')?.addEventListener('click', () => {
                 setStatus('0');
                 if (message) message.textContent = 'Saving this product as a draft…';
                 form?.requestSubmit();
             });
 
-            blueprint.parentElement.querySelector('[data-editor-action="publish"]')?.addEventListener('click', () => {
+            actions?.querySelector('[data-editor-action="publish"]')?.addEventListener('click', () => {
                 setStatus('1');
                 if (message) message.textContent = 'Publishing this product…';
                 form?.requestSubmit();
             });
 
-            blueprint.parentElement.querySelector('[data-editor-action="preview"]')?.addEventListener('click', () => {
+            actions?.querySelector('[data-editor-action="preview"]')?.addEventListener('click', () => {
                 if (message) message.textContent = 'Save the product before previewing it.';
             });
         }

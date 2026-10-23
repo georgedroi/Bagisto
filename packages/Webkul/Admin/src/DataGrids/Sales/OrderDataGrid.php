@@ -32,6 +32,7 @@ class OrderDataGrid extends DataGrid
                 'orders.id',
                 DB::raw('GROUP_CONCAT('.DB::getTablePrefix().'order_payment.method SEPARATOR "|") as method'),
                 'orders.increment_id',
+                'orders.total_qty_ordered',
                 'orders.base_grand_total',
                 'orders.created_at',
                 'channel_name',
@@ -43,6 +44,12 @@ class OrderDataGrid extends DataGrid
                 DB::raw('CONCAT('.DB::getTablePrefix().'order_address_billing.city, ", ", '.DB::getTablePrefix().'order_address_billing.state,", ", '.DB::getTablePrefix().'order_address_billing.country) as location')
             )
             ->groupBy('orders.id');
+
+        $queue = request()->query('queue');
+
+        if (in_array($queue, [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT, Order::STATUS_PROCESSING, Order::STATUS_COMPLETED, Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD], true)) {
+            $queryBuilder->where('orders.status', $queue);
+        }
 
         $this->addFilter('full_name', DB::raw('CONCAT('.DB::getTablePrefix().'orders.customer_first_name, " ", '.DB::getTablePrefix().'orders.customer_last_name)'));
         $this->addFilter('created_at', 'orders.created_at');
@@ -172,9 +179,6 @@ class OrderDataGrid extends DataGrid
             'sortable' => true,
         ]);
 
-        /**
-         * Searchable dropdown sample. In testing phase.
-         */
         $this->addColumn([
             'index' => 'customer_email',
             'label' => trans('admin::app.sales.orders.index.datagrid.email'),

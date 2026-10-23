@@ -11,7 +11,7 @@
             @click="$refs.sidebarMenuDrawer.open()"
         ></button>
 
-        <a href="{{ route('admin.dashboard.index') }}" class="flex-shrink-0">
+        <a href="{{ route('admin.dashboard.index') }}" class="mp-brand flex-shrink-0" data-action="open-dashboard">
             @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
                 <img
                     class="h-8 w-auto sm:h-10"
@@ -19,15 +19,14 @@
                     alt="{{ config('app.name') }}"
                 />
             @else
-                <img
-                    src="{{ (request()->cookie('dark_mode') ?? 1) ? bagisto_asset('images/dark-logo.svg') : bagisto_asset('images/logo.svg') }}"
-                    class="h-8 w-auto sm:h-10"
-                    id="logo-image"
-                    data-admin-default-logo
-                    alt="{{ config('app.name') }}"
-                />
+                <img class="mp-brand-emblem" src="{{ asset('images/msp-admin-mark.png') }}" alt="{{ trans('admin::executive-layout.brand') }}">
+                <span class="mp-brand-name">{{ trans('admin::executive-layout.brand') }}</span>
             @endif
         </a>
+
+        <span class="mp-environment"><span aria-hidden="true">●</span> {{ app()->environment() }}</span>
+
+        <span class="mp-header-page">{{ $title ?? trans('admin::admin-navigation.overview') }}</span>
 
         <v-mega-search class="hidden sm:block">
             <div class="relative flex w-[200px] items-center sm:w-[300px] md:w-[400px] lg:w-[525px] xl:max-w-[525px] ltr:ml-2 rtl:mr-2 sm:ltr:ml-2.5 sm:rtl:mr-2.5">
@@ -36,6 +35,7 @@
                 <input
                     type="text"
                     class="block w-full rounded-lg border bg-white px-8 py-1.5 text-sm leading-6 text-gray-600 transition-all hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 sm:px-10 sm:text-base"
+                    data-action="nav-search"
                     placeholder="@lang('admin::app.components.layouts.header.mega-search.title')"
                 >
             </div>
@@ -46,7 +46,7 @@
         <v-dark>
             <div class="flex">
                 <span
-                    class="{{ (request()->cookie('dark_mode') ?? 1) ? 'icon-light' : 'icon-dark' }} cursor-pointer rounded-md p-1.5 text-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-950 sm:text-2xl"
+                    class="{{ (request()->cookie('dark_mode') ?? 0) ? 'icon-light' : 'icon-dark' }} cursor-pointer rounded-md p-1.5 text-xl transition-all hover:bg-gray-100 dark:hover:bg-gray-950 sm:text-2xl"
                 ></span>
             </div>
         </v-dark>
@@ -146,7 +146,7 @@
                 />
             @else
                 <img
-                    src="{{ (request()->cookie('dark_mode') ?? 1) ? bagisto_asset('images/dark-logo.svg') : bagisto_asset('images/logo.svg') }}"
+                    src="{{ (request()->cookie('dark_mode') ?? 0) ? bagisto_asset('images/dark-logo.svg') : bagisto_asset('images/logo.svg') }}"
                     class="h-8 w-auto sm:h-10"
                     id="drawer-logo-image"
                     data-admin-default-logo
@@ -176,6 +176,7 @@
                 class="peer block w-full rounded-lg border bg-white px-8 py-1.5 text-sm leading-6 text-gray-600 transition-all hover:border-gray-400 focus:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-400 dark:focus:border-gray-400 sm:px-10 sm:text-base"
                 :class="{'border-gray-400': isDropdownOpen}"
                 placeholder="@lang('admin::app.components.layouts.header.mega-search.title')"
+                data-action="nav-search"
                 v-model.lazy="searchTerm"
                 @click="searchTerm.length >= 2 ? isDropdownOpen = true : {}"
                 v-debounce="500"
@@ -765,7 +766,7 @@
 
             data() {
                 return {
-                    isDarkMode: {{ (int) ((request()->cookie('dark_mode') ?? 1) == 1) }},
+                    isDarkMode: {{ (int) ((request()->cookie('dark_mode') ?? 0) == 1) }},
 
                     logo: "{{ bagisto_asset('images/logo.svg') }}",
 
@@ -803,7 +804,7 @@
                         }
                     }
 
-                    return 1;
+                    return 0;
                 },
             },
         });

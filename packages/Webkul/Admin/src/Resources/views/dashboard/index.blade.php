@@ -26,6 +26,8 @@
         </v-dashboard-filters>
     </div>
 
+    @include('manpleasure-admin::stitch-dashboard')
+
     <!-- Body Component -->
     <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
         <!-- Left Section -->

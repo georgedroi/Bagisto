@@ -10,8 +10,6 @@
         enctype="multipart/form-data"
     >
         {!! view_render_event('bagisto.admin.catalog.product.edit.actions.before', ['product' => $product]) !!}
-
-        <!-- Page Header -->
         <div class="grid gap-2.5">
             <div class="flex items-center justify-between gap-4 max-sm:flex-wrap">
                 <div class="grid gap-1.5">
@@ -21,15 +19,12 @@
                 </div>
 
                 <div class="flex items-center gap-x-2.5">
-                    <!-- Back Button -->
                     <a
                         href="{{ route('admin.catalog.products.index') }}"
                         class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
                     >
                         @lang('admin::app.account.edit.back-btn')
                     </a>
-
-                    <!-- Preview Button -->
                     @if (
                         $product->status
                         && $product->visible_individually
@@ -43,8 +38,6 @@
                             @lang('admin::app.catalog.products.edit.preview')
                         </a>
                     @endif
-
-                    <!-- Save Button -->
                     <button class="primary-button">
                         @lang('admin::app.catalog.products.edit.save-btn')
                     </button>
@@ -59,13 +52,9 @@
 
             $currentLocale = core()->getAllLocales()->firstWhere('code', $currentChannel->resolveLocaleCode(core()->getRequestedLocaleCode()));
         @endphp
-
-        <!-- Channel and Locale Switcher -->
         <div class="mt-7 flex items-center justify-between gap-4 max-md:flex-wrap">
             <div class="flex items-center gap-x-1">
-                <!-- Channel Switcher -->
                 <x-admin::dropdown :class="$channels->count() <= 1 ? 'hidden' : ''">
-                    <!-- Dropdown Toggler -->
                     <x-slot:toggle>
                         <button
                             type="button"
@@ -84,8 +73,6 @@
                             <span class="icon-sort-down text-2xl"></span>
                         </button>
                     </x-slot>
-
-                    <!-- Dropdown Content -->
                     <x-slot:content class="!p-0">
                         @foreach ($channels as $channel)
                             <a
@@ -98,10 +85,7 @@
                         @endforeach
                     </x-slot>
                 </x-admin::dropdown>
-
-                <!-- Locale Switcher -->
                 <x-admin::dropdown :class="$currentChannel->locales->count() <= 1 ? 'hidden' : ''">
-                    <!-- Dropdown Toggler -->
                     <x-slot:toggle>
                         <button
                             type="button"
@@ -120,8 +104,6 @@
                             <span class="icon-sort-down text-2xl"></span>
                         </button>
                     </x-slot>
-
-                    <!-- Dropdown Content -->
                     <x-slot:content class="!p-0">
                         @foreach ($currentChannel->locales->sortBy('name') as $locale)
                             <a
@@ -138,11 +120,9 @@
         </div>
 
         {!! view_render_event('bagisto.admin.catalog.product.edit.actions.after', ['product' => $product]) !!}
-
-        <!-- Body Content -->
         {!! view_render_event('bagisto.admin.catalog.product.edit.form.before', ['product' => $product]) !!}
 
-        <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
+        <div class="msp-product-editor mt-3.5 flex gap-2.5 max-xl:flex-wrap" data-entity="product" data-id="{{ $product->sku }}">
             @php
                 $groupedColumns = $product->attribute_family->attribute_groups->groupBy('column');
 
@@ -153,6 +133,10 @@
                 {!! view_render_event("bagisto.admin.catalog.product.edit.form.column_{$column}.before", ['product' => $product]) !!}
 
                 <div class="flex flex-col gap-2 {{ $column == 1 ? 'flex-1 max-xl:flex-auto' : 'w-[360px] max-w-full max-sm:w-full' }}">
+                    @if ($column == 1 || $isSingleColumn)
+                        @include('admin::catalog.products.edit.images')
+                    @endif
+
                     @foreach ($groups as $group)
                         @php $customAttributes = $product->getEditableAttributes($group); @endphp
 
@@ -243,27 +227,14 @@
                     @endforeach
 
                     @if ($column == 1)
-                        <!-- Images View Blade File -->
-                        @include('admin::catalog.products.edit.images')
-
-                        <!-- Videos View Blade File -->
                         @include('admin::catalog.products.edit.videos')
-
-                        <!-- Product Type View Blade File -->
                         @includeIf('admin::catalog.products.edit.types.' . $product->type)
-
-                        <!-- Related, Cross Sells, Up Sells View Blade File -->
                         @include('admin::catalog.products.edit.links')
-
-                        <!-- Include Product Type Additional Blade Files If Any -->
                         @foreach ($product->getTypeInstance()->getAdditionalViews() as $view)
                             @includeIf($view)
                         @endforeach
                     @elseif (! $isSingleColumn)
-                        <!-- Channels View Blade File -->
                         @include('admin::catalog.products.edit.channels')
-
-                        <!-- Categories View Blade File -->
                         @include('admin::catalog.products.edit.categories')
                     @endif
                 </div>
@@ -277,28 +248,14 @@
                 )
                     <div class="w-[360px] max-w-full max-sm:w-full">
                         @if ($column == 2)
-                            <!-- Images View Blade File -->
-                            @include('admin::catalog.products.edit.images')
-
-                            <!-- Videos View Blade File -->
                             @include('admin::catalog.products.edit.videos')
-
-                            <!-- Product Type View Blade File -->
                             @includeIf('admin::catalog.products.edit.types.' . $product->type)
-
-                            <!-- Related, Cross Sells, Up Sells View Blade File -->
                             @include('admin::catalog.products.edit.links')
-
-                            <!-- Include Product Type Additional Blade Files If Any -->
                             @foreach ($product->getTypeInstance()->getAdditionalViews() as $view)
                                 @includeIf($view)
                             @endforeach
                         @endif
-
-                        <!-- Channels View Blade File -->
                         @include('admin::catalog.products.edit.channels')
-
-                        <!-- Categories View Blade File -->
                         @include('admin::catalog.products.edit.categories')
                     </div>
                 @endif

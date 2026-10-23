@@ -1,9 +1,23 @@
 {
+  "resources/css/admin-login-builder.css": {
+    "file": "assets/admin-login-builder-BfN5-x3k.css",
+    "src": "resources/css/admin-login-builder.css",
+    "isEntry": true
+  },
   "resources/css/app.css": {
     "file": "assets/app-l0sNRNKZ.js",
     "name": "app",
     "src": "resources/css/app.css",
     "isEntry": true
+  },
+  "resources/js/admin-login-builder.js": {
+    "file": "assets/admin-login-builder-C-NaODPy.js",
+    "name": "admin-login-builder",
+    "src": "resources/js/admin-login-builder.js",
+    "isEntry": true,
+    "css": [
+      "assets/admin-login-builder-DMGkLXJ1.css"
+    ]
   },
   "resources/js/app.js": {
     "file": "assets/app-DMsN-rLE.js",

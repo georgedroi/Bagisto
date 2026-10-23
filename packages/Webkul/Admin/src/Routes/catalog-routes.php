@@ -96,6 +96,8 @@ Route::prefix('catalog')->group(function () {
     Route::controller(ProductController::class)->prefix('products')->group(function () {
         Route::get('', 'index')->name('admin.catalog.products.index');
 
+        Route::get('create', 'create')->name('admin.catalog.products.create');
+
         Route::post('create', 'store')->name('admin.catalog.products.store');
 
         Route::post('copy/{id}', 'copy')->name('admin.catalog.products.copy');
