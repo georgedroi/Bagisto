@@ -101,7 +101,6 @@
         border-spacing: 0;width: 100%">
             <thead>
                 <tr style="color: #121A26;border-top: 1px solid #CBD5E1;border-bottom: 1px solid #CBD5E1;">
-                    <th style="text-align: left;padding: 15px">@lang('shop::app.emails.orders.sku')</th>
                     <th style="text-align: left;padding: 15px">@lang('shop::app.emails.orders.name')</th>
                     <th style="text-align: left;padding: 15px">@lang('shop::app.emails.orders.price')</th>
                     <th style="text-align: left;padding: 15px">@lang('shop::app.emails.orders.qty')</th>
@@ -112,36 +111,8 @@
                 @foreach ($order->items as $item)
                     <tr style="vertical-align: text-top;">
                         <td style="text-align: left;padding: 15px">
-                            {{ $item->getTypeInstance()->getOrderedItem($item)->sku }}
-                        </td>
+                            @lang('shop::discreet.item', ['number' => $loop->iteration])
 
-                        <td style="text-align: left;padding: 15px">
-                            {{ $item->name }}
-
-                            @if (isset($item->additional['attributes']))
-                                <div>
-                                    @foreach ($item->additional['attributes'] as $attribute)
-                                        @if (
-                                            ! isset($attribute['attribute_type'])
-                                            || $attribute['attribute_type'] !== 'file'
-                                        )
-                                            <b>{{ $attribute['attribute_name'] }} : </b>{{ $attribute['option_label'] }}<br>
-                                        @else
-                                            {{ $attribute['attribute_name'] }} :
-
-                                            <a
-                                                href="{{ Storage::url($attribute['option_label']) }}"
-                                                class="text-blue-600 hover:underline"
-                                                download="{{ File::basename($attribute['option_label']) }}"
-                                            >
-                                                {{ File::basename($attribute['option_label']) }}
-                                            </a>
-
-                                            <br>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            @endif
                         </td>
 
 

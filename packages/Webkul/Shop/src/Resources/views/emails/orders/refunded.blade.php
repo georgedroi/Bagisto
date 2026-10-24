@@ -113,32 +113,8 @@
                 @foreach ($refund->items as $item)
                     <tr style="vertical-align: text-top;">
                         <td style="text-align: left;padding: 15px">
-                            {{ $item->name }}
+                            @lang('shop::discreet.item', ['number' => $loop->iteration])
 
-                            @if (isset($item->additional['attributes']))
-                                <div>
-                                    @foreach ($item->additional['attributes'] as $attribute)
-                                        @if (
-                                            ! isset($attribute['attribute_type'])
-                                            || $attribute['attribute_type'] !== 'file'
-                                        )
-                                            <b>{{ $attribute['attribute_name'] }} : </b>{{ $attribute['option_label'] }}<br>
-                                        @else
-                                            {{ $attribute['attribute_name'] }} :
-
-                                            <a
-                                                href="{{ Storage::url($attribute['option_label']) }}"
-                                                class="text-blue-600 hover:underline"
-                                                download="{{ File::basename($attribute['option_label']) }}"
-                                            >
-                                                {{ File::basename($attribute['option_label']) }}
-                                            </a>
-
-                                            <br>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            @endif
                         </td>
 
                         <td style="display: flex;flex-direction: column;text-align: left;padding: 15px">
