@@ -28,5 +28,19 @@ class ShippingServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             dirname(__DIR__).'/Config/carriers.php', 'carriers'
         );
+
+        $this->mergeConfigFrom(
+            dirname(__DIR__).'/Config/system.php', 'core'
+        );
+    }
+
+    /**
+     * Bootstrap services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'shipping');
     }
 }
