@@ -30,4 +30,13 @@ return [
     'approve' => 'Approve Payment',
     'reject' => 'Reject Payment',
     'notes' => 'Notes / Reason',
+    'cryptotransfer' => 'Bitcoin / USDT',
+    'cryptotransfer-info' => 'Configure the wallet addresses customers send Bitcoin or USDT to. Payments are confirmed manually.',
+    'cryptotransfer-details' => 'Send payment to',
+    'cryptotransfer-btc' => 'Bitcoin (BTC)',
+    'cryptotransfer-usdt-trc20' => 'USDT (TRC20 / Tron)',
+    'cryptotransfer-usdt-erc20' => 'USDT (ERC20 / Ethereum)',
+    'btc-address' => 'Bitcoin (BTC) Wallet Address',
+    'usdt-trc20-address' => 'USDT TRC20 (Tron) Wallet Address',
+    'usdt-erc20-address' => 'USDT ERC20 (Ethereum) Wallet Address',
 ];

@@ -2,6 +2,7 @@
 
 use Webkul\Payment\Payment\CashOnDelivery;
 use Webkul\Payment\Payment\CreditDebitCards;
+use Webkul\Payment\Payment\CryptoTransfer;
 use Webkul\Payment\Payment\DuitNowQR;
 use Webkul\Payment\Payment\DuitNowQRAuto;
 use Webkul\Payment\Payment\DuitNowQRManual;
@@ -38,6 +39,16 @@ return [
         'active' => false,
         'generate_invoice' => false,
         'sort' => 1,
+    ],
+
+    'cryptotransfer' => [
+        'class' => CryptoTransfer::class,
+        'code' => 'cryptotransfer',
+        'title' => 'Bitcoin / USDT',
+        'description' => 'Pay with Bitcoin or USDT by sending the exact amount to our wallet.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 2,
     ],
 
     'duitnowqr' => [
