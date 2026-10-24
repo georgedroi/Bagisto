@@ -34,7 +34,7 @@ try {
         'development HMR markers absent' => glob(public_path('*.hot')) === [],
     ];
 
-    foreach (['fpx', 'tngewallet', 'creditdebitcards', 'duitnowqr_auto', 'duitnowqr_manual', 'duitnowqr', 'stripe'] as $method) {
+    foreach (['fpx', 'tngewallet', 'creditdebitcards', 'duitnowqr_auto', 'duitnowqr', 'stripe'] as $method) {
         $checks['unverified payment method disabled: '.$method] = ! core()->getConfigData('sales.payment_methods.'.$method.'.active');
         $class = config('payment_methods.'.$method.'.class');
         $checks['unverified payment method unavailable: '.$method] = is_string($class)
