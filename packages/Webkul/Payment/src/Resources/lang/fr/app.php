@@ -47,4 +47,6 @@ return [
     'how-to-pay' => 'How to pay',
     'payment-reference-note' => 'Use order number :order as your payment reference, then email us your proof of payment. We prepare your order once your payment is confirmed.',
     'payment-instructions-heading' => 'Payment instructions',
+    'send-proof-whatsapp' => 'Send proof of payment on WhatsApp',
+    'whatsapp-proof-message' => 'Hello, I would like to send my proof of payment for order :order.',
 ];

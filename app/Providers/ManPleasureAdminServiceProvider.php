@@ -32,5 +32,9 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
         Event::listen('bagisto.admin.catalog.product.edit.form.after', function (ViewRenderEventManager $manager): void {
             $manager->addTemplate('manpleasure-admin::product-editor-actions');
         });
+
+        Event::listen('bagisto.admin.sales.order.right_component.before', function (ViewRenderEventManager $manager): void {
+            $manager->addTemplate('manpleasure-admin::order-whatsapp');
+        });
     }
 }

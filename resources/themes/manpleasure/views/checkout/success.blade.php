@@ -83,6 +83,18 @@
 					<p class="mt-4 text-sm text-zinc-500">
 						@lang('payment::app.payment-reference-note', ['order' => $order->increment_id])
 					</p>
+
+					@if (config('manpleasure-contact.whatsapp'))
+						<a
+							href="https://wa.me/{{ config('manpleasure-contact.whatsapp') }}?text={{ rawurlencode(trans('payment::app.whatsapp-proof-message', ['order' => '#'.$order->increment_id])) }}"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="mt-4 inline-block rounded-xl px-6 py-3 text-center text-base font-medium"
+							style="background-color: #128c7e; color: #fff; text-decoration: none;"
+						>
+							@lang('payment::app.send-proof-whatsapp')
+						</a>
+					@endif
 				</div>
 			@endif
 
