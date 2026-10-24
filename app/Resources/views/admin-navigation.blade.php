@@ -109,10 +109,4 @@
             </section>
         @endif
     @endforeach
-
-    @if ($navigationMode === 'mobile')
-        <div class="mp-nav-support">
-            @include('manpleasure-admin::admin-navigation-help')
-        </div>
-    @endif
 </nav>

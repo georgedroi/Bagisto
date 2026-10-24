@@ -26,24 +26,6 @@
             >
                 {{ $name }}
             </p>
-
-            <!-- Save Inventory -->
-            <div class="flex items-center gap-x-2.5">
-                <!-- Back Button -->
-                <a
-                    href="{{ route('admin.configuration.index') }}"
-                    class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
-                >
-                    @lang('admin::app.configuration.index.back-btn')
-                </a>
-
-                <button
-                    type="submit"
-                    class="primary-button"
-                >
-                    @lang('admin::app.configuration.index.save-btn')
-                </button>
-            </div>
         </div>
 
         <div class="mt-7 flex items-center justify-between gap-4 max-md:flex-wrap">
@@ -147,6 +129,28 @@
                     @endforeach
                 </div>
             @endforeach
+        </div>
+
+        <div
+            class="mt-7"
+            style="height: 64px;"
+            aria-hidden="true"
+        ></div>
+
+        <div class="mp-config-footer">
+            <a
+                href="{{ route('admin.configuration.index') }}"
+                class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
+            >
+                @lang('admin::app.configuration.index.back-btn')
+            </a>
+
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                @lang('admin::app.configuration.index.save-btn')
+            </button>
         </div>
     </x-admin::form>
 </x-admin::layouts>
