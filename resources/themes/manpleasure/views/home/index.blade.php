@@ -5,7 +5,7 @@
     });
     $heroSection = $campaigns['mp-hero'] ?? $sections->firstWhere('type', \Webkul\Theme\Enums\SectionTypeEnum::IMAGE_CAROUSEL->value);
     $benefitsSection = $campaigns['mp-benefits'] ?? $sections->firstWhere('type', \Webkul\Theme\Enums\SectionTypeEnum::SERVICES_CONTENT->value);
-    $categoryLinks = collect($categories->resolve())->keyBy('name');
+    $categoryLinks = collect(isset($categories) ? $categories->resolve() : [])->keyBy('name');
 @endphp
 
 @push('meta')
