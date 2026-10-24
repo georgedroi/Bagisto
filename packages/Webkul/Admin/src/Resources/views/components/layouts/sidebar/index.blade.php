@@ -15,15 +15,6 @@
     </button>
 
     <div class="mp-admin-sidebar__scroll">
-        <button type="button" class="msp-sidebar-search" data-action="nav-search" title="{{ trans('admin::app.components.layouts.header.mega-search.title') }} (Ctrl+K)">
-            <span class="icon-search" aria-hidden="true"></span>
-            <span class="mp-nav-label">{{ trans('admin::app.components.layouts.header.mega-search.title') }}</span>
-            <kbd aria-hidden="true">⌘K</kbd>
-        </button>
         @include('manpleasure-admin::admin-navigation', ['navigationMode' => 'desktop'])
-    </div>
-
-    <div class="mp-admin-sidebar__footer">
-        @include('manpleasure-admin::admin-navigation-help')
     </div>
 </aside>
