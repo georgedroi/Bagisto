@@ -89,7 +89,7 @@
                 @if (! empty($additionalDetails))
                     <div style="font-size: 16px; color: #384860;">
                         <div>{{ $additionalDetails['title'] }}</div>
-                        <div>{{ $additionalDetails['value'] }}</div>
+                        <div style="white-space: pre-line;">{{ $additionalDetails['value'] }}</div>
                     </div>
                 @endif
             </div>

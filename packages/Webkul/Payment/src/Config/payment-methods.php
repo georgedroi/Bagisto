@@ -1,5 +1,6 @@
 <?php
 
+use Webkul\Payment\Payment\BankTransfer;
 use Webkul\Payment\Payment\CashOnDelivery;
 use Webkul\Payment\Payment\CreditDebitCards;
 use Webkul\Payment\Payment\CryptoTransfer;
@@ -36,6 +37,16 @@ return [
         'code' => 'duitnowqr_manual',
         'title' => 'DuitNow QR (Manual Bank Transfer / QR)',
         'description' => 'Pay via DuitNow QR and upload your transfer receipt for verification.',
+        'active' => false,
+        'generate_invoice' => false,
+        'sort' => 1,
+    ],
+
+    'banktransfer' => [
+        'class' => BankTransfer::class,
+        'code' => 'banktransfer',
+        'title' => 'Bank Transfer',
+        'description' => 'Pay by online bank transfer. Our bank details are shown after you select this option.',
         'active' => false,
         'generate_invoice' => false,
         'sort' => 1,

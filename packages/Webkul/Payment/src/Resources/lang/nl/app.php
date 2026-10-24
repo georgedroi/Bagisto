@@ -39,4 +39,12 @@ return [
     'btc-address' => 'Bitcoin (BTC) Wallet Address',
     'usdt-trc20-address' => 'USDT TRC20 (Tron) Wallet Address',
     'usdt-erc20-address' => 'USDT ERC20 (Ethereum) Wallet Address',
+    'banktransfer' => 'Bank Transfer',
+    'banktransfer-info' => 'Configure the bank account customers transfer to. Payments are confirmed manually.',
+    'banktransfer-details' => 'Bank transfer details',
+    'duitnowqr-details' => 'DuitNow QR details',
+    'duitnowqr-scan' => 'Scan this QR code with any banking app or e-wallet.',
+    'how-to-pay' => 'How to pay',
+    'payment-reference-note' => 'Use order number :order as your payment reference, then email us your proof of payment. We prepare your order once your payment is confirmed.',
+    'payment-instructions-heading' => 'Payment instructions',
 ];

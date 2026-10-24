@@ -3,8 +3,8 @@
 namespace Webkul\Payment\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Illuminate\Routing\Controller;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class PaymentRedirectController extends Controller
 {

@@ -38,6 +38,8 @@ class Payment
                     'description' => $paymentMethod->getDescription(),
                     'sort' => $paymentMethod->getSortOrder(),
                     'image' => $paymentMethod->getImage(),
+                    'instructions' => static::normalizeDetails($paymentMethod->getAdditionalDetails()),
+                    'qr_image' => method_exists($paymentMethod, 'getQrImage') ? $paymentMethod->getQrImage() : null,
                 ];
             }
         }
@@ -77,5 +79,42 @@ class Payment
         $paymentMethodClass = app(Config::get('payment_methods.'.$code.'.class'));
 
         return $paymentMethodClass->getAdditionalDetails();
+    }
+
+    /**
+     * Returns the instructions a customer needs to pay with a payment method, as a title and value pair plus an optional QR image.
+     *
+     * @param  string|null  $code
+     * @return array
+     */
+    public static function getInstructions($code)
+    {
+        $class = Config::get('payment_methods.'.$code.'.class');
+
+        if (! $class) {
+            return ['details' => [], 'qr_image' => null];
+        }
+
+        $paymentMethodClass = app($class);
+
+        return [
+            'details' => static::normalizeDetails($paymentMethodClass->getAdditionalDetails()),
+            'qr_image' => method_exists($paymentMethodClass, 'getQrImage') ? $paymentMethodClass->getQrImage() : null,
+        ];
+    }
+
+    /**
+     * Keep only a well formed title and value pair so views never receive a malformed structure.
+     *
+     * @param  mixed  $details
+     * @return array
+     */
+    protected static function normalizeDetails($details)
+    {
+        if (! is_array($details) || ! isset($details['title'], $details['value'])) {
+            return [];
+        }
+
+        return ['title' => (string) $details['title'], 'value' => (string) $details['value']];
     }
 }

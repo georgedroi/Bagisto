@@ -14,11 +14,12 @@ class DuitNowQRManual extends Payment
     protected $code = 'duitnowqr_manual';
 
     /**
-     * Checks if payment method is available.
+     * Checks if payment method is available. A method with neither a QR code nor an account cannot take payment.
      */
     public function isAvailable(): bool
     {
-        return false;
+        return (bool) $this->getConfigData('active')
+            && ($this->getConfigData('qr_image') || ! empty(trim((string) $this->getConfigData('account_number'))));
     }
 
     /**
@@ -29,43 +30,38 @@ class DuitNowQRManual extends Payment
     public function getRedirectUrl() {}
 
     /**
-     * Returns payment method additional information.
+     * Returns the DuitNow account details and instructions as a single title and value pair.
      *
      * @return array
      */
     public function getAdditionalDetails()
     {
-        $details = [];
+        $lines = [];
 
-        if ($bankName = $this->getConfigData('bank_name')) {
-            $details[] = [
-                'title' => trans('payment::app.bank-name'),
-                'value' => $bankName,
-            ];
-        }
+        $fields = [
+            'payment::app.bank-name' => $this->getConfigData('bank_name'),
+            'payment::app.account-name' => $this->getConfigData('account_name'),
+            'payment::app.account-number' => $this->getConfigData('account_number'),
+        ];
 
-        if ($accountName = $this->getConfigData('account_name')) {
-            $details[] = [
-                'title' => trans('payment::app.account-name'),
-                'value' => $accountName,
-            ];
-        }
-
-        if ($accountNumber = $this->getConfigData('account_number')) {
-            $details[] = [
-                'title' => trans('payment::app.account-number'),
-                'value' => $accountNumber,
-            ];
+        foreach ($fields as $label => $value) {
+            if ($value = trim((string) $value)) {
+                $lines[] = trans($label).': '.$value;
+            }
         }
 
         if ($instructions = $this->getConfigData('instructions')) {
-            $details[] = [
-                'title' => trans('payment::app.instructions'),
-                'value' => $instructions,
-            ];
+            $lines[] = $instructions;
         }
 
-        return $details;
+        if (empty($lines)) {
+            return [];
+        }
+
+        return [
+            'title' => trans('payment::app.duitnowqr-details'),
+            'value' => implode("\n", $lines),
+        ];
     }
 
     /**
@@ -87,6 +83,6 @@ class DuitNowQRManual extends Payment
     {
         $url = $this->getConfigData('image');
 
-        return $url ? Storage::url($url) : bagisto_asset('images/duitnow-qr.png', 'shop');
+        return $url ? Storage::url($url) : bagisto_asset('images/money-transfer.png', 'shop');
     }
 }
