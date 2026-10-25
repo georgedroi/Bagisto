@@ -3,6 +3,8 @@
 namespace Webkul\Attribute\Repositories;
 
 use Illuminate\Container\Container;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Webkul\Attribute\Contracts\AttributeFamily;
 use Webkul\Core\Eloquent\Repository;
@@ -66,61 +68,81 @@ class AttributeFamilyRepository extends Repository
      */
     public function update(array $data, $id)
     {
-        $family = parent::update($data, $id);
+        return DB::transaction(function () use ($data, $id) {
+            $family = parent::update($data, $id);
 
-        $previousAttributeGroupIds = $family->attribute_groups()->pluck('id');
+            $previousAttributeGroupIds = $family->attribute_groups()->pluck('id');
 
-        foreach ($data['attribute_groups'] ?? [] as $attributeGroupId => $attributeGroupInputs) {
-            if (Str::contains($attributeGroupId, 'group_')) {
-                $attributeGroup = $family->attribute_groups()->create($attributeGroupInputs);
+            foreach ($data['attribute_groups'] ?? [] as $attributeGroupId => $attributeGroupInputs) {
+                if (Str::contains($attributeGroupId, 'group_')) {
+                    $attributeGroup = $family->attribute_groups()->create($attributeGroupInputs);
 
-                if (empty($attributeGroupInputs['custom_attributes'])) {
-                    continue;
-                }
+                    if (empty($attributeGroupInputs['custom_attributes'])) {
+                        continue;
+                    }
 
-                foreach ($attributeGroupInputs['custom_attributes'] as $attributeInputs) {
-                    $attribute = $this->attributeRepository->find($attributeInputs['id']);
-
-                    $attributeGroup->custom_attributes()->save($attribute, [
-                        'position' => $attributeInputs['position'],
-                    ]);
-                }
-            } else {
-                if (is_numeric($index = $previousAttributeGroupIds->search($attributeGroupId))) {
-                    $previousAttributeGroupIds->forget($index);
-                }
-
-                $attributeGroup = $this->attributeGroupRepository->update($attributeGroupInputs, $attributeGroupId);
-
-                $previousAttributeIds = $attributeGroup->custom_attributes()->get()->pluck('id');
-
-                foreach ($attributeGroupInputs['custom_attributes'] ?? [] as $attributeInputs) {
-                    if (is_numeric($index = $previousAttributeIds->search($attributeInputs['id']))) {
-                        $previousAttributeIds->forget($index);
-
-                        $attributeGroup->custom_attributes()->updateExistingPivot($attributeInputs['id'], [
-                            'position' => $attributeInputs['position'],
-                        ]);
-                    } else {
+                    foreach ($attributeGroupInputs['custom_attributes'] as $attributeInputs) {
                         $attribute = $this->attributeRepository->find($attributeInputs['id']);
 
                         $attributeGroup->custom_attributes()->save($attribute, [
                             'position' => $attributeInputs['position'],
                         ]);
                     }
-                }
+                } else {
+                    if (is_numeric($index = $previousAttributeGroupIds->search($attributeGroupId))) {
+                        $previousAttributeGroupIds->forget($index);
+                    }
 
-                if ($previousAttributeIds->count()) {
-                    $attributeGroup->custom_attributes()->detach($previousAttributeIds);
+                    $attributeGroup = $this->attributeGroupRepository->update($attributeGroupInputs, $attributeGroupId);
+
+                    $previousAttributeIds = $attributeGroup->custom_attributes()->get()->pluck('id');
+
+                    foreach ($attributeGroupInputs['custom_attributes'] ?? [] as $attributeInputs) {
+                        if (is_numeric($index = $previousAttributeIds->search($attributeInputs['id']))) {
+                            $previousAttributeIds->forget($index);
+
+                            $attributeGroup->custom_attributes()->updateExistingPivot($attributeInputs['id'], [
+                                'position' => $attributeInputs['position'],
+                            ]);
+                        } else {
+                            $attribute = $this->attributeRepository->find($attributeInputs['id']);
+
+                            $attributeGroup->custom_attributes()->save($attribute, [
+                                'position' => $attributeInputs['position'],
+                            ]);
+                        }
+                    }
+
+                    if ($previousAttributeIds->count()) {
+                        $attributeGroup->custom_attributes()->detach($previousAttributeIds);
+                    }
                 }
             }
-        }
 
-        foreach ($previousAttributeGroupIds as $attributeGroupId) {
-            $this->attributeGroupRepository->delete($attributeGroupId);
-        }
+            foreach ($previousAttributeGroupIds as $attributeGroupId) {
+                $this->attributeGroupRepository->delete($attributeGroupId);
+            }
 
-        return $family;
+            return $family;
+        });
+    }
+
+    /**
+     * Get the system attributes that saving the given groups would leave without a group.
+     */
+    public function getUnassignedSystemAttributes(int $id, array $attributeGroups): Collection
+    {
+        $assignedAttributeIds = collect($attributeGroups)
+            ->pluck('custom_attributes.*.id')
+            ->flatten()
+            ->filter()
+            ->map(fn ($attributeId) => (int) $attributeId);
+
+        return $this->findOrFail($id)
+            ->custom_attributes
+            ->reject(fn ($attribute) => $attribute->is_user_defined || $assignedAttributeIds->contains($attribute->id))
+            ->unique('id')
+            ->values();
     }
 
     /**

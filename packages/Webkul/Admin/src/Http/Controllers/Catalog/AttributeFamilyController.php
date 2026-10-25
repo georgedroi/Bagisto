@@ -107,7 +107,9 @@ class AttributeFamilyController extends Controller
 
         $customAttributes = $this->attributeRepository->all(['id', 'code', 'admin_name', 'type', 'is_user_defined']);
 
-        return view('admin::catalog.families.edit', compact('attributeFamily', 'customAttributes'));
+        $productCount = $attributeFamily->products()->count();
+
+        return view('admin::catalog.families.edit', compact('attributeFamily', 'customAttributes', 'productCount'));
     }
 
     /**
@@ -124,6 +126,16 @@ class AttributeFamilyController extends Controller
             'attribute_groups.*.name' => 'required',
             'attribute_groups.*.column' => 'required|in:1,2',
         ]);
+
+        $unassignedSystemAttributes = $this->attributeFamilyRepository->getUnassignedSystemAttributes($id, (array) request('attribute_groups'));
+
+        if ($unassignedSystemAttributes->isNotEmpty()) {
+            session()->flash('error', trans('admin::app.catalog.families.system-attributes-unassigned', [
+                'attributes' => $unassignedSystemAttributes->pluck('admin_name')->implode(', '),
+            ]));
+
+            return back()->withInput();
+        }
 
         Event::dispatch('catalog.attribute_family.update.before', $id);
 

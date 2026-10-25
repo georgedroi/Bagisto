@@ -440,6 +440,8 @@
 
                         customAttributes: @json($customAttributes),
 
+                        productCount: @json($productCount),
+
                         dropReverted: false,
                     }
                 },
@@ -551,21 +553,42 @@
                         return group.custom_attributes.find(attribute => ! attribute.is_user_defined);
                     },
 
+                    getDeleteGroupMessage(group) {
+                        let message = "@lang('admin::app.catalog.families.edit.delete-group-warning')"
+                            .replace(':attributes', group.custom_attributes.length);
+
+                        if (this.productCount) {
+                            message += ' ' + "@lang('admin::app.catalog.families.edit.delete-group-products')"
+                                .replace(':products', this.productCount);
+                        }
+
+                        return message;
+                    },
+
                     deleteGroup() {
+                        if (! this.selectedGroup.id) {
+                            this.$emitter.emit('add-flash', { type: 'warning', message: "@lang('admin::app.catalog.families.edit.select-group')" });
+
+                            return;
+                        }
+
+                        if (this.isGroupContainsSystemAttributes(this.selectedGroup)) {
+                            this.$emitter.emit('add-flash', { type: 'warning', message: "@lang('admin::app.catalog.families.edit.group-contains-system-attributes')" });
+
+                            return;
+                        }
+
                         this.$emitter.emit('open-confirm-modal', {
+                            title: "@lang('admin::app.catalog.families.edit.delete-group-title')".replace(':name', this.selectedGroup.name),
+
+                            message: this.getDeleteGroupMessage(this.selectedGroup),
+
+                            options: {
+                                btnDisagree: "@lang('admin::app.components.modal.confirm.disagree-btn')",
+                                btnAgree: "@lang('admin::app.catalog.families.edit.delete-group-btn')",
+                            },
+
                             agree: () => {
-                                if (! this.selectedGroup.id) {
-                                    this.$emitter.emit('add-flash', { type: 'warning', message: "@lang('admin::app.catalog.families.edit.select-group')" });
-
-                                    return;
-                                }
-
-                                if (this.isGroupContainsSystemAttributes(this.selectedGroup)) {
-                                    this.$emitter.emit('add-flash', { type: 'warning', message: "@lang('admin::app.catalog.families.edit.group-contains-system-attributes')" });
-
-                                    return;
-                                }
-
                                 for (const [key, groups] of Object.entries(this.columnGroups)) {
                                     let index = groups.indexOf(this.selectedGroup);
 
@@ -573,6 +596,12 @@
                                         groups.splice(index, 1);
                                     }
                                 }
+
+                                this.selectedGroup = {
+                                    id: null,
+                                    code: null,
+                                    name: null,
+                                };
                             }
                         });
                     },
