@@ -133,6 +133,8 @@ The project was forked from Bagisto 2.4.12. All 37 project commits fall between 
 | 24 Oct | Production check updated so the manual DuitNow QR method may be enabled | `67b2566ce7` |
 | 25 Oct | Currency switcher restyled (circular symbol badge); themed desktop top bar with the currency badge | `a2c8e53ebf`, `19ee7c537f` |
 | 25 Oct | **Attribute family group deletion**: specific warning pop-up, server-side guard, transactional family update, new strings in 22 locales, 5 new tests (branch `family-group-delete-warning`, not merged) | `779b43d850` |
+| 25 Oct | **Category tree and product-family fields:** 8 main + 23 sub-categories (at most 3 each, unique names) built by the category seeder, with earlier categories renamed in place or merged; New, Featured and Special Price (with from/to dates) added to both families; every family group now has a `code` (the family edit form needs one to save) | `ManPleasureCategorySeeder`, `ManPleasureAttributeSeeder`, `ManPleasureCatalogSeederTest`; branch `category-setup`, uncommitted; applied to the **local** database only |
+| 26 Oct | **Eight product families, one per main category** (strokers, rings, pumps, prostate, condoms, lubricants, accessories, apparel), with eight new fields (Width, Pack size, Texture, Lubricated, Best before, Insertable length, Fabric, Audience), new options (Condom, Underwear, Lingerie, Costume; Latex, Polyisoprene, Polyurethane) and required flags; the field table was approved by the owner; no KEY flag | `ManPleasureFamilySeeder`, `ManPleasureAttributeSeeder`, `ManPleasureCatalogSeederTest`; branch `category-setup`, uncommitted; applied to the **local** database only |
 
 **Work done outside the repository (2026-10-25):**
 - A private **Product Entry Form** page that builds a product import CSV (section 10).
@@ -173,8 +175,8 @@ The project was forked from Bagisto 2.4.12. All 37 project commits fall between 
 - **Attribute family group deletion** now warns, shows attribute and product counts, and the server refuses a save that would leave a system attribute without a group. Run evidence: section 15.
 
 ### Catalog
-- Category tree: 6 main + 21 sub-categories under Root. Families: `default`, `manpleasure_core`, `manpleasure_consumable` [Verified in the local database, 2026-10-25].
-- Seeders: `ManPleasureCategorySeeder`, `ManPleasureAttributeSeeder` (creates the `mp_*` attributes and the two families), `ManPleasureQaProductSeeder` (QA products with SKUs `MP-QA-SIMPLE-001` and `MP-QA-CONFIG-001`). The production check requires that no `MP-QA-%` products exist.
+- Category tree: 8 main + 23 sub-categories under Root (max 3 sub-categories each, unique names). Families: `default`, `manpleasure_core`, `manpleasure_consumable` [Verified in the local database after the 2026-10-25 category setup; **not yet applied to production**].
+- Seeders (all repeatable): `ManPleasureCategorySeeder` builds the tree, renames earlier categories in place so ids and product links survive, merges retired categories into their replacement, and rolls back with an error if a retired category still holds products and has no replacement; `ManPleasureAttributeSeeder` creates the `mp_*` attributes, their options and required flags, and the two legacy families, adding missing fields and group codes without removing anything; `ManPleasureFamilySeeder` creates the eight per-category families and only ever adds to a family that already exists; `ManPleasureQaProductSeeder` creates QA products (`MP-QA-SIMPLE-001`, `MP-QA-CONFIG-001`). The production check requires that no `MP-QA-%` products exist.
 - Product import: the standard Bagisto Data Transfer importer (admin → Settings → Data Transfer → Imports). CSV format: see the Product Entry Form.
 
 ### Release and operations tooling (`scripts/`)
@@ -186,18 +188,20 @@ The project was forked from Bagisto 2.4.12. All 37 project commits fall between 
 
 ---
 
-## 9. Catalog data snapshot [Verified, local database, 2026-10-25, read-only]
+## 9. Catalog data snapshot [Verified, local database, 2026-10-25, after the category setup]
 
-- 28 categories including Root; none contains a product.
+- 32 categories including Root (8 main, 23 sub); none contains a product.
 - 3 products, all in `manpleasure_core` (test items).
-- Families: `default` (8 groups), `manpleasure_core` (8), `manpleasure_consumable` (7), plus a local test family `zz_test_family`.
-- **Gap:** `manpleasure_core` and `manpleasure_consumable` omit 11 system attributes: `tax_category_id`, `new`, `featured`, `special_price`, `special_price_from`, `special_price_to`, `meta_title`, `meta_keywords`, `product_number`, `allow_rma`, `rma_rule_id`. So these families have no New/Featured/Sale flags, no special price, no per-product SEO fields and no tax category. The older document figures (49 attributes, 199 migrations) were not re-checked.
+- Families: `default` (8 groups), the legacy `manpleasure_core` (8) and `manpleasure_consumable` (7), and the eight per-category families `manpleasure_strokers`, `_rings`, `_pumps`, `_prostate`, `_condoms`, `_lubricants`, `_accessories`, `_apparel` (6 groups each). The consumable family has an extra group "Ingredients & Care" that the seeder does not define (it drifted in the database); the seeder leaves it alone.
+- New, Featured, Special Price and its from/to dates are assigned to both families (General and Price groups). Every group in these families now has a `code`.
+- **Remaining gap:** no ManPleasure family includes 6 system attributes: `tax_category_id`, `meta_title`, `meta_keywords`, `product_number`, `allow_rma`, `rma_rule_id`. So there is no tax category, no per-product SEO fields and no RMA setting. The older document figures (49 attributes, 199 migrations) were not re-checked.
+- A full backup of the local database taken before the change was written outside the repository (scratchpad, 299 KB). It is not kept in git.
 
 ## 10. Product Entry Form (external)
 
 A private claude.ai artifact, "Product Entry Form" (`https://claude.ai/artifact/7CsenwhmdD6yLUxxB1rzAG`), builds a product CSV for the Data Transfer importer. It is **not part of this repository**.
 
-- "Device or accessory" and "Lubricant, cleaner or care" are hard-coded in its `FAMILY` constant and map to `manpleasure_core` and `manpleasure_consumable`. Detail fields are in `DETAILS`; category list, option IDs, existing SKUs and URL keys are in `STORE`. All of these go stale when categories or attributes change.
+- "Device or accessory" and "Lubricant, cleaner or care" are hard-coded in its `FAMILY` constant and map to `manpleasure_core` and `manpleasure_consumable`. Detail fields are in `DETAILS`; category list, option IDs, existing SKUs and URL keys are in `STORE`. All of these go stale when categories or attributes change. **They are stale now:** the form still shows the old 6-category list, so refresh `STORE` and the category rules before using it again.
 - It creates simple products only. It states an exchange rate of 1 USD = RM 4.50, a free-delivery threshold of RM 300 and fee tiers. These were **not checked against the configured zone-rate table**, and the owner's notes say there is no free shipping [Unverified, possible conflict].
 
 ---
@@ -212,10 +216,16 @@ Package the release from a clean worktree, upload and stage it, then the **owner
 
 ## 12. Planned work (nothing below is built; nothing has been changed in code or database)
 
-1. **Category restructure — awaiting owner approval.** Proposed: 8 main categories, at most 3 sub-categories each: Strokers & Masturbators (Manual Strokers, Automatic Strokers, Sleeves & Compact); Rings & Delay (Cock Rings, Extenders, Delay Sprays); Pumps & Trainers (Manual Pumps, Electric Pumps, Trainers & Accessories); Prostate & Anal (Prostate Massagers, Anal Toys); **Condoms** (Regular, Thin, Lasting); Lubricants & Care (Water-Based, Silicone-Based, Cleaners & Care); Accessories & Storage (Storage & Travel, Replacement Parts, Chargers & Cables); **Underwear & Costumes** (Men's Underwear, Women's Lingerie, Costumes & Cosplay). Fixes: plainer wording for claim-style names, "Beginner-Friendly" becomes a filter, overlapping travel categories merged. Categories hold no products yet, so the change is low-risk now.
-2. **Apparel family** for Underwear & Costumes: new family, product types (Underwear, Lingerie, Costume), attributes Size (required), Colour (optional), Fabric, Audience; configurable products with one SKU and stock count per variant; a non-returnable-hygiene line on the policy page. The owner confirmed sizes and possibly colours as variants.
-3. **Product Entry Form v2:** the category decides the family and fills in the product type (editable); add a variants section for apparel.
-4. **Add `new`, `featured`, `special_price*`** to the families if New Arrivals / Best Sellers / Sale collections are wanted.
+1. **Category restructure: done locally on 2026-10-25, not yet in production.** The approved tree is 8 main categories with at most 3 sub-categories each: Strokers & Masturbators; Rings & Delay; Pumps & Trainers; Prostate & Anal; Condoms; Lubricants & Care; Accessories & Storage; Underwear & Costumes (sub-category names are in `ManPleasureCategorySeeder`). To apply it to production, take a backup, run `php artisan db:seed --class="Database\Seeders\ManPleasureAttributeSeeder" --force` then the same for `ManPleasureCategorySeeder` as part of the owner-run activation, and check that no retired category holds products (the seeder stops and rolls back if one does). Rehearsed on a restored copy of the local database first.
+2. **Eight families, one per main category: created locally on 2026-10-26, not yet in production.** The owner approved the field table and decided there is **no KEY flag** (so no KEY badges and no "Show more": every field stays visible, required ones starred). Family codes: `manpleasure_strokers`, `_rings`, `_pumps`, `_prostate`, `_condoms`, `_lubricants`, `_accessories`, `_apparel`. Each has General, Product Details, Description, Shipping, Price and Inventory groups. The two older families (`manpleasure_core`, `manpleasure_consumable`) still exist as legacy because the 3 test products use `manpleasure_core`; retire them at the launch cleanup. Production: run `ManPleasureAttributeSeeder` then `ManPleasureFamilySeeder` after a backup (the family seeder only adds to a family that exists). **Required fields:** the owner decided on 2026-10-26 that Material and Compatibility notes need not be required, so only four fields are required: Volume, Width, Pack size and Fabric (plus Size when variations are on, which Bagisto enforces itself). Everything else, Material included, is optional. Bagisto stores "required" on the field, not the family, so the approved table's other required marks (Material for four families, Compatibility notes for Accessories, Power source for Pumps) were dropped. A non-returnable-hygiene line is still needed on the policy page.
+3. **In-admin Add product page (design chosen 2026-10-26; nothing built).** The owner picked this over extending the CSV form; the CSV form stays for bulk loading and is to be refreshed from the new tree. Design canvas (private claude.ai page, "Add product: two drafts": https://claude.ai/artifact/WCp5Pzf5Jz5DNUW6iMNTxY) holds the drafts. Decisions so far:
+   - **Category first**, chosen in a two-column picker with search and per-admin recently-used chips; the category sets the family and product type (editable). Behaviour copied from a marketplace seller screen the owner recorded; the look and data are ours.
+   - **Changing category asks first:** the name, price, stock, images and description are kept; fields that belong only to the old family are hidden, not deleted (Bagisto keeps the stored values), and come back if the owner switches back. The dialog names the fields that hide and the new ones to fill in.
+   - **Specification section** shows required fields starred and a Fill Rate bar. There is no KEY badge and no "Show more" (owner decision).
+   - **Variations** (apparel and any product that needs them): off by default behind an "Enable variations" button; up to two variations; names chosen from the store's configurable fields (Size, Colour), not free-form, so filters keep working; options typed inline in two columns with a spare empty box that adds the next row; an optional explanation per option, stored as a size-guide note; a picture slot on each option of Variation 1, copied to that option's variants; a variation list with a "Set for all" row (price, stock) and one row per combination with price, stock and SKU. **Not included:** GTIN/barcode and days-to-ship columns.
+   - The owner ticked both "explanation" and "none of these" for extras; it was read as: keep the explanation, drop GTIN and days-to-ship. Confirm if wrong.
+   - Left open: whether to use MagicAI or a keyword rule for suggested categories; how the page enforces required fields for products added through the CSV import (the import checks required fields itself).
+4. **New Arrivals / On Sale.** The fields now exist on both families (done locally). Still to do: tick `new` on products, add a Product Carousel section filtered on `new` to the home page, and decide whether an "On Sale" collection page is wanted (the product card already shows a Sale badge when a special price is active, but carousels have no sale filter).
 5. **Launch cleanup** of product data (section 2): backup with a tested restore, rehearsal on a copy, run by the owner. Keep configuration. Do not use the installer or seeders to reset.
 6. Replace placeholder text on policy pages where it remains (the privacy page held placeholders on 2026-10-08) [Unverified now].
 
@@ -223,7 +233,10 @@ Package the release from a clean worktree, upload and stage it, then the **owner
 
 - **Documentation drift:** the tracker and handover disagree with each other and with git (see section 1). They are history.
 - **Two failing tests** in `Catalog/CategoryTest` (single and mass delete expect 200, get 409). The controller deliberately returns 409 on the old delete routes ("use the tree"), so the tests are out of date. Pre-existing [Verified].
-- **Repository rule violations** (all database access must go through a repository): `MediaAssetController` uses the model directly; the three `ManPleasure*` seeders use the `DB` facade [Verified]. The Media Bank page and controller also have untranslated English strings.
+- **Repository rule violations** (all database access must go through a repository): `MediaAssetController` uses the model directly; `ManPleasureAttributeSeeder` and `ManPleasureQaProductSeeder` use the `DB` facade (the category seeder now uses the repository) [Verified]. The Media Bank page and controller also have untranslated English strings.
+- **Family groups had no `code`.** The ManPleasure family groups were created without one, and the family edit form requires it, so saving either family in the admin would have failed validation. Fixed by the attribute seeder on 2026-10-25 (local only; production still has the problem until the seeder runs there).
+- **Legacy families.** `manpleasure_core` and `manpleasure_consumable` remain only because the 3 test products use `manpleasure_core`; the per-category families replace them. Required is per field in Bagisto, not per family (see section 12.2).
+- **Production not updated.** The new category tree, family fields and group codes exist only in the local database. The Product Entry Form is stale (section 10).
 - **Media Bank gaps** listed in section 8.
 - **`CLAUDE.md` skills:** the upstream `bagisto-*` skills it once named are not installed (`.agents/skills`, `.claude/skills` do not exist). `AGENTS.md` does not depend on them.
 - **Working-tree clutter:** untracked `*.bak` files, `deploy.bat`, `route-list.json` (a stale route dump), and a garbled `C:` folder created at the root.
@@ -234,6 +247,7 @@ Package the release from a clean worktree, upload and stage it, then the **owner
 
 - Remotes: `origin` (the owner's GitHub fork), `upstream` (bagisto/bagisto).
 - Branch `family-group-delete-warning`: one commit ahead of `main` (`779b43d850`), pushed to `origin`, not merged. `main` is at the release bump `f2f0272f7a`.
+- Branch `category-setup` (from `docs/project-handover`): the category, attribute and family seeder changes plus `ManPleasureCatalogSeederTest`. **Uncommitted** at the snapshot.
 - Branch `docs/project-handover` is stacked on `family-group-delete-warning` and adds one commit with the three documentation files (`AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`). Merge the family branch first, then this one. Pushed to `origin`, not merged.
 - Earlier local branches: zone-rate shipping, manual payment instructions, crypto transfer, WhatsApp, discreet emails, currency switcher, admin UI tweaks, and two small fixes.
 
@@ -245,6 +259,8 @@ Package the release from a clean worktree, upload and stage it, then the **owner
 | `php -l` on all changed PHP files and 22 locale files | pass |
 | `php artisan bagisto:translations:check` | 357 locale files pass |
 | `AttributeFamilyTest` (disposable database) | 17 of 17 pass |
+| `ManPleasureCatalogSeederTest` (10 tests, disposable database) | 10 of 10 pass; together with `AttributeFamilyTest` 27 of 27 |
+| Seeders run on a restored copy of the local database, then on the real local database | tree, names, slugs, group codes and family fields verified by query; storefront `/`, `/condoms`, `/underwear-costumes` and `/admin/login` return 200 |
 | `packages/Webkul/Admin/tests/Feature/Catalog` | 182 pass, 2 fail (the known-stale Category tests) |
 | Browser check of the group-delete pop-up | passed, by the owner |
 | Playwright, full Pest suite, Vite build | **not run** |
@@ -253,8 +269,10 @@ Package the release from a clean worktree, upload and stage it, then the **owner
 
 1. Review and merge `family-group-delete-warning`, then release the usual way (owner activates).
 2. Merge `docs/project-handover` after step 1.
-3. Decide the category tree (section 12.1) and whether to add Condoms and Underwear & Costumes; apply to the database only after approval.
-4. Decide on the 11 missing system attributes (section 9) before building collections or per-product SEO.
+3. Refresh the Product Entry Form from the new tree and make the category decide the family and product type (section 12.3).
+3a. Apply the category tree and family changes to production through the owner-run release (section 12.1), after a backup.
+3b. Build the in-admin Add product page (section 12.3), then refresh the Product Entry Form from the new families and category tree.
+4. Decide whether to add the 6 remaining system attributes (tax category, meta title/keywords, product number, RMA) to the eight families.
 5. Retire the stale tracker/handover so there is one source of progress (this file plus git).
 6. Add tests for payments and receipts, WhatsApp, Media Bank, age gate, login page builder and the updater; fix the two stale Category tests.
 7. Fix the Media Bank gaps: in-use delete protection, translations, repository, URL import.
@@ -267,5 +285,8 @@ Add one row after every significant change: date, what changed, files, checks ru
 
 | Date | Change | Files | Checks run | Open items |
 |---|---|---|---|---|
+| 2026-10-26 | Material and Compatibility notes made optional (only Volume, Width, Pack size, Fabric required); applied locally; design board updated | `ManPleasureAttributeSeeder`, `ManPleasureCatalogSeederTest` | 10 seeder tests pass on a disposable database; flags verified by query on the real local database | Uncommitted on `category-setup`; not in production |
+| 2026-10-26 | Eight per-category product families, eight new fields and options, required flags, applied to the local database through repeatable seeders; no KEY flag; design board updated | `ManPleasureFamilySeeder`, `ManPleasureAttributeSeeder`, `ManPleasureCatalogSeederTest` | Pint, php -l, 27 tests pass on a disposable database, rehearsal on a restored copy, query and HTTP checks on the real local database | Uncommitted on `category-setup`; not in production; in-admin page not built; CSV form stale |
+| 2026-10-25 | Category tree (8 main, 23 sub) and New/Featured/Special Price fields applied to the local database through repeatable seeders; family group codes fixed; 7 new tests | `ManPleasureCategorySeeder`, `ManPleasureAttributeSeeder`, `ManPleasureCatalogSeederTest` | Pint, php -l, 24 tests pass on a disposable database, rehearsal on a restored copy, query and HTTP checks on the real local database | Uncommitted on branch `category-setup`; not applied to production; Product Entry Form stale; apparel family not built |
 | 2026-10-25 | Rewrote this file as a full hand-over (start-here guide, work log from the 37 project commits, availability map); rewrote `AGENTS.md` for this project only; trimmed `CLAUDE.md` to point at both | `PROJECT_CONTEXT.md`, `AGENTS.md`, `CLAUDE.md` | Documentation only; referenced paths, routes and classes were checked to exist | Items marked [Unverified]; committed on branch `docs/project-handover`, not merged |
 | 2026-10-25 | Warn before deleting an attribute family group; server guard against orphaned system attributes; transactional family update; 4 strings x 22 locales | `AttributeFamilyController`, `AttributeFamilyRepository`, `families/edit.blade.php`, `AttributeFamilyTest`, 22 admin `app.php` | Section 15 | Not merged; Playwright not run |
