@@ -233,8 +233,8 @@ Package the release from a clean worktree, upload and stage it, then the **owner
 ## 14. Git summary [Verified, 2026-10-25]
 
 - Remotes: `origin` (the owner's GitHub fork), `upstream` (bagisto/bagisto).
-- Branch `family-group-delete-warning`: one commit ahead of `main` (`779b43d850`), not pushed or merged. `main` is at the release bump `f2f0272f7a`.
-- Branch `docs/project-handover` is stacked on `family-group-delete-warning` and adds one commit with the three documentation files (`AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`). Merge the family branch first, then this one. Not pushed.
+- Branch `family-group-delete-warning`: one commit ahead of `main` (`779b43d850`), pushed to `origin`, not merged. `main` is at the release bump `f2f0272f7a`.
+- Branch `docs/project-handover` is stacked on `family-group-delete-warning` and adds one commit with the three documentation files (`AGENTS.md`, `CLAUDE.md`, `PROJECT_CONTEXT.md`). Merge the family branch first, then this one. Pushed to `origin`, not merged.
 - Earlier local branches: zone-rate shipping, manual payment instructions, crypto transfer, WhatsApp, discreet emails, currency switcher, admin UI tweaks, and two small fixes.
 
 ## 15. Checks run on 2026-10-25 (the only ones)
