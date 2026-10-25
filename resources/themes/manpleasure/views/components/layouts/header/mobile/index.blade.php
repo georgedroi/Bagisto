@@ -304,7 +304,9 @@
                                                     role="button"
                                                     v-pre
                                                 >
-                                                    {{ core()->getCurrentCurrency()->symbol . ' ' . core()->getCurrentCurrencyCode() }}
+                                                    <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 5px; border: 1px solid currentColor; border-radius: 9999px; font-size: 10px; font-weight: 700; line-height: 1;">{{ core()->getCurrentCurrency()->symbol }}</span>
+
+                                                    {{ core()->getCurrentCurrencyCode() }}
                                                 </div>
                                             </x-slot>
 
