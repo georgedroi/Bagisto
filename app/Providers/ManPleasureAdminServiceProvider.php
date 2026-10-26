@@ -15,6 +15,8 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(config_path('manpleasure-update-menu.php'), 'menu.admin');
         $this->mergeConfigFrom(config_path('manpleasure-update-acl.php'), 'acl');
+        $this->mergeConfigFrom(config_path('manpleasure-product-entry-menu.php'), 'menu.admin');
+        $this->mergeConfigFrom(config_path('manpleasure-product-entry-acl.php'), 'acl');
     }
 
     /**
@@ -24,17 +26,16 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(app_path('Resources/views'), 'manpleasure-admin');
         $this->loadRoutesFrom(base_path('routes/manpleasure-updates.php'));
-
-        Event::listen('bagisto.admin.catalog.product.edit.form.before', function (ViewRenderEventManager $manager): void {
-            $manager->addTemplate('manpleasure-admin::product-editor-blueprint');
-        });
+        $this->loadRoutesFrom(base_path('routes/manpleasure-product-entry.php'));
 
         Event::listen('bagisto.admin.catalog.product.edit.form.after', function (ViewRenderEventManager $manager): void {
             $manager->addTemplate('manpleasure-admin::product-editor-actions');
         });
 
         Event::listen('bagisto.admin.sales.order.right_component.before', function (ViewRenderEventManager $manager): void {
-            $manager->addTemplate('manpleasure-admin::order-whatsapp');
+            if ($manager->getParam('order')) {
+                $manager->addTemplate('manpleasure-admin::order-whatsapp');
+            }
         });
     }
 }

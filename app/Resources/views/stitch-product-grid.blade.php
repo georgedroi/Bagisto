@@ -26,6 +26,8 @@
                     <strong class="msp-money" data-field="product.price">@{{ $admin.formatPrice(record.price) }}</strong>
                     <div data-field="product.status"><span class="msp-stock-pill" v-if="Number(record.status)">{{ trans('admin::executive-layout.active') }}</span><span class="msp-stock-pill is-empty" v-else>{{ trans('admin::executive-layout.inactive') }}</span></div>
                     <div class="msp-row-actions">
+                        <button v-if="['simple', 'virtual'].includes(record.type)" type="button" class="msp-review-button" @click="$emitter.emit('open-product-pricing', record.product_id)" data-action="edit-pricing">{{ trans('admin::product-pricing.edit-pricing') }}</button>
+                        <a v-if="record.url_key && Number(record.status)" :href="@js(url('/')) + '/' + record.url_key" target="_blank" rel="noopener" class="msp-review-button" data-action="view-storefront">{{ trans('admin::product-pricing.view-storefront') }}</a>
                         <button v-for="(action, actionIndex) in record.actions" :key="actionIndex" type="button" class="msp-review-button" @click="performAction(action)" :title="action.title" :aria-label="action.title" data-action="review-product">@{{ action.title }}</button>
                     </div>
                 </div>

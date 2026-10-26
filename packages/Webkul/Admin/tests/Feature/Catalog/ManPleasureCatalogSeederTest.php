@@ -223,7 +223,7 @@ it('should create one family per main category with the approved fields', functi
 
         $assigned = $family->custom_attributes()->pluck('attributes.code')->all();
 
-        expect($assigned)->toContain('sku', 'name', 'url_key', 'price', 'special_price', 'special_price_from', 'special_price_to', 'new', 'featured', 'weight', 'manage_stock', ...$fields);
+        expect($assigned)->toContain('sku', 'name', 'url_key', 'price', 'special_price', 'special_price_from', 'special_price_to', 'cost', 'new', 'featured', 'weight', 'manage_stock', ...$fields);
 
         expect($family->attribute_groups()->whereNull('code')->count())->toBe(0);
     }

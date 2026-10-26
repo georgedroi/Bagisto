@@ -142,7 +142,7 @@ class ManPleasureFamilySeeder extends Seeder
                 'name' => 'Price',
                 'column' => 2,
                 'position' => 2,
-                'attributes' => ['price', 'special_price', 'special_price_from', 'special_price_to'],
+                'attributes' => ['price', 'special_price', 'special_price_from', 'special_price_to', 'cost'],
             ],
             [
                 'code' => 'inventory',

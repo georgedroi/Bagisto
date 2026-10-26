@@ -38,4 +38,6 @@
     </section>
 
     @include('manpleasure-admin::stitch-product-grid')
+
+    @include('manpleasure-admin::product-pricing-modal')
 </x-admin::layouts>
