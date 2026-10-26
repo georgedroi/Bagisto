@@ -78,6 +78,10 @@ it('should show the add product page with the category tree and the family field
     // Act and Assert.
     $this->loginAsAdmin();
 
+    $html = get(route('admin.catalog.product_entry.index'))->assertOk()->getContent();
+
+    expect(strpos($html, '.mpe-layout {'))->toBeLessThan(strpos($html, '<body'));
+
     get(route('admin.catalog.product_entry.index'))
         ->assertOk()
         ->assertSeeText(trans('admin::product-entry.title'))

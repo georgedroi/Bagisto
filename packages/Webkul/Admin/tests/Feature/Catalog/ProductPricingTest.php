@@ -119,6 +119,10 @@ it('should show the pricing window and the storefront links on the product list'
     // Act and Assert.
     $this->loginAsAdmin();
 
+    $html = get(route('admin.catalog.products.index'))->assertOk()->getContent();
+
+    expect(strpos($html, '.mpp-summary {'))->toBeLessThan(strpos($html, '<body'));
+
     get(route('admin.catalog.products.index'))
         ->assertOk()
         ->assertSee('v-product-pricing', false)

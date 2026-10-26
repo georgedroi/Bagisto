@@ -1,3 +1,4 @@
+@pushOnce('styles')
 <style>
     .mpp-summary { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
     .mpp-thumb { flex: none; width: 56px; height: 56px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff center / cover no-repeat; }
@@ -36,6 +37,7 @@
     .mpp-margin { margin-inline-start: auto; padding: 4px 10px; border: 1px solid #bfd0ff; background: #f5f8ff; color: #2544d6; font-size: 12px; font-weight: 600; }
     @media (max-width: 639px) { .mpp-grid, .mpp-dates { grid-template-columns: minmax(0, 1fr); } .mpp-margin { margin-inline-start: 0; } }
 </style>
+@endPushOnce
 
 <v-product-pricing></v-product-pricing>
 
