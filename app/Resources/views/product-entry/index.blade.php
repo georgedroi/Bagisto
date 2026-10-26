@@ -1,6 +1,7 @@
 <x-admin::layouts>
     <x-slot:title>@lang('admin::product-entry.title')</x-slot>
 
+    @pushOnce('styles')
     <style>
         .mpe-back { margin-block-end: 6px; font-size: 12px; }
         .mpe-back a { color: #475569; text-decoration: none; }
@@ -73,6 +74,7 @@
         @media (max-width: 1023px) { .mpe-layout { grid-template-columns: minmax(0, 1fr); } }
         @media (max-width: 479px) { .mpe-picker { grid-template-columns: minmax(0, 1fr); } .mpe-picker-column + .mpe-picker-column { border-inline-start: 0; border-block-start: 1px solid #e2e8f0; } .mpe-margin { margin-inline-start: 0; } }
     </style>
+    @endPushOnce
 
     <v-product-entry></v-product-entry>
 
