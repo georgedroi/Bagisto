@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Wypełniono nazwę, SKU i adres internetowy',
     'check-image' => 'Co najmniej jedno zdjęcie',
     'check-price' => 'Wypełniono cenę, stan i wagę',
-    'check-required' => 'Wypełniono wymagane szczegóły',
     'checklist-title' => 'Przed publikacją',
     'choose-category' => 'Wybierz kategorię',
     'created-by' => 'Utworzył',

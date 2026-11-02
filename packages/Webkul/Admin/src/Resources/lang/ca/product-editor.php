@@ -4,6 +4,8 @@ return [
     'draft' => 'Desa l\'esborrany',
     'hint' => 'No canvia res fins que deseu o publiqueu.',
     'media-bank' => 'Biblioteca de mitjans',
+    'media-deleted' => 'S\'ha suprimit el fitxer multimèdia.',
+    'media-invalid-image' => 'El fitxer pujat no és una imatge vàlida.',
     'preview' => 'Previsualitza',
     'publish' => 'Publica',
     'publishing' => 'S\'està publicant aquest producte…',

@@ -42,7 +42,7 @@ A male-focused adult wellness store on Bagisto 2.4.12 (Laravel 12, PHP 8.3, Vue 
 - **No `env()` outside `config/`.** It returns null once config is cached.
 - **No Composer or npm dependency added or removed** without approval.
 - **No documentation files** except `PROJECT_CONTEXT.md`, unless asked.
-- **A pre-existing violation in a file you touch is yours:** scan the whole class (member order, docblocks, repository use) and fix what is wrong. Known ones: `MediaAssetController` queries the model directly; the `ManPleasure*` seeders use the `DB` facade.
+- **A pre-existing violation in a file you touch is yours:** scan the whole class (member order, docblocks, repository use) and fix what is wrong. Known one: the `ManPleasure*` seeders use the `DB` facade.
 - **Provider chain:** a package registers its main provider in `bootstrap/providers.php`, and a package with models registers its `ModuleServiceProvider` in `config/concord.php` too. Never edit either file without understanding the chain; removing a provider breaks the module. Models use the Contract/Model/Proxy trio.
 
 ## Database, validation, authorization, security

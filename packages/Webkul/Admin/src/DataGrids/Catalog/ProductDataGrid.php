@@ -2,12 +2,14 @@
 
 namespace Webkul\Admin\DataGrids\Catalog;
 
+use App\Repositories\ProductStockRepository;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Admin\Exports\ProductDataGridExport;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
+use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Core\Facades\ElasticSearch;
 use Webkul\DataGrid\DataGrid;
 use Webkul\Marketing\Repositories\SearchSynonymRepository;
@@ -29,6 +31,7 @@ class ProductDataGrid extends DataGrid
      */
     public function __construct(
         protected AttributeFamilyRepository $attributeFamilyRepository,
+        protected AttributeRepository $attributeRepository,
         protected SearchSynonymRepository $searchSynonymRepository
     ) {}
 
@@ -57,9 +60,39 @@ class ProductDataGrid extends DataGrid
                 'product_flat.manage_stock',
                 'product_flat.category_name',
                 'product_flat.attribute_family_name as attribute_family',
+                'product_flat.short_description',
+                'product_flat.special_price',
+                'product_flat.special_price_from',
+                'product_flat.special_price_to',
+                'product_flat.weight',
+                'product_flat.new',
+                'product_flat.featured',
+                'product_flat.created_at',
+                'product_flat.updated_at',
             )
             ->where('product_flat.locale', app()->getLocale())
             ->groupBy('product_flat.product_id');
+
+        $stockFilter = request()->query('stock');
+
+        if (is_string($stockFilter)) {
+            app(ProductStockRepository::class)->constrainStock($queryBuilder, $stockFilter);
+        }
+
+        $costAttributeId = $this->attributeRepository->findOneByField('code', 'cost')?->id;
+
+        if ($costAttributeId) {
+            $queryBuilder->selectSub(
+                DB::table('product_attribute_values as cost_values')
+                    ->select('cost_values.float_value')
+                    ->whereColumn('cost_values.product_id', 'product_flat.product_id')
+                    ->where('cost_values.attribute_id', $costAttributeId)
+                    ->limit(1),
+                'cost'
+            );
+        } else {
+            $queryBuilder->addSelect(DB::raw('NULL as cost'));
+        }
 
         $this->addFilter('attribute_family', 'attribute_family_id');
 
@@ -170,6 +203,46 @@ class ProductDataGrid extends DataGrid
                 ],
             ],
             'sortable' => true,
+        ]);
+
+        $this->addColumn([
+            'index' => 'special_price',
+            'label' => trans('admin::product-columns.col-special-price'),
+            'type' => 'decimal',
+            'sortable' => true,
+            'exportable' => false,
+        ]);
+
+        $this->addColumn([
+            'index' => 'cost',
+            'label' => trans('admin::product-columns.col-cost'),
+            'type' => 'decimal',
+            'sortable' => true,
+            'exportable' => false,
+        ]);
+
+        $this->addColumn([
+            'index' => 'weight',
+            'label' => trans('admin::product-columns.col-weight'),
+            'type' => 'decimal',
+            'sortable' => true,
+            'exportable' => false,
+        ]);
+
+        $this->addColumn([
+            'index' => 'created_at',
+            'label' => trans('admin::product-columns.col-created'),
+            'type' => 'datetime',
+            'sortable' => true,
+            'exportable' => false,
+        ]);
+
+        $this->addColumn([
+            'index' => 'updated_at',
+            'label' => trans('admin::product-columns.col-updated'),
+            'type' => 'datetime',
+            'sortable' => true,
+            'exportable' => false,
         ]);
 
         $this->addColumn([

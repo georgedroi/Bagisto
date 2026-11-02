@@ -2,31 +2,37 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\MediaAsset;
+use App\Repositories\MediaAssetRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class MediaAssetController
 {
-    public function index(Request $request)
+    /**
+     * Assets shown on one page of the Media Bank.
+     */
+    protected const PER_PAGE = 24;
+
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(protected MediaAssetRepository $mediaAssetRepository) {}
+
+    /**
+     * List the Media Bank, newest first, filtered by search text.
+     */
+    public function index(Request $request): View
     {
-        $query = MediaAsset::query()->latest();
-
-        if ($search = trim((string) $request->query('search'))) {
-            $query->where(function ($builder) use ($search) {
-                $builder->where('original_name', 'like', "%{$search}%")
-                    ->orWhere('mime_type', 'like', "%{$search}%")
-                    ->orWhere('checksum', 'like', "%{$search}%");
-            });
-        }
-
-        $assets = $query->paginate(24)->withQueryString();
+        $assets = $this->mediaAssetRepository->search(trim((string) $request->query('search')) ?: null, self::PER_PAGE);
 
         return view('manpleasure-admin::media.index', compact('assets'));
     }
 
+    /**
+     * Store an uploaded picture or video, reusing the asset that already holds the same file.
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -35,36 +41,23 @@ class MediaAssetController
         ]);
 
         $file = $validated['file'];
-        $mime = $file->getMimeType();
-        $isVideo = Str::startsWith($mime, 'video/');
-        $dimensions = $isVideo ? [null, null] : @getimagesize($file->getRealPath());
+        $isVideo = Str::startsWith($file->getMimeType(), 'video/');
+        $dimensions = $isVideo ? null : @getimagesize($file->getRealPath());
 
-        abort_unless($isVideo || $dimensions !== false, 422, 'The uploaded file is not a valid image.');
+        abort_unless($isVideo || $dimensions !== false, 422, trans('admin::product-editor.media-invalid-image'));
 
-        $checksum = hash_file('sha256', $file->getRealPath());
-        $existing = MediaAsset::where('checksum', $checksum)->first();
+        [$asset, $reused] = $this->mediaAssetRepository->storeUpload($file, $validated['collection'] ?? 'library', $dimensions ?: null);
 
-        if ($existing) {
-            return response()->json(['data' => $existing, 'reused' => true]);
-        }
-
-        $path = $file->storeAs('media-library/'.now()->format('Y/m'), Str::uuid().'.'.$file->extension(), 'public');
-        $asset = MediaAsset::create([
-            'disk' => 'public', 'path' => $path, 'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $mime, 'size' => $file->getSize(), 'width' => $dimensions[0] ?? null,
-            'height' => $dimensions[1] ?? null, 'checksum' => $checksum,
-            'collection' => $validated['collection'] ?? 'library', 'uploaded_by' => auth('admin')->id(),
-        ]);
-
-        return response()->json(['data' => $asset, 'reused' => false], 201);
+        return response()->json(['data' => $asset, 'reused' => $reused], $reused ? 200 : 201);
     }
 
-
-    public function destroy(MediaAsset $asset): JsonResponse
+    /**
+     * Delete an asset and its file.
+     */
+    public function destroy(int $asset): JsonResponse
     {
-        Storage::disk($asset->disk)->delete($asset->path);
-        $asset->delete();
+        $this->mediaAssetRepository->deleteAsset($asset);
 
-        return response()->json(['message' => 'Media asset deleted.']);
+        return response()->json(['message' => trans('admin::product-editor.media-deleted')]);
     }
 }

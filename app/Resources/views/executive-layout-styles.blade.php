@@ -88,6 +88,17 @@
     .msp-kpi--urgent .msp-kpi-icon { color: #b91c1c; background: #fee2e2; }
     .msp-catalog-snapshot .msp-kpi { background: #f8f9ff; border: 0; border-radius: 4px; }
     .msp-catalog-snapshot .msp-kpi strong { font-size: 24px; }
+    .msp-task-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-block-start: 14px; }
+    .msp-task-group { min-width: 0; padding: 14px 16px 8px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+    .msp-task-group h3 { padding-block-end: 6px; font-size: 13px; font-weight: 600; letter-spacing: -.015em; }
+    .msp-task-group a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding-block: 6px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #475569; }
+    .msp-task-group a:hover { color: #3b5bf5; }
+    .msp-task-group strong { flex-shrink: 0; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; color: #94a3b8; }
+    .msp-task-group strong.has-tasks { font-weight: 650; color: #3b5bf5; }
+    .dark .msp-task-group { background: #101725; border-color: #263144; color: #e2e8f0; }
+    .dark .msp-task-group a { border-color: #263144; color: #cbd5e1; }
+    .dark .msp-task-group strong.has-tasks { color: #a5b4fc; }
+    @media (max-width: 1023px) { .msp-task-groups { grid-template-columns: minmax(0, 1fr); } }
     .msp-quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
     .msp-quick-grid a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8f9ff; font-size: 12px; }
     .msp-quick-grid a:hover { color: #3b5bf5; border-color: #a5b4fc; }
@@ -97,8 +108,34 @@
     .msp-data-grid .table-responsive { border: 1px solid #e2e8f0; border-radius: 9px; box-shadow: none; }
     .msp-grid-row { display: grid; gap: 18px; align-items: center; padding: 17px 18px; border-bottom: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: 12px; }
     .msp-grid-row:last-child { border-bottom: 0; }
-    .msp-order-grid .msp-grid-row { min-width: 780px; grid-template-columns: 1.1fr 1.5fr 1fr 1fr .9fr; }
-    .msp-product-grid .msp-grid-row { min-width: 920px; grid-template-columns: 20px 2fr 1.1fr .8fr .9fr .7fr 1fr; }
+    .msp-order-grid .table-responsive { overflow: visible; border: 0; box-shadow: none; background: transparent; }
+    .msp-order-list-head, .msp-order-card__body { display: grid; grid-template-columns: minmax(260px, 1.8fr) minmax(110px, .7fr) minmax(150px, 1fr) minmax(100px, .7fr) minmax(100px, .7fr); align-items: center; gap: 18px; }
+    .msp-order-list-head { margin-block-end: 12px; padding: 13px 18px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .msp-order-list-head button { text-align: start; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
+    .msp-order-list-head button:not(:disabled):hover { color: #3b5bf5; }
+    .msp-order-card { margin-block-end: 14px; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px #0f172a04; }
+    .msp-order-card__header { display: flex; min-height: 46px; align-items: center; gap: 10px; padding: 10px 16px; border-block-end: 1px solid #e2e8f0; color: #64748b; font-size: 11px; }
+    .msp-order-card__avatar { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 50%; background: #eef1ff; color: #3b5bf5; font-size: 12px; font-weight: 700; }
+    .msp-order-card__customer { color: #1e293b; font-weight: 600; }
+    .msp-order-card__items { color: #64748b; }
+    .msp-order-card__number { margin-inline-start: auto; white-space: nowrap; }
+    .msp-order-card__number a { color: #3b5bf5; font-weight: 600; }
+    .msp-order-card__date { color: #64748b; white-space: nowrap; }
+    .msp-order-card__body { min-height: 108px; padding: 14px 16px; color: #475569; font-size: 12px; }
+    .msp-order-items { display: grid; gap: 10px; }
+    .msp-order-item { display: flex; min-width: 0; align-items: center; gap: 10px; }
+    .msp-order-item__image { position: relative; width: 58px; height: 58px; flex: 0 0 58px; padding: 3px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8f9ff; }
+    .msp-order-item__image img { width: 100%; height: 100%; border-radius: 3px; object-fit: cover; }
+    .msp-order-item__image span { position: absolute; inset-inline-start: -5px; inset-block-end: -5px; min-width: 18px; padding: 2px 5px; border-radius: 9px; background: #3b5bf5; color: #fff; text-align: center; font-size: 10px; font-weight: 600; }
+    .msp-order-item__details { min-width: 0; }
+    .msp-order-item__details strong { display: -webkit-box; overflow: hidden; color: #1e293b; font-size: 12px; font-weight: 500; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .msp-order-item__details small, .msp-order-card__total small, .msp-order-card__delivery small { display: block; margin-block-start: 5px; color: #94a3b8; font-size: 10px; }
+    .msp-order-card__total strong { display: block; color: #1e293b; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .msp-order-card__delivery strong { display: block; color: #1e293b; font-size: 11px; font-weight: 600; }
+    .msp-order-card__delivery small { overflow-wrap: anywhere; }
+    .msp-order-card__field-label { display: none; }
+    .msp-order-card__status p { width: fit-content; margin: 0; padding: 4px 7px; border-radius: 10px; font-size: 10px; white-space: nowrap; }
+    .msp-order-card__actions { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
     .msp-grid-row:not(.msp-grid-head):nth-child(odd) { background: #fcfdff; }
     .msp-grid-row:not(.msp-grid-head):hover { background: #f5f7ff; }
     .msp-grid-row strong { display: block; color: #0f172a; font-size: 12px; font-weight: 600; }
@@ -145,16 +182,33 @@
     .msp-media-panel label:has(input[type="file"]) p { display: none; }
     .msp-media-panel label:has(input[type="file"]) .icon-image::before { content: '+'; font-family: system-ui, sans-serif; color: #3b5bf5; }
     .mp-compact .msp-grid-row { padding-block: 8px; }
+    .mp-compact .msp-order-card__body { min-height: 80px; padding-block: 8px; }
     .dark .msp-panel, .dark .msp-kpi, .dark .msp-status-tabs, .dark .msp-grid-row, .dark .msp-media-panel { background: #101725; border-color: #263144; color: #cbd5e1; }
     .dark .msp-todo-panel, .dark .msp-grid-head, .dark .msp-catalog-snapshot .msp-kpi, .dark .msp-recent-orders th { background: #17213a; border-color: #263144; }
     .dark .msp-grid-row strong, .dark .msp-kpi { color: #e2e8f0; }
+    .dark .msp-order-card, .dark .msp-order-list-head { background: #101725; border-color: #263144; color: #cbd5e1; }
+    .dark .msp-order-card__header { border-color: #263144; }
+    .dark .msp-order-card__body, .dark .msp-order-card__customer, .dark .msp-order-item__details strong, .dark .msp-order-card__total strong, .dark .msp-order-card__delivery strong { color: #e2e8f0; }
+    .dark .msp-status-tabs a { background: #17213a; color: #cbd5e1; }
+    .dark .msp-status-tabs a.is-active { background: #3b5bf5; color: #fff; }
     .dark .msp-product-editor input, .dark .msp-product-editor textarea, .dark .msp-product-editor select, .dark .msp-form-field input, .dark .msp-form-field select { background: #17213a; border-color: #263144; color: #e2e8f0; }
     @media (max-width: 1199px) { .msp-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .msp-kpi-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (max-width: 900px) { .msp-order-list-head { display: none; } .msp-order-card__header { flex-wrap: wrap; } .msp-order-card__number { width: 100%; margin-inline-start: 38px; } .msp-order-card__body { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .msp-order-card__products { grid-column: 1 / -1; } .msp-order-card__field-label { display: block; margin-block-end: 5px; color: #94a3b8; font-size: 9px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; } }
+    @media (max-width: 480px) { .msp-order-card__header { gap: 7px; padding: 10px; } .msp-order-card__date { width: 100%; margin-inline-start: 38px; } .msp-order-card__body { padding: 12px 10px; } .msp-order-item__image { width: 48px; height: 48px; flex-basis: 48px; } .msp-order-card__delivery strong { overflow-wrap: anywhere; } }
     @media (max-width: 767px) { .msp-kpi-grid, .msp-kpi-grid--four { grid-template-columns: repeat(2, minmax(0, 1fr)); } .msp-page-header { align-items: flex-start; flex-direction: column; } .msp-product-setup-layout { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 479px) { .msp-quick-grid, .msp-form-grid { grid-template-columns: minmax(0, 1fr); } .msp-kpi { padding: 12px; } .msp-panel, .msp-todo-panel { padding: 14px; } .msp-header-actions { flex-wrap: wrap; } }
 </style>
 <style>
     .msp-order-details .box-shadow { border: 1px solid #e2e8f0; border-radius: 9px; box-shadow: 0 1px 3px #0f172a04; }
+    .msp-workflow { min-width: 0; margin-bottom: 16px; overflow-wrap: anywhere; }
+    .msp-workflow form { display: grid; gap: 8px; min-width: 0; }
+    .msp-workflow input:not([type="hidden"]), .msp-workflow select { width: 100%; max-width: 100%; min-width: 0; min-height: 44px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; background: white; }
+    .msp-workflow button, .msp-workflow .secondary-button { min-height: 44px; }
+    .msp-workflow-stage { padding: 12px; border: 1px solid; border-radius: 6px; }
+    .msp-workflow-stage--pending { background: #fff3cd; border-color: #b8860b; color: #333; }
+    .msp-workflow-stage--confirmed { background: #d4edda; border-color: #288443; color: #163; }
+    .msp-workflow-stage--issue { background: #f8d7da; border-color: #b02a37; color: #842029; }
+    .dark .msp-workflow input:not([type="hidden"]), .dark .msp-workflow select { background: #17213a; color: #e2e8f0; border-color: #475569; }
 </style>
 <style>
     .msp-media-panel .group:has(> img) { width: 60px; min-width: 60px; max-height: 60px; }

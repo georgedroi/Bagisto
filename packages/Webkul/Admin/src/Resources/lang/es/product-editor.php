@@ -4,6 +4,8 @@ return [
     'draft' => 'Guardar borrador',
     'hint' => 'Nada cambia hasta que guarde o publique.',
     'media-bank' => 'Biblioteca de medios',
+    'media-deleted' => 'Se eliminó el archivo multimedia.',
+    'media-invalid-image' => 'El archivo subido no es una imagen válida.',
     'preview' => 'Vista previa',
     'publish' => 'Publicar',
     'publishing' => 'Publicando este producto…',

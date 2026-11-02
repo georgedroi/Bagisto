@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ProductEntryController;
 use App\Http\Controllers\Admin\ProductPricingController;
+use App\Http\Controllers\Admin\ProductStockController;
 use Illuminate\Support\Facades\Route;
 use Webkul\Core\Http\Middleware\NoCacheMiddleware;
 use Webkul\Core\Http\Middleware\PreventRequestsDuringMaintenance;
@@ -19,6 +20,8 @@ Route::middleware([
             Route::get('', 'index')->name('index');
             Route::get('suggest-sku', 'suggestSku')->name('suggest_sku');
             Route::post('', 'store')->name('store');
+            Route::post('description-image', 'storeDescriptionImage')->name('description_image');
+            Route::put('{id}', 'update')->whereNumber('id')->name('update');
         });
 
     Route::prefix(config('app.admin_url').'/catalog/product-pricing')
@@ -27,5 +30,14 @@ Route::middleware([
         ->group(function () {
             Route::get('{id}', 'show')->whereNumber('id')->name('show');
             Route::put('{id}', 'update')->whereNumber('id')->name('update');
+        });
+
+    Route::prefix(config('app.admin_url').'/catalog/product-stock')
+        ->name('admin.catalog.product_stock.')
+        ->controller(ProductStockController::class)
+        ->group(function () {
+            Route::get('{id}', 'show')->whereNumber('id')->name('show');
+            Route::put('{id}', 'update')->whereNumber('id')->name('update');
+            Route::put('{id}/alert', 'alert')->whereNumber('id')->name('alert');
         });
 });

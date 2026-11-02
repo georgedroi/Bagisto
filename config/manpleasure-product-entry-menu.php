@@ -2,9 +2,15 @@
 
 return [
     [
+        'key' => 'sales.workspace',
+        'name' => 'admin::seller-workspace.title',
+        'route' => 'admin.seller_workspace.overview',
+        'sort' => 0,
+        'icon' => '',
+    ], [
         'key' => 'catalog.product_entry',
         'name' => 'admin::product-entry.menu',
-        'route' => 'admin.catalog.product_entry.index',
+        'route' => 'admin.seller_workspace.add_product',
         'sort' => 5,
         'icon' => '',
     ], [

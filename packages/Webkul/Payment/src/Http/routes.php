@@ -8,6 +8,12 @@ use Webkul\Payment\Http\Controllers\PaymentRedirectController;
 use Webkul\Payment\Http\Controllers\WebhookController;
 
 Route::group(['middleware' => ['web']], function () {
+    Route::get('payment/orders/{id}/receipt', [CustomerReceiptController::class, 'showSigned'])
+        ->middleware(['signed', 'throttle:30,1'])->name('payment.orders.receipt.show');
+
+    Route::post('payment/orders/{id}/receipt', [CustomerReceiptController::class, 'uploadSigned'])
+        ->middleware(['signed', 'throttle:10,1'])->name('payment.orders.receipt.upload');
+
     Route::post('payment/webhook/{provider?}', [WebhookController::class, 'handle'])
         ->withoutMiddleware([ValidateCsrfToken::class])
         ->name('payment.webhook');
@@ -35,5 +41,8 @@ Route::group(['middleware' => ['web']], function () {
 
         Route::post('sales/receipts/{id}/reject', [AdminReceiptController::class, 'reject'])
             ->name('admin.sales.receipts.reject');
+
+        Route::get('sales/receipts/{id}', [AdminReceiptController::class, 'view'])
+            ->name('admin.sales.receipts.view');
     });
 });

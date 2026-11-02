@@ -2,8 +2,12 @@
 
 namespace Webkul\Payment\Repositories;
 
+use App\Support\OrderWorkflow;
 use Illuminate\Container\Container;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Payment\Contracts\PaymentReceipt;
 use Webkul\Sales\Repositories\InvoiceRepository;
@@ -35,14 +39,36 @@ class PaymentReceiptRepository extends Repository
      */
     public function uploadReceipt(int $orderId, UploadedFile $file): mixed
     {
-        $path = $file->store('receipts', 'local');
+        $path = null;
 
-        return $this->create([
-            'order_id' => $orderId,
-            'receipt_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'status' => 'pending',
-        ]);
+        try {
+            return DB::transaction(function () use ($orderId, $file, &$path) {
+                $order = $this->orderRepository->scopeQuery(fn ($query) => $query->lockForUpdate())
+                    ->with('payment')->findOrFail($orderId);
+
+                if ($order->payment?->method !== 'duitnowqr_manual' || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
+                    throw ValidationException::withMessages(['receipt' => trans('admin::order-status.receipt-upload-unavailable')]);
+                }
+
+                $path = $file->store('receipts', 'local');
+                $receipt = $this->create([
+                    'order_id' => $orderId,
+                    'receipt_path' => $path,
+                    'original_name' => mb_substr($file->getClientOriginalName(), 0, 255),
+                    'status' => 'pending',
+                ]);
+
+                $this->orderRepository->update(['workflow_status' => 'awaiting_verification'], $orderId);
+
+                return $receipt;
+            });
+        } catch (\Throwable $exception) {
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }
+
+            throw $exception;
+        }
     }
 
     /**
@@ -50,22 +76,32 @@ class PaymentReceiptRepository extends Repository
      */
     public function approveReceipt(int $receiptId): bool
     {
-        $receipt = $this->findOrFail($receiptId);
-        $order = $this->orderRepository->findOrFail($receipt->order_id);
+        return DB::transaction(function () use ($receiptId) {
+            [$receipt, $order, $reviewable] = $this->reviewableReceipt($receiptId);
 
-        if ($order->canInvoice()) {
-            $invoiceData = ['order_id' => $order->id];
-
-            foreach ($order->items as $item) {
-                $invoiceData['invoice']['items'][$item->id] = $item->qty_to_invoice;
+            if (! $reviewable) {
+                return false;
             }
 
-            $this->invoiceRepository->create($invoiceData);
-        }
+            if ($order->items->isEmpty() || ! $order->billing_address || (! $order->canInvoice() && $order->base_total_due > 0.01)) {
+                return false;
+            }
 
-        $this->update(['status' => 'approved'], $receiptId);
+            if ($order->canInvoice()) {
+                $invoiceData = ['order_id' => $order->id];
 
-        return true;
+                foreach ($order->items as $item) {
+                    $invoiceData['invoice']['items'][$item->id] = $item->qty_to_invoice;
+                }
+
+                $this->invoiceRepository->create($invoiceData);
+            }
+
+            $this->update(['status' => 'approved'], $receiptId);
+            $this->orderRepository->update(['workflow_status' => 'confirmed'], $order->id);
+
+            return true;
+        });
     }
 
     /**
@@ -73,11 +109,35 @@ class PaymentReceiptRepository extends Repository
      */
     public function rejectReceipt(int $receiptId, ?string $notes = null): bool
     {
-        $this->update([
-            'status' => 'rejected',
-            'admin_notes' => $notes,
-        ], $receiptId);
+        return DB::transaction(function () use ($receiptId, $notes) {
+            [$receipt, $order, $reviewable] = $this->reviewableReceipt($receiptId);
 
-        return true;
+            if (! $reviewable) {
+                return false;
+            }
+
+            $this->update(['status' => 'rejected', 'admin_notes' => $notes], $receiptId);
+            $this->orderRepository->update(['workflow_status' => 'payment_clarification'], $order->id);
+
+            return true;
+        });
+    }
+
+    /**
+     * Lock an order before its receipt and refuse stale or terminal reviews.
+     */
+    protected function reviewableReceipt(int $receiptId): array
+    {
+        $receipt = $this->findOrFail($receiptId);
+        $order = $this->orderRepository->scopeQuery(fn ($query) => $query->lockForUpdate())
+            ->with(['payment', 'items', 'addresses'])->findOrFail($receipt->order_id);
+        $receipt = $this->scopeQuery(fn ($query) => $query->lockForUpdate())->findOrFail($receiptId);
+        $latest = $this->scopeQuery(fn ($query) => $query->where('order_id', $order->id)->orderByDesc('id'))->first();
+        $reviewable = $receipt->status === 'pending'
+            && $latest?->id === $receipt->id
+            && $order->payment?->method === 'duitnowqr_manual'
+            && OrderWorkflow::current($order) === 'awaiting_verification';
+
+        return [$receipt, $order, $reviewable];
     }
 }

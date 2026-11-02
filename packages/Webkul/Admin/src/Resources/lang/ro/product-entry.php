@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Nume, SKU și adresă web completate',
     'check-image' => 'Cel puțin o imagine',
     'check-price' => 'Preț, stoc și greutate completate',
-    'check-required' => 'Detalii obligatorii completate',
     'checklist-title' => 'Înainte de publicare',
     'choose-category' => 'Alegeți o categorie',
     'created-by' => 'Creat de',

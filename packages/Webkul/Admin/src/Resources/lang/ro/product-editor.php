@@ -4,6 +4,8 @@ return [
     'draft' => 'Salvează ciorna',
     'hint' => 'Nimic nu se schimbă până nu salvați sau publicați.',
     'media-bank' => 'Bibliotecă media',
+    'media-deleted' => 'Fișierul media a fost șters.',
+    'media-invalid-image' => 'Fișierul încărcat nu este o imagine validă.',
     'preview' => 'Previzualizare',
     'publish' => 'Publică',
     'publishing' => 'Se publică produsul…',

@@ -16,14 +16,15 @@ use Webkul\Sales\Models\OrderAddress;
 use Webkul\Sales\Models\OrderComment;
 use Webkul\Sales\Models\OrderItem;
 use Webkul\Sales\Models\OrderPayment;
+use Webkul\Sales\Models\Shipment;
 use Webkul\Shop\Mail\Order\CanceledNotification as ShopOrderCanceledNotification;
 use Webkul\Shop\Mail\Order\CommentedNotification;
 
 use function Pest\Laravel\get;
+use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
 it('should return the index page of Orders page', function () {
-    // Act and Assert.
     $this->loginAsAdmin();
 
     get(route('admin.sales.orders.index'))
@@ -31,8 +32,51 @@ it('should return the index page of Orders page', function () {
         ->assertSeeText(trans('admin::app.sales.orders.index.title'));
 });
 
+it('should render the order cards while preserving a dashboard queue filter', function () {
+    $this->loginAsAdmin();
+
+    get(route('admin.sales.orders.index', ['queue' => Order::STATUS_PENDING]))
+        ->assertOk()
+        ->assertSee('msp-order-list-head', false)
+        ->assertSee('msp-order-card', false)
+        ->assertSee(trans('admin::app.sales.orders.create.types.simple.total-amount'))
+        ->assertSee(trans('admin::app.sales.orders.view.shipping-method'))
+        ->assertSee('aria-current="page"', false);
+});
+
+it('should show fulfillment labels from the order and shipment states', function () {
+    $pending = Order::factory()->create([
+        'status' => Order::STATUS_PENDING,
+    ]);
+
+    $toShip = Order::factory()->create([
+        'status' => Order::STATUS_PROCESSING,
+    ]);
+
+    $shipping = Order::factory()->create([
+        'status' => Order::STATUS_PROCESSING,
+    ]);
+
+    Shipment::factory()->create([
+        'order_id' => $shipping->id,
+    ]);
+
+    $this->loginAsAdmin();
+
+    $records = collect(getJson(route('admin.sales.orders.index'), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ])->assertOk()->json('records'));
+
+    $pendingStatus = strip_tags($records->firstWhere('id', $pending->id)['status']);
+    $toShipStatus = strip_tags($records->firstWhere('id', $toShip->id)['status']);
+    $shippingStatus = strip_tags($records->firstWhere('id', $shipping->id)['status']);
+
+    expect($pendingStatus)->toBe(trans('admin::order-status.to-confirm'))
+        ->and($toShipStatus)->toBe(trans('admin::order-status.to-ship'))
+        ->and($shippingStatus)->toBe(trans('admin::order-status.shipping'));
+});
+
 it('should return the view page of order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -145,8 +189,6 @@ it('should return the view page of order', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     get(route('admin.sales.orders.view', $order->id))
@@ -223,7 +265,6 @@ it('should return the view page of order', function () {
 });
 
 it('should cancel the order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -336,8 +377,6 @@ it('should cancel the order', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.orders.cancel', $order->id))
@@ -410,7 +449,6 @@ it('should cancel the order', function () {
 });
 
 it('should cancel the order and send the notification to the customer and admin', function () {
-    // Arrange.
     Mail::fake();
 
     CoreConfig::factory()->create([
@@ -534,8 +572,6 @@ it('should cancel the order and send the notification to the customer and admin'
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.orders.cancel', $order->id))
@@ -614,7 +650,6 @@ it('should cancel the order and send the notification to the customer and admin'
 });
 
 it('should give validation error when store the comment to the order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -727,8 +762,6 @@ it('should give validation error when store the comment to the order', function 
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.orders.comment', $order->id))
@@ -801,7 +834,6 @@ it('should give validation error when store the comment to the order', function 
 });
 
 it('should comment to the order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -914,8 +946,6 @@ it('should comment to the order', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.orders.comment', $order->id), [
@@ -997,7 +1027,6 @@ it('should comment to the order', function () {
 });
 
 it('should comment to the order and send mail to the customer', function () {
-    // Arrange.
     Mail::fake();
 
     $product = (new ProductFaker([
@@ -1112,8 +1141,6 @@ it('should comment to the order and send mail to the customer', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.orders.comment', $order->id), [
@@ -1201,7 +1228,6 @@ it('should comment to the order and send mail to the customer', function () {
 });
 
 it('should search the order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -1314,8 +1340,6 @@ it('should search the order', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsAdmin();
 
     get(route('admin.sales.orders.search'), [

@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Nama, SKU, dan alamat web terisi',
     'check-image' => 'Minimal satu gambar',
     'check-price' => 'Harga, stok, dan berat terisi',
-    'check-required' => 'Detail wajib terisi',
     'checklist-title' => 'Sebelum menerbitkan',
     'choose-category' => 'Pilih kategori',
     'created-by' => 'Dibuat oleh',

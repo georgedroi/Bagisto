@@ -1,0 +1,1 @@
+<a class="primary-button mt-4" href="{{ \Illuminate\Support\Facades\URL::temporarySignedRoute('payment.orders.receipt.show', now()->addDays(30), ['id' => $order->id]) }}">{{ trans('payment::app.upload-receipt') }}</a>

@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'تمت تعبئة الاسم وSKU وعنوان الويب',
     'check-image' => 'صورة واحدة على الأقل',
     'check-price' => 'تمت تعبئة السعر والمخزون والوزن',
-    'check-required' => 'تمت تعبئة التفاصيل المطلوبة',
     'checklist-title' => 'قبل النشر',
     'choose-category' => 'اختر فئة',
     'created-by' => 'أنشأه',
