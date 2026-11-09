@@ -35,6 +35,14 @@ class PaymentReceiptRepository extends Repository
     }
 
     /**
+     * Get the status of an order's most recent receipt.
+     */
+    public function latestStatus(int $orderId): ?string
+    {
+        return $this->orderBy('id', 'desc')->findWhere(['order_id' => $orderId], ['status'])->first()?->status;
+    }
+
+    /**
      * Upload and persist payment receipt.
      */
     public function uploadReceipt(int $orderId, UploadedFile $file): mixed

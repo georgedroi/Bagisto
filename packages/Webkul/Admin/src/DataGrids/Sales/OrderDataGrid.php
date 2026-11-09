@@ -71,7 +71,7 @@ class OrderDataGrid extends DataGrid
 
             if ($workflow === 'awaiting_payment') {
                 $queryBuilder->where('order_payment.method', 'duitnowqr_manual')
-                    ->where(fn ($query) => $query->whereNull('orders.workflow_status')->orWhere('orders.workflow_status', $workflow));
+                    ->where(fn ($query) => $query->where(fn ($query) => $query->whereNull('orders.workflow_status')->whereIn('orders.status', [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT]))->orWhere('orders.workflow_status', $workflow));
             } else {
                 $queryBuilder->where('orders.workflow_status', $workflow);
             }
@@ -142,7 +142,7 @@ class OrderDataGrid extends DataGrid
                     return '<p class="label-pending">'.e(trans('admin::order-status.to-return-refund')).'</p>';
                 }
 
-                $workflowStatus = $row->workflow_status ?: (in_array('duitnowqr_manual', explode('|', (string) $row->method), true) ? 'awaiting_payment' : null);
+                $workflowStatus = $row->workflow_status ?: (in_array('duitnowqr_manual', explode('|', (string) $row->method), true) && in_array($row->status, [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT], true) ? 'awaiting_payment' : null);
                 $workflowLabel = [
                     'awaiting_payment' => ['pending-payment', 'label-pending'],
                     'awaiting_verification' => ['awaiting-verification', 'label-pending'],

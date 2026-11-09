@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\OrderWorkflow;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
@@ -192,4 +193,57 @@ it('requires a reason for failed delivery and permits a recorded delivery retry'
 
     expect($order->fresh()->workflow_status)->toBe('out_for_delivery')
         ->and($order->comments()->count())->toBe(2);
+});
+
+it('treats a fully invoiced order saved before the workflow as confirmed and lets it ship', function () {
+    $order = createDuitNowWorkflowOrder();
+    $order->update(['status' => Order::STATUS_PROCESSING, 'grand_total_invoiced' => 10, 'base_grand_total_invoiced' => 10]);
+    $order->items()->update(['qty_invoiced' => 1]);
+
+    expect($order->fresh()->workflow_status)->toBeNull()
+        ->and(OrderWorkflow::current($order->fresh()))->toBe('confirmed');
+    Event::dispatch('sales.shipment.save.before', ['order_id' => $order->id]);
+
+    $this->loginAsAdmin();
+    getJson(route('admin.sales.orders.index', ['workflow' => 'awaiting_payment']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
+    expect(getJson(route('admin.sales.orders.index'), ['X-Requested-With' => 'XMLHttpRequest'])->json('records.0.status'))->toContain(trans('admin::order-status.to-ship'));
+    post(route('admin.sales.orders.workflow.update', $order->id), ['expected_status' => 'confirmed', 'workflow_status' => 'packing'])->assertRedirect();
+    expect($order->fresh()->workflow_status)->toBe('packing');
+});
+
+it('treats a shipped order saved before the workflow as handed to the courier', function () {
+    $order = createDuitNowWorkflowOrder();
+    $order->update(['status' => Order::STATUS_COMPLETED, 'grand_total_invoiced' => 10, 'base_grand_total_invoiced' => 10]);
+    Shipment::factory()->create(['order_id' => $order->id, 'carrier_title' => 'Test Courier', 'track_number' => 'QA123']);
+
+    expect(OrderWorkflow::current($order->fresh()))->toBe('handed_to_courier');
+});
+
+it('lets an administrator review a pending receipt saved before the workflow', function () {
+    $order = createDuitNowWorkflowOrder();
+    $receipt = app(PaymentReceiptRepository::class)->create(['order_id' => $order->id, 'receipt_path' => 'receipts/old.png', 'original_name' => 'old.png', 'status' => 'pending']);
+
+    expect(OrderWorkflow::current($order->fresh()))->toBe('awaiting_verification');
+
+    $this->loginAsAdmin();
+    post(route('admin.sales.receipts.approve', $receipt->id))->assertRedirect();
+    expect($order->fresh()->workflow_status)->toBe('confirmed')
+        ->and($order->invoices()->count())->toBe(1);
+});
+
+it('asks for a new receipt when the last receipt saved before the workflow was rejected', function () {
+    $order = createDuitNowWorkflowOrder();
+    app(PaymentReceiptRepository::class)->create(['order_id' => $order->id, 'receipt_path' => 'receipts/old.png', 'original_name' => 'old.png', 'status' => 'rejected']);
+    $this->actingAs($order->customer, 'customer');
+
+    expect(OrderWorkflow::current($order->fresh()))->toBe('payment_clarification');
+    post(route('customer.orders.receipt.upload', $order->id), ['receipt' => UploadedFile::fake()->image('proof.png')])->assertRedirect();
+    expect($order->fresh()->workflow_status)->toBe('awaiting_verification');
+});
+
+it('keeps an unpaid order saved before the workflow awaiting payment and refuses its shipment', function () {
+    $order = createDuitNowWorkflowOrder();
+
+    expect(OrderWorkflow::current($order))->toBe('awaiting_payment')
+        ->and(fn () => Event::dispatch('sales.shipment.save.before', ['order_id' => $order->id]))->toThrow(ValidationException::class);
 });
