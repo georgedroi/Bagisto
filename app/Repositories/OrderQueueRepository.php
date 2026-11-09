@@ -48,6 +48,19 @@ class OrderQueueRepository extends OrderRepository
     }
 
     /**
+     * Keep only open orders saved at one task list stage, as the task list counts them.
+     */
+    public function constrainWorkflow(Builder|EloquentBuilder $query, string $stage): Builder|EloquentBuilder
+    {
+        if (! in_array($stage, array_merge(...array_values(self::WORKFLOW_TASKS)), true)) {
+            return $query;
+        }
+
+        return $query->whereNotIn('orders.status', [Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD])
+            ->where('orders.workflow_status', $stage);
+    }
+
+    /**
      * Count each queue using the same constraints as its destination page.
      */
     public function queueCounts(): array

@@ -2,6 +2,7 @@
 
 use App\Models\ProductStockAlert;
 use App\Models\ProductStockBatch;
+use Webkul\Customer\Models\Customer;
 use Webkul\Faker\Helpers\Product;
 use Webkul\Inventory\Models\InventorySource;
 use Webkul\Product\Models\ProductFlat;
@@ -9,6 +10,7 @@ use Webkul\Product\Models\ProductInventory;
 use Webkul\Product\Models\ProductReview;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderPayment;
+use Webkul\Sales\Models\Refund;
 use Webkul\User\Models\Admin;
 use Webkul\User\Models\Role;
 
@@ -16,7 +18,7 @@ use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
-dataset('workspace pages', ['overview', 'orders', 'shipping', 'returns', 'reviews', 'products', 'promotions', 'income', 'fees', 'settings']);
+dataset('workspace pages', ['overview', 'orders', 'shipping', 'returns', 'reviews', 'customers', 'products', 'promotions', 'income', 'refunds', 'fees', 'settings']);
 
 it('opens every workspace page with no marketplace content', function (string $page) {
     $this->loginAsAdmin();
@@ -364,21 +366,180 @@ it('hides action forms from a role without those permissions and the engine refu
 });
 
 it('opens every link on the settings page', function () {
-    $this->loginAsAdmin();
+    $admin = $this->loginAsAdmin();
+
+    config(['manpleasure-updates.owner_ids' => [(int) $admin->id]]);
 
     $html = get(route('admin.seller_workspace.settings'))->assertOk()->getContent();
 
     preg_match_all('/class="msw-set" href="([^"]+)"/', $html, $matches);
 
-    expect($matches[1])->toHaveCount(12);
+    expect($matches[1])->toHaveCount(39)
+        ->and($html)->not->toContain('/appearance/login-page-builder')
+        ->and($html)->toContain(route('admin.media.index'))
+        ->and($html)->toContain(route('admin.settings.system_updates.index'));
 
     foreach ($matches[1] as $url) {
         get(html_entity_decode($url))->assertOk();
     }
 });
 
-it('links to the workspace from the admin dashboard', function () {
+it('shows system updates on the settings page to the update owner only', function () {
+    $admin = $this->loginAsAdmin();
+
+    config(['manpleasure-updates.owner_ids' => [(int) $admin->id + 1000]]);
+
+    get(route('admin.seller_workspace.settings'))->assertOk()->assertDontSee(route('admin.settings.system_updates.index'));
+});
+
+it('files each task list stage under its own heading and keeps every overview link in the workspace', function () {
     $this->loginAsAdmin();
 
-    get(route('admin.dashboard.index'))->assertSee(route('admin.seller_workspace.overview'));
+    $html = get(route('admin.seller_workspace.overview'))->assertOk()->getContent();
+
+    $payments = strpos($html, '<h3>Payments</h3>');
+    $fulfilment = strpos($html, '<h3>Fulfilment</h3>');
+    $stage = fn (string $stage) => strpos($html, e(route('admin.seller_workspace.orders', ['workflow' => $stage])));
+
+    expect($payments)->toBeLessThan($stage('awaiting_verification'))
+        ->and($stage('payment_clarification'))->toBeLessThan($fulfilment)
+        ->and($fulfilment)->toBeLessThan($stage('confirmed'))
+        ->and($fulfilment)->toBeLessThan($stage('packing'))
+        ->and($html)->toContain(e(route('admin.seller_workspace.products', ['stock' => 'low'])))
+        ->and($html)->toContain(e(route('admin.seller_workspace.products', ['tab' => 'inactive'])))
+        ->and($html)->not->toContain(route('admin.sales.orders.index').'?workflow')
+        ->and($html)->not->toContain(route('admin.catalog.products.index').'?stock');
+});
+
+it('filters orders by task list stage and keeps the stage while searching', function () {
+    $this->loginAsAdmin();
+
+    $packing = Order::factory()->create(['status' => 'processing', 'workflow_status' => 'packing', 'increment_id' => 'WS-STAGE-PACK']);
+    $ready = Order::factory()->create(['status' => 'processing', 'workflow_status' => 'ready_to_ship', 'increment_id' => 'WS-STAGE-READY']);
+
+    $html = get(route('admin.seller_workspace.orders', ['workflow' => 'packing']))
+        ->assertSee($packing->increment_id)
+        ->assertDontSee($ready->increment_id)
+        ->getContent();
+
+    expect($html)->toContain('<input type="hidden" name="workflow" value="packing">')
+        ->and($html)->not->toContain(route('admin.sales.orders.index').'?workflow');
+
+    get(route('admin.seller_workspace.orders', ['queue' => 'to_ship', 'workflow' => 'ready_to_ship']))
+        ->assertSee($ready->increment_id)
+        ->assertDontSee($packing->increment_id);
+
+    get(route('admin.seller_workspace.orders', ['workflow' => 'delivered']))->assertRedirect();
+});
+
+it('filters products by low and out of stock and lists the lowest on the overview', function () {
+    $this->loginAsAdmin();
+
+    $low = (new Product)->getSimpleProductFactory()->create();
+    $out = (new Product)->getSimpleProductFactory()->create();
+    $plenty = (new Product)->getSimpleProductFactory()->create();
+
+    ProductFlat::query()->where('product_id', $low->id)->update(['quantity' => 3]);
+    ProductFlat::query()->where('product_id', $out->id)->update(['quantity' => 0]);
+    ProductFlat::query()->where('product_id', $plenty->id)->update(['quantity' => 500]);
+
+    get(route('admin.seller_workspace.products', ['stock' => 'low']))->assertSee($low->sku)->assertDontSee($out->sku)->assertDontSee($plenty->sku);
+    get(route('admin.seller_workspace.products', ['stock' => 'out']))->assertSee($out->sku)->assertDontSee($low->sku)->assertDontSee($plenty->sku);
+    get(route('admin.seller_workspace.products', ['stock' => 'nonsense']))->assertRedirect();
+
+    get(route('admin.seller_workspace.overview'))->assertSee($out->sku)->assertDontSee($plenty->sku);
+});
+
+it('shows the dashboard figures for a date range and refuses a range that ends before it starts', function () {
+    $this->loginAsAdmin();
+
+    $start = now()->subDays(7)->format('Y-m-d');
+
+    $html = get(route('admin.seller_workspace.overview', ['start' => $start, 'end' => now()->format('Y-m-d')]))->assertOk()->getContent();
+
+    foreach (['range-sales', 'range-orders', 'range-customers', 'range-average', 'revenue', 'orders', 'customers-today', 'unpaid'] as $tile) {
+        expect($html)->toContain('data-field="business.'.$tile.'"');
+    }
+
+    expect($html)->toContain('class="msw-bars"')
+        ->and($html)->toContain('Top selling products')
+        ->and($html)->toContain('Top customers')
+        ->and($html)->toContain('name="start" value="'.$start.'"');
+
+    get(route('admin.seller_workspace.overview', ['start' => '2026-10-30', 'end' => '2026-10-01']))->assertRedirect();
+    get(route('admin.seller_workspace.overview', ['start' => 'garbage']))->assertRedirect();
+    get(route('admin.seller_workspace.overview', ['channel' => 'no-such-channel']))->assertRedirect();
+});
+
+it('hides the dashboard figures from a role that may not open the dashboard', function () {
+    $role = Role::factory()->create(['permission_type' => 'custom', 'permissions' => ['sales', 'sales.workspace']]);
+
+    actingAs(Admin::factory()->create(['role_id' => $role->id]), 'admin');
+
+    $html = get(route('admin.seller_workspace.overview'))->assertOk()->getContent();
+
+    expect($html)->not->toContain('data-field="business.')
+        ->and($html)->not->toContain('Top customers')
+        ->and($html)->not->toContain('Lowest stock');
+});
+
+it('lists and searches customers and refuses a role without customer or refund access', function () {
+    $this->loginAsAdmin();
+
+    $found = Customer::factory()->create(['first_name' => 'Wsfind', 'email' => 'ws-find@example.com']);
+    $other = Customer::factory()->create(['first_name' => 'Wsother', 'email' => 'ws-other@example.com']);
+
+    get(route('admin.seller_workspace.customers', ['search' => 'ws-find']))
+        ->assertOk()
+        ->assertSee($found->email)
+        ->assertDontSee($other->email)
+        ->assertSee(route('admin.customers.customers.view', $found->id));
+
+    $role = Role::factory()->create(['permission_type' => 'custom', 'permissions' => ['sales', 'sales.workspace']]);
+
+    actingAs(Admin::factory()->create(['role_id' => $role->id]), 'admin');
+
+    get(route('admin.seller_workspace.customers'))->assertUnauthorized();
+    get(route('admin.seller_workspace.refunds'))->assertUnauthorized();
+});
+
+it('lists refunds with their order', function () {
+    $this->loginAsAdmin();
+
+    $order = Order::factory()->create(['increment_id' => 'WS-RF-ORDER']);
+
+    $refund = Refund::factory()->create(['order_id' => $order->id, 'increment_id' => 'WS-RF-1', 'state' => 'refunded', 'base_grand_total' => 12.5, 'grand_total' => 12.5]);
+
+    get(route('admin.seller_workspace.refunds'))
+        ->assertOk()
+        ->assertSee('#WS-RF-1')
+        ->assertSee('#WS-RF-ORDER')
+        ->assertSee(route('admin.sales.refunds.view', $refund->id));
+});
+
+it('opens the combined workspace from the admin dashboard', function () {
+    $this->loginAsAdmin();
+
+    get(route('admin.dashboard.index'))
+        ->assertViewIs('manpleasure-admin::seller-workspace.page')
+        ->assertSee(route('admin.seller_workspace.orders'));
+});
+
+it('serves every workspace page straight under the admin address and drops the old seller workspace address', function () {
+    $this->loginAsAdmin();
+
+    $admin = '/'.config('app.admin_url');
+
+    foreach (['overview' => '/overview', 'orders' => '/orders', 'shipping' => '/shipping', 'customers' => '/customer-list', 'products' => '/products', 'add_product' => '/products/add', 'income' => '/income', 'settings' => '/settings'] as $name => $path) {
+        expect(route('admin.seller_workspace.'.$name, [], false))->toBe($admin.$path);
+
+        get($admin.$path)->assertOk();
+    }
+
+    foreach (['', '/orders', '/products', '/products/add'] as $path) {
+        get($admin.'/seller-workspace'.$path)->assertNotFound();
+    }
+
+    get(route('admin.customers.customers.index'))->assertOk()
+        ->assertViewIs('admin::customers.customers.index');
 });

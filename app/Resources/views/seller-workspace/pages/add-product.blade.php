@@ -1,5 +1,5 @@
 <nav class="msw-crumb" aria-label="{{ trans('admin::seller-workspace.home') }}">
-    <a href="{{ route('admin.seller_workspace.overview') }}">{{ trans('admin::seller-workspace.home') }}</a>
+    <a href="{{ $overviewUrl }}">{{ trans('admin::seller-workspace.home') }}</a>
     @include('manpleasure-admin::seller-workspace.icon', ['name' => 'right'])
     <a href="{{ route('admin.seller_workspace.products') }}">{{ trans('admin::seller-workspace.pages.products') }}</a>
     @include('manpleasure-admin::seller-workspace.icon', ['name' => 'right'])

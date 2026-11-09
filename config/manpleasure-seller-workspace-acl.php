@@ -6,6 +6,7 @@ return [
         'name' => 'admin::seller-workspace.title',
         'route' => [
             'admin.seller_workspace.overview',
+            'admin.seller_workspace.home',
             'admin.seller_workspace.orders',
             'admin.seller_workspace.shipping',
             'admin.seller_workspace.fees',
@@ -21,6 +22,16 @@ return [
         'key' => 'sales.invoices.workspace',
         'name' => 'admin::seller-workspace.pages.income',
         'route' => 'admin.seller_workspace.income',
+        'sort' => 8,
+    ], [
+        'key' => 'sales.refunds.workspace',
+        'name' => 'admin::seller-workspace.pages.refunds',
+        'route' => 'admin.seller_workspace.refunds',
+        'sort' => 8,
+    ], [
+        'key' => 'customers.customers.workspace',
+        'name' => 'admin::seller-workspace.pages.customers',
+        'route' => 'admin.seller_workspace.customers',
         'sort' => 8,
     ], [
         'key' => 'customers.reviews.workspace',

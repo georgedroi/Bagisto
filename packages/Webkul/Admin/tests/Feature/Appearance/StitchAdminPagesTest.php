@@ -20,7 +20,7 @@ it('connects the dashboard to the fulfillment queues and category-first product 
     $response = get(route('admin.dashboard.index'))->assertOk();
 
     foreach (['awaiting_payment', 'to_ship', 'shipping', 'failed_delivery', 'returns'] as $queue) {
-        $response->assertSee(route('admin.sales.orders.index', ['queue' => $queue]));
+        $response->assertSee(route('admin.seller_workspace.orders', ['queue' => $queue]));
     }
 
     $response->assertSee(route('admin.seller_workspace.add_product'));
@@ -62,7 +62,7 @@ it('shows saved fulfillment progress in the dashboard recent order list', functi
     $this->loginAsAdmin();
 
     $html = get(route('admin.dashboard.index'))->assertOk()->getContent();
-    preg_match('/<tr data-entity="order" data-id="'.$order->increment_id.'">([\s\S]*?)<\/tr>/', $html, $row);
+    preg_match('/<div class="msw-order-row" data-entity="order" data-id="'.$order->increment_id.'">[\s\S]*?<span class="msw-pill">([^<]*)<\/span>/', $html, $row);
 
     expect(strip_tags($row[1] ?? ''))->toContain(trans('admin::order-status.delivered'));
 });
@@ -137,10 +137,10 @@ it('shows task list counts that match the order list each one opens', function (
 
     foreach (OrderQueueRepository::WORKFLOW_TASKS as $stages) {
         foreach ($stages as $stage) {
-            $response->assertSee(route('admin.sales.orders.index', ['workflow' => $stage]));
+            $response->assertSee(route('admin.seller_workspace.orders', ['workflow' => $stage]));
 
-            $total = getJson(route('admin.sales.orders.index', ['workflow' => $stage]), ['X-Requested-With' => 'XMLHttpRequest'])
-                ->assertOk()->json('meta.total');
+            $total = get(route('admin.seller_workspace.orders', ['workflow' => $stage]))
+                ->assertOk()->viewData('rows')->total();
 
             expect($total)->toBe($after[$stage]);
         }
@@ -177,10 +177,12 @@ it('shows product task counts that match the product list each one opens', funct
     $response = get(route('admin.dashboard.index'))->assertOk();
 
     foreach (array_keys(ProductStockRepository::FILTERS) as $filter) {
-        $response->assertSee(route('admin.catalog.products.index', ['stock' => $filter]));
+        $filters = $filter === 'inactive' ? ['tab' => 'inactive'] : ['stock' => $filter];
 
-        $total = getJson(route('admin.catalog.products.index', ['stock' => $filter]), ['X-Requested-With' => 'XMLHttpRequest'])
-            ->assertOk()->json('meta.total');
+        $response->assertSee(route('admin.seller_workspace.products', $filters));
+
+        $total = get(route('admin.seller_workspace.products', $filters))
+            ->assertOk()->viewData('rows')->total();
 
         expect($total)->toBe($after[$filter]);
     }

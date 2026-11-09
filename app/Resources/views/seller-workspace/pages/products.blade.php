@@ -9,14 +9,14 @@
     <h2>{{ trans('admin::seller-workspace.products.overview') }}</h2>
     <div class="msw-grid-3">
         @foreach (\App\Repositories\ProductStockRepository::FILTERS as $filter => $label)
-            <a class="msw-tile" href="{{ route('admin.catalog.products.index', ['stock' => $filter]) }}"><span>{{ trans($label) }}</span><strong>{{ number_format($stock[$filter]) }}</strong></a>
+            <a @class(['msw-tile', 'is-active' => $stockFilter === $filter || ($filter === 'inactive' && $tab === 'inactive')]) href="{{ route('admin.seller_workspace.products', $filter === 'inactive' ? ['tab' => 'inactive'] : ['stock' => $filter]) }}"><span>{{ trans($label) }}</span><strong>{{ number_format($stock[$filter]) }}</strong></a>
         @endforeach
     </div>
 </section>
 
 <div class="msw-tabs">
     @foreach ($tabs as $key)
-        <a href="{{ route('admin.seller_workspace.products', array_filter(['tab' => $key, 'search' => $search, 'out' => $out ? 1 : null, 'alert' => $alert ? 1 : null])) }}" @class(['is-active' => $tab === $key])>{{ trans('admin::seller-workspace.products.tab-'.$key) }}</a>
+        <a href="{{ route('admin.seller_workspace.products', array_filter(['tab' => $key, 'search' => $search, 'stock' => $stockFilter, 'alert' => $alert ? 1 : null])) }}" @class(['is-active' => $tab === $key])>{{ trans('admin::seller-workspace.products.tab-'.$key) }}</a>
     @endforeach
 </div>
 
@@ -26,10 +26,15 @@
         @if ($alert)
             <input type="hidden" name="alert" value="1">
         @endif
+        @if ($stockFilter)
+            <input type="hidden" name="stock" value="{{ $stockFilter }}">
+        @endif
         <div class="msw-chips" style="flex-basis: 100%; min-height: 44px; align-items: flex-start; gap: 12px; line-height: 32px">
             <span>{{ trans('admin::seller-workspace.products.filter') }}</span>
-            <a @class(['msw-chip', 'is-active' => $out]) style="height: 32px" href="{{ route('admin.seller_workspace.products', array_filter(['tab' => $tab, 'search' => $search, 'out' => $out ? null : 1, 'alert' => $alert ? 1 : null])) }}">{{ trans($out ? 'admin::seller-workspace.products.all-stock' : 'admin::seller-workspace.products.out') }}</a>
-            <a @class(['msw-chip', 'is-active' => $alert]) style="height: 32px" href="{{ route('admin.seller_workspace.products', array_filter(['tab' => $tab, 'search' => $search, 'out' => $out ? 1 : null, 'alert' => $alert ? null : 1])) }}">{{ trans('admin::seller-workspace.products.alerts', ['count' => number_format($alertCount)]) }}</a>
+            @foreach (['out', 'low'] as $filter)
+                <a @class(['msw-chip', 'is-active' => $stockFilter === $filter]) style="height: 32px" href="{{ route('admin.seller_workspace.products', array_filter(['tab' => $tab, 'search' => $search, 'stock' => $stockFilter === $filter ? null : $filter, 'alert' => $alert ? 1 : null])) }}">{{ trans('admin::seller-workspace.products.'.$filter) }}</a>
+            @endforeach
+            <a @class(['msw-chip', 'is-active' => $alert]) style="height: 32px" href="{{ route('admin.seller_workspace.products', array_filter(['tab' => $tab, 'search' => $search, 'stock' => $stockFilter, 'alert' => $alert ? null : 1])) }}">{{ trans('admin::seller-workspace.products.alerts', ['count' => number_format($alertCount)]) }}</a>
         </div>
         <label class="msw-field">
             <span>{{ trans('admin::seller-workspace.products.search') }}</span>

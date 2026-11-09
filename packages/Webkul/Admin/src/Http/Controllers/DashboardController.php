@@ -2,18 +2,17 @@
 
 namespace Webkul\Admin\Http\Controllers;
 
+use App\Http\Controllers\Admin\SellerWorkspaceController;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
 use Webkul\Admin\Helpers\Dashboard;
 
 class DashboardController extends Controller
 {
     /**
      * Request param functions
-     *
-     * @var array
      */
-    protected $typeFunctions = [
+    protected array $typeFunctions = [
         'over-all' => 'getOverAllStats',
         'today' => 'getTodayStats',
         'stock-threshold-products' => 'getStockThresholdProducts',
@@ -23,46 +22,40 @@ class DashboardController extends Controller
     ];
 
     /**
-     * Create a controller instance.
-     *
-     * @return void
+     * Show the combined dashboard using the seller workspace layout and data.
      */
-    public function __construct(protected Dashboard $dashboardHelper) {}
-
-    /**
-     * Dashboard page.
-     *
-     * @return View|JsonResponse
-     */
-    public function index()
+    public function index(SellerWorkspaceController $workspace): View
     {
-        return view('admin::dashboard.index')->with([
-            'startDate' => $this->dashboardHelper->getStartDate(),
-            'endDate' => $this->dashboardHelper->getEndDate(),
-        ]);
+        return $workspace->overview();
     }
 
     /**
      * Display a listing of the resource.
-     *
-     * @return JsonResponse
      */
-    public function stats()
+    public function stats(): JsonResponse
     {
-        $stats = $this->dashboardHelper->{$this->resolveTypeFunction()}();
+        $function = $this->resolveTypeFunction();
+
+        request()->validate([
+            'start' => ['nullable', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start'],
+            'channel' => ['nullable', 'string', 'in:'.core()->getAllChannels()->pluck('code')->implode(',')],
+        ]);
+
+        $dashboard = app(Dashboard::class);
+
+        $stats = $dashboard->{$function}();
 
         return response()->json([
             'statistics' => $stats,
-            'date_range' => $this->dashboardHelper->getDateRange(),
+            'date_range' => $dashboard->getDateRange(),
         ]);
     }
 
     /**
      * Resolve the requested type into a valid function name.
-     *
-     * @return string
      */
-    protected function resolveTypeFunction()
+    protected function resolveTypeFunction(): string
     {
         $type = request()->query('type');
 

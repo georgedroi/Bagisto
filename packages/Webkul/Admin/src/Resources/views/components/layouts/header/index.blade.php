@@ -4,26 +4,6 @@
 
 <header class="mp-admin-header sticky top-0 z-[10001] flex items-center justify-between border-b bg-white px-2 py-2 dark:border-gray-800 dark:bg-gray-900 sm:px-4 sm:py-2.5">
     <div class="flex items-center gap-1 sm:gap-1.5">
-        <button
-            type="button"
-            class="mp-admin-drawer-toggle icon-menu cursor-pointer rounded-md p-1.5 text-xl hover:bg-gray-100 dark:hover:bg-gray-950 lg:hidden sm:text-2xl"
-            aria-label="@lang('admin::admin-navigation.navigation')"
-            @click="$refs.sidebarMenuDrawer.open()"
-        ></button>
-
-        <a href="{{ route('admin.dashboard.index') }}" class="mp-brand flex-shrink-0" data-action="open-dashboard">
-            @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
-                <img
-                    class="h-8 w-auto sm:h-10"
-                    src="{{ Storage::url($logo) }}"
-                    alt="{{ config('app.name') }}"
-                />
-            @else
-                <img class="mp-brand-emblem" src="{{ asset('images/msp-admin-mark.png') }}" alt="{{ trans('admin::executive-layout.brand') }}">
-                <span class="mp-brand-name">{{ trans('admin::executive-layout.brand') }}</span>
-            @endif
-        </a>
-
         <span class="mp-environment"><span aria-hidden="true">●</span> {{ app()->environment() }}</span>
 
         <span class="mp-header-page">{{ $title ?? trans('admin::admin-navigation.overview') }}</span>
@@ -130,38 +110,6 @@
         </x-admin::dropdown>
     </div>
 </header>
-
-<x-admin::drawer
-    position="{{ core()->getCurrentLocale()->direction === 'rtl' ? 'right' : 'left' }}"
-    width="270px"
-    ref="sidebarMenuDrawer"
->
-    <x-slot:header>
-        <div class="flex items-center justify-between">
-            @if ($logo = core()->getConfigData('general.design.admin_logo.logo_image'))
-                <img
-                    src="{{ Storage::url($logo) }}"
-                    class="h-8 w-auto sm:h-10"
-                    alt="{{ config('app.name') }}"
-                />
-            @else
-                <img
-                    src="{{ (request()->cookie('dark_mode') ?? 0) ? bagisto_asset('images/dark-logo.svg') : bagisto_asset('images/logo.svg') }}"
-                    class="h-8 w-auto sm:h-10"
-                    id="drawer-logo-image"
-                    data-admin-default-logo
-                    alt="{{ config('app.name') }}"
-                />
-            @endif
-        </div>
-    </x-slot>
-
-    <x-slot:content class="p-3 sm:p-4">
-        <div class="mp-admin-mobile-scroll journal-scroll h-[calc(100vh-100px)] overflow-auto">
-            @include('manpleasure-admin::admin-navigation', ['navigationMode' => 'mobile'])
-        </div>
-    </x-slot>
-</x-admin::drawer>
 
 @pushOnce('scripts')
     <script

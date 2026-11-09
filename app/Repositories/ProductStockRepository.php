@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Query\Builder;
 use Webkul\Product\Repositories\ProductFlatRepository;
 
@@ -71,9 +72,9 @@ class ProductStockRepository extends ProductFlatRepository
     }
 
     /**
-     * Page through products by status, lifecycle state, name or SKU search, out of stock filter and raised stock alerts.
+     * Page through products by status, lifecycle state, name or SKU search, out or low stock filter and raised stock alerts.
      */
-    public function paginateList(?int $status, ?string $search, bool $outOfStock, int $perPage, bool $alerted = false, ?string $state = null): LengthAwarePaginator
+    public function paginateList(?int $status, ?string $search, ?string $stock, int $perPage, bool $alerted = false, ?string $state = null): LengthAwarePaginator
     {
         $query = $this->model->newQuery()
             ->select('product_flat.*')
@@ -89,8 +90,8 @@ class ProductStockRepository extends ProductFlatRepository
             $this->constrainState($query, $state);
         }
 
-        if ($outOfStock) {
-            $this->constrainStock($query, 'out');
+        if (in_array($stock, ['out', 'low'], true)) {
+            $this->constrainStock($query, $stock);
         }
 
         if ($alerted) {
@@ -107,6 +108,23 @@ class ProductStockRepository extends ProductFlatRepository
     }
 
     /**
+     * List the products with the least stock that count as out or low, lowest first.
+     */
+    public function lowestStock(int $limit): EloquentCollection
+    {
+        $query = $this->model->newQuery()
+            ->select('product_flat.*')
+            ->where('product_flat.locale', app()->getLocale());
+
+        return $this->constrainStocked($query)
+            ->where(fn ($query) => $query->whereNull('product_flat.quantity')->orWhere('product_flat.quantity', '<=', self::LOW_STOCK_LIMIT))
+            ->groupBy('product_flat.product_id')
+            ->orderByRaw('COALESCE(product_flat.quantity, 0)')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
      * Count products whose stock has fallen below their alert level.
      */
     public function alertedCount(): int
@@ -114,6 +132,29 @@ class ProductStockRepository extends ProductFlatRepository
         return $this->constrainAlerted($this->model->newQuery()->where('product_flat.locale', app()->getLocale()))
             ->distinct()
             ->count('product_flat.product_id');
+    }
+
+    /**
+     * Apply a stock filter. Online and offline products both count as out or low; obsolete products
+     * and products that hold no stock of their own never do.
+     */
+    public function constrainStock(Builder|EloquentBuilder $query, string $filter): Builder|EloquentBuilder
+    {
+        if ($filter === 'inactive') {
+            return $this->constrainState($query->where('product_flat.status', 0), self::NO_STATE);
+        }
+
+        if (! array_key_exists($filter, self::FILTERS)) {
+            return $query;
+        }
+
+        $this->constrainStocked($query);
+
+        if ($filter === 'low') {
+            return $query->whereBetween('product_flat.quantity', [1, self::LOW_STOCK_LIMIT]);
+        }
+
+        return $query->where(fn ($query) => $query->whereNull('product_flat.quantity')->orWhere('product_flat.quantity', '<=', 0));
     }
 
     /**
@@ -139,30 +180,15 @@ class ProductStockRepository extends ProductFlatRepository
     }
 
     /**
-     * Apply a stock filter. Online and offline products both count as out or low; obsolete products
-     * and products that hold no stock of their own never do.
+     * Keep only products that hold managed stock of their own and are not obsolete.
      */
-    public function constrainStock(Builder|EloquentBuilder $query, string $filter): Builder|EloquentBuilder
+    protected function constrainStocked(Builder|EloquentBuilder $query): Builder|EloquentBuilder
     {
-        if ($filter === 'inactive') {
-            return $this->constrainState($query->where('product_flat.status', 0), self::NO_STATE);
-        }
-
-        if (! array_key_exists($filter, self::FILTERS)) {
-            return $query;
-        }
-
-        $query->whereIn('product_flat.type', ['simple', 'virtual'])
+        return $query->whereIn('product_flat.type', ['simple', 'virtual'])
             ->whereNotExists(fn ($sub) => $sub->selectRaw('1')
                 ->from('product_lifecycles')
                 ->whereColumn('product_lifecycles.product_id', 'product_flat.product_id')
                 ->where('product_lifecycles.state', ProductLifecycleRepository::OBSOLETE))
             ->where(fn ($query) => $query->whereNull('product_flat.manage_stock')->orWhere('product_flat.manage_stock', 1));
-
-        if ($filter === 'low') {
-            return $query->whereBetween('product_flat.quantity', [1, self::LOW_STOCK_LIMIT]);
-        }
-
-        return $query->where(fn ($query) => $query->whereNull('product_flat.quantity')->orWhere('product_flat.quantity', '<=', 0));
     }
 }

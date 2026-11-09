@@ -417,7 +417,7 @@ it('opens a product with variations on the Add Product page', function () {
 
     $product = savedProduct();
 
-    expect(app(ProductEntryCatalog::class)->editUrl($product->id, 'configurable'))->toContain('seller-workspace/products/'.$product->id.'/edit');
+    expect(app(ProductEntryCatalog::class)->editUrl($product->id, 'configurable'))->toContain(config('app.admin_url').'/products/'.$product->id.'/edit');
 
     $this->get(route('admin.seller_workspace.edit_product', $product->id))
         ->assertOk()

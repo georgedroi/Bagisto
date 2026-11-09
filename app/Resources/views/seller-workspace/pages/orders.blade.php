@@ -7,10 +7,10 @@
     @endforeach
 </div>
 
-@if ($queue === 'to_ship')
+@if ($queue === 'to_ship' || $workflow)
     <div class="msw-subtabs">
-        @foreach (['packing', 'ready_to_ship'] as $stage)
-            <a href="{{ route('admin.sales.orders.index', ['workflow' => $stage]) }}">{{ trans('admin::order-status.'.$stage) }} ({{ number_format($stages[$stage]) }})</a>
+        @foreach ($queue === 'to_ship' ? ['packing', 'ready_to_ship'] : [$workflow] as $stage)
+            <a href="{{ route('admin.seller_workspace.orders', array_filter(['queue' => $queue, 'workflow' => $workflow === $stage ? null : $stage, 'search' => $search])) }}" @class(['is-active' => $workflow === $stage]) @if ($workflow === $stage) aria-current="true" @endif>{{ trans('admin::order-status.'.$stage) }} ({{ number_format($stages[$stage]) }})</a>
         @endforeach
     </div>
 @endif
@@ -19,6 +19,9 @@
     <form class="msw-filter" method="get" action="{{ route('admin.seller_workspace.orders') }}">
         @if ($queue)
             <input type="hidden" name="queue" value="{{ $queue }}">
+        @endif
+        @if ($workflow)
+            <input type="hidden" name="workflow" value="{{ $workflow }}">
         @endif
         <label class="msw-field">
             <span>{{ trans('admin::seller-workspace.orders.search') }}</span>

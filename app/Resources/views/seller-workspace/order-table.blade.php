@@ -6,7 +6,7 @@
     <span>{{ trans('admin::seller-workspace.columns.action') }}</span>
 </div>
 @forelse ($rows as $order)
-    <div class="msw-order-row">
+    <div class="msw-order-row" data-entity="order" data-id="{{ $order->increment_id }}">
         <div><strong>#{{ $order->increment_id }}</strong><small>{{ $order->customer_first_name }} {{ $order->customer_last_name }}</small><small>{{ $order->created_at }}</small></div>
         <div>{{ core()->formatBasePrice($order->base_grand_total) }}<small>{{ trans('admin::executive-layout.items', ['count' => $order->total_qty_ordered]) }}</small></div>
         <div>{{ $order->shipping_title ?: '—' }}</div>

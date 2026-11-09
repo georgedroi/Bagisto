@@ -3,19 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\RequireUpdateOwner;
 use App\Repositories\OrderQueueRepository;
 use App\Repositories\ProductLifecycleRepository;
 use App\Repositories\ProductStockAlertRepository;
 use App\Repositories\ProductStockRepository;
+use App\Support\AdminMenu;
 use App\Support\OrderWorkflow;
 use App\Support\ProductEntryCatalog;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
+use Webkul\Admin\Helpers\Dashboard;
+use Webkul\Admin\Helpers\Reporting\Customer as CustomerReporting;
 use Webkul\Admin\Helpers\Reporting\Sale;
 use Webkul\CartRule\Repositories\CartRuleRepository;
 use Webkul\CatalogRule\Repositories\CatalogRuleRepository;
+use Webkul\Customer\Repositories\CustomerRepository;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Product\Repositories\ProductReviewRepository;
 use Webkul\RMA\Repositories\RMARepository;
@@ -32,37 +38,14 @@ class SellerWorkspaceController extends Controller
     protected const PER_PAGE = 20;
 
     /**
-     * Workspace pages in menu order: route name suffix and the permission that opens it.
-     */
-    protected const PAGES = [
-        'overview' => 'sales.workspace',
-        'orders' => 'sales.workspace',
-        'shipping' => 'sales.workspace',
-        'returns' => 'sales.rma.workspace',
-        'reviews' => 'customers.reviews.workspace',
-        'products' => 'catalog.products.workspace',
-        'promotions' => 'marketing.promotions.workspace',
-        'income' => 'sales.invoices.workspace',
-        'fees' => 'sales.workspace',
-        'settings' => 'settings.workspace',
-    ];
-
-    /**
-     * Left menu groups and their pages; "add" opens the Add product page.
-     */
-    protected const MENU = [
-        'common' => ['overview', 'orders', 'promotions'],
-        'products' => ['products', 'add'],
-        'orders' => ['orders', 'shipping', 'returns', 'reviews'],
-        'marketing' => ['promotions'],
-        'finance' => ['income', 'fees'],
-        'settings' => ['settings'],
-    ];
-
-    /**
      * Review states an admin can filter by.
      */
     protected const REVIEW_TABS = ['pending', 'approved', 'disapproved'];
+
+    /**
+     * Rows listed on each overview ranking.
+     */
+    protected const TOP_LIMIT = 5;
 
     /**
      * Links on the settings page: group, label, permission, route and route parameters.
@@ -72,7 +55,46 @@ class SellerWorkspaceController extends Controller
             ['channels', 'settings.channels', 'admin.settings.channels.index'],
             ['locales', 'settings.locales', 'admin.settings.locales.index'],
             ['currencies', 'settings.currencies', 'admin.settings.currencies.index'],
+            ['exchange-rates', 'settings.exchange_rates', 'admin.settings.exchange_rates.index'],
             ['taxes', 'settings.taxes', 'admin.settings.taxes.rates.index'],
+            ['tax-categories', 'settings.taxes.tax_categories', 'admin.settings.taxes.categories.index'],
+        ],
+        'catalog' => [
+            ['categories', 'catalog.categories', 'admin.catalog.categories.index'],
+            ['attributes', 'catalog.attributes', 'admin.catalog.attributes.index'],
+            ['families', 'catalog.families', 'admin.catalog.families.index'],
+            ['media', 'catalog.media_bank', 'admin.media.index'],
+            ['all-products', 'catalog.products', 'admin.catalog.products.index'],
+        ],
+        'content' => [
+            ['cms', 'cms', 'admin.cms.index'],
+            ['themes', 'appearance.themes', 'admin.appearance.themes.index'],
+            ['login-page', 'appearance.login_page_builder', 'admin.appearance.login_page_builder.index'],
+        ],
+        'customers' => [
+            ['customer-groups', 'customers.groups', 'admin.customers.groups.index'],
+        ],
+        'sales' => [
+            ['transactions', 'sales.transactions', 'admin.sales.transactions.index'],
+            ['return-reasons', 'sales.rma.reasons', 'admin.sales.rma.reasons.index'],
+            ['return-rules', 'sales.rma.rules', 'admin.sales.rma.rules.index'],
+            ['return-statuses', 'sales.rma.statuses', 'admin.sales.rma.statuses.index'],
+            ['return-fields', 'sales.rma.custom-fields', 'admin.sales.rma.custom-fields.index'],
+        ],
+        'marketing' => [
+            ['email-templates', 'marketing.communications.email_templates', 'admin.marketing.communications.email_templates.index'],
+            ['events', 'marketing.communications.events', 'admin.marketing.communications.events.index'],
+            ['campaigns', 'marketing.communications.campaigns', 'admin.marketing.communications.campaigns.index'],
+            ['subscribers', 'marketing.communications.subscribers', 'admin.marketing.communications.subscribers.index'],
+            ['url-rewrites', 'marketing.search_seo.url_rewrites', 'admin.marketing.search_seo.url_rewrites.index'],
+            ['search-terms', 'marketing.search_seo.search_terms', 'admin.marketing.search_seo.search_terms.index'],
+            ['search-synonyms', 'marketing.search_seo.search_synonyms', 'admin.marketing.search_seo.search_synonyms.index'],
+            ['sitemaps', 'marketing.search_seo.sitemaps', 'admin.marketing.search_seo.sitemaps.index'],
+        ],
+        'reports' => [
+            ['sales-report', 'reporting.sales', 'admin.reporting.sales.index'],
+            ['customers-report', 'reporting.customers', 'admin.reporting.customers.index'],
+            ['products-report', 'reporting.products', 'admin.reporting.products.index'],
         ],
         'fulfilment' => [
             ['inventory', 'settings.inventory_sources', 'admin.settings.inventory_sources.index'],
@@ -87,6 +109,7 @@ class SellerWorkspaceController extends Controller
         'tools' => [
             ['imports', 'settings.data_transfer', 'admin.settings.data_transfer.imports.index'],
             ['configuration', 'configuration', 'admin.configuration.index'],
+            ['system-updates', 'settings.system_updates', 'admin.settings.system_updates.index'],
         ],
     ];
 
@@ -106,41 +129,72 @@ class SellerWorkspaceController extends Controller
         protected CatalogRuleRepository $catalogRuleRepository,
         protected InvoiceRepository $invoiceRepository,
         protected RefundRepository $refundRepository,
-        protected Sale $saleReporting,
         protected ProductLifecycleRepository $productLifecycleRepository,
-        protected ProductRepository $productRepository
+        protected ProductRepository $productRepository,
+        protected CustomerRepository $customerRepository,
+        protected AdminMenu $adminMenu
     ) {}
 
     /**
-     * Show today's figures and everything waiting for action.
+     * Show everything waiting for action and, for admins who may open the dashboard, the store's
+     * figures for a date range and channel.
      */
     public function overview(): View
     {
+        $data = request()->validate([
+            'start' => ['nullable', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start'],
+            'channel' => ['nullable', 'string', 'in:'.core()->getAllChannels()->pluck('code')->implode(',')],
+        ]);
+
+        $orderRoute = bouncer()->hasPermission('sales.workspace')
+            ? 'admin.seller_workspace.orders'
+            : (bouncer()->hasPermission('sales.orders') ? 'admin.sales.orders.index' : null);
+
+        $productRoute = bouncer()->hasPermission('catalog.products.workspace')
+            ? 'admin.seller_workspace.products'
+            : (bouncer()->hasPermission('catalog.products') ? 'admin.catalog.products.index' : null);
+
         return $this->page('overview', [
-            'stages' => $this->orderQueueRepository->workflowCounts(),
+            'orderRoute' => $orderRoute,
+            'productRoute' => $productRoute,
+            'stages' => $orderRoute ? $this->orderQueueRepository->workflowCounts() : null,
             'stock' => bouncer()->hasPermission('catalog.products') ? $this->productStockRepository->stockCounts() : null,
-            'sales' => $this->saleReporting->getTodaySalesProgress(),
-            'ordersToday' => $this->saleReporting->getTodayOrdersProgress(),
-            'recent' => $this->orderList(null, null, 5),
+            'lowest' => bouncer()->hasPermission('catalog.products') ? $this->productStockRepository->lowestStock(self::TOP_LIMIT) : null,
+            'business' => bouncer()->hasPermission('dashboard') ? $this->businessFigures($data['channel'] ?? null) : null,
+            'recent' => $orderRoute ? $this->orderList(null, null, 6) : null,
+            'quickLinks' => collect([
+                ['catalog.product_entry', 'admin.seller_workspace.add_product', 'admin::product-entry.menu'],
+                ['sales.workspace', 'admin.seller_workspace.shipping', 'admin::executive-layout.shipping'],
+                ['sales.shipments', 'admin.sales.shipments.index', 'admin::executive-layout.shipping'],
+                ['sales.refunds.workspace', 'admin.seller_workspace.refunds', 'admin::executive-layout.refunds'],
+                ['sales.refunds', 'admin.sales.refunds.index', 'admin::executive-layout.refunds'],
+                ['sales.rma.workspace', 'admin.seller_workspace.returns', 'admin::executive-layout.returns'],
+                ['sales.rma', 'admin.sales.rma.requests.index', 'admin::executive-layout.returns'],
+                ['catalog.products.workspace', 'admin.seller_workspace.products', 'admin::executive-layout.catalog'],
+                ['catalog.products', 'admin.catalog.products.index', 'admin::executive-layout.catalog'],
+            ])->filter(fn (array $link) => bouncer()->hasPermission($link[0]))->unique(2)->values(),
         ]);
     }
 
     /**
-     * List orders by operational queue and search text.
+     * List orders by operational queue, task list stage and search text.
      */
     public function orders(): View
     {
         $data = request()->validate([
             'queue' => ['nullable', 'string', 'in:'.implode(',', array_keys(OrderQueueRepository::QUEUES))],
+            'workflow' => ['nullable', 'string', 'in:'.implode(',', array_merge(...array_values(OrderQueueRepository::WORKFLOW_TASKS)))],
             'search' => ['nullable', 'string', 'max:255'],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
         return $this->page('orders', [
             'queue' => $data['queue'] ?? null,
+            'workflow' => $data['workflow'] ?? null,
             'search' => $data['search'] ?? null,
             'stages' => $this->orderQueueRepository->workflowCounts(),
-            'rows' => $this->orderList($data['queue'] ?? null, $data['search'] ?? null, self::PER_PAGE),
+            'rows' => $this->orderList($data['queue'] ?? null, $data['search'] ?? null, self::PER_PAGE, $data['workflow'] ?? null),
         ]);
     }
 
@@ -217,14 +271,49 @@ class SellerWorkspaceController extends Controller
     }
 
     /**
-     * List products by status, search text, out of stock filter and raised stock alerts.
+     * List customers by name, email or phone.
+     */
+    public function customers(): View
+    {
+        $data = request()->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $search = $data['search'] ?? null;
+
+        return $this->page('customers', [
+            'search' => $search,
+            'total' => $this->customerRepository->resetScope()->count(),
+            'rows' => $this->customerRepository->resetScope()
+                ->with('group')
+                ->scopeQuery(function ($query) use ($search) {
+                    if ($search !== null && $search !== '') {
+                        $term = '%'.addcslashes($search, '\\%_').'%';
+
+                        $query = $query->where(fn ($query) => $query
+                            ->where('first_name', 'like', $term)
+                            ->orWhere('last_name', 'like', $term)
+                            ->orWhere('email', 'like', $term)
+                            ->orWhere('phone', 'like', $term));
+                    }
+
+                    return $query->orderByDesc('id');
+                })
+                ->paginate(self::PER_PAGE)
+                ->withQueryString(),
+        ]);
+    }
+
+    /**
+     * List products by status, search text, out or low stock filter and raised stock alerts.
      */
     public function products(): View
     {
         $data = request()->validate([
             'tab' => ['nullable', 'string', 'in:'.implode(',', array_keys(ProductStockRepository::PRODUCT_TABS))],
             'search' => ['nullable', 'string', 'max:255'],
-            'out' => ['nullable', 'boolean'],
+            'stock' => ['nullable', 'string', 'in:out,low'],
             'alert' => ['nullable', 'boolean'],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
@@ -236,7 +325,7 @@ class SellerWorkspaceController extends Controller
         $rows = $this->productStockRepository->paginateList(
             $filter['status'],
             $data['search'] ?? null,
-            (bool) ($data['out'] ?? false),
+            $data['stock'] ?? null,
             self::PER_PAGE,
             (bool) ($data['alert'] ?? false),
             $filter['state']
@@ -247,7 +336,7 @@ class SellerWorkspaceController extends Controller
             'tabs' => array_keys(ProductStockRepository::PRODUCT_TABS),
             'states' => $this->productLifecycleRepository->states($rows->pluck('product_id')->all()),
             'search' => $data['search'] ?? null,
-            'out' => (bool) ($data['out'] ?? false),
+            'stockFilter' => $data['stock'] ?? null,
             'stock' => $this->productStockRepository->stockCounts(),
             'alert' => (bool) ($data['alert'] ?? false),
             'alertCount' => $this->productStockRepository->alertedCount(),
@@ -359,6 +448,27 @@ class SellerWorkspaceController extends Controller
     }
 
     /**
+     * Show the refunds given to customers.
+     */
+    public function refunds(): View
+    {
+        request()->validate(['page' => ['nullable', 'integer', 'min:1']]);
+
+        $refunds = $this->refundRepository->resetScope()
+            ->scopeQuery(fn ($query) => $query->selectRaw('SUM(base_grand_total) as total, COUNT(*) as count'))
+            ->first();
+
+        return $this->page('refunds', [
+            'refunded' => (float) $refunds?->total,
+            'count' => (int) $refunds?->count,
+            'rows' => $this->refundRepository->resetScope()
+                ->with('order')
+                ->scopeQuery(fn ($query) => $query->orderByDesc('id'))
+                ->paginate(self::PER_PAGE),
+        ]);
+    }
+
+    /**
      * Show the shipping charged to customers per order, by date range.
      */
     public function fees(): View
@@ -395,7 +505,8 @@ class SellerWorkspaceController extends Controller
     {
         $groups = collect(self::SETTINGS)
             ->map(fn (array $links) => collect($links)
-                ->filter(fn (array $link) => $link[1] === null || bouncer()->hasPermission($link[1]))
+                ->filter(fn (array $link) => Route::has($link[2]) && ($link[1] === null || bouncer()->hasPermission($link[1])))
+                ->reject(fn (array $link) => $link[0] === 'system-updates' && ! RequireUpdateOwner::allows(auth()->guard('admin')->user()))
                 ->map(fn (array $link) => ['label' => $link[0], 'url' => route($link[2], $link[3] ?? [])])
                 ->values())
             ->filter(fn ($links) => $links->isNotEmpty());
@@ -404,15 +515,51 @@ class SellerWorkspaceController extends Controller
     }
 
     /**
-     * Page through orders, optionally by queue and by order number or customer name.
+     * Gather the admin dashboard's figures for the requested dates and channel: range and today
+     * totals with their change, sales over time, and the best selling products and customers.
      */
-    protected function orderList(?string $queue, ?string $search, int $perPage)
+    protected function businessFigures(?string $channel): array
+    {
+        $dashboard = app(Dashboard::class);
+
+        $sale = app(Sale::class);
+
+        $customer = app(CustomerReporting::class);
+
+        $overTime = $sale->getCurrentTotalSalesOverTime();
+
+        return [
+            'start' => $dashboard->getStartDate(),
+            'end' => $dashboard->getEndDate(),
+            'channel' => $channel,
+            'channels' => core()->getAllChannels(),
+            'range' => $dashboard->getOverAllStats(),
+            'today' => [
+                'sales' => $sale->getTodaySalesProgress(),
+                'orders' => $sale->getTodayOrdersProgress(),
+                'customers' => $customer->getTodayCustomersProgress(),
+            ],
+            'overTime' => $overTime,
+            'peak' => max(array_column($overTime, 'total') ?: [0]),
+            'products' => $dashboard->getTopSellingProducts(),
+            'customers' => $dashboard->getTopCustomers(),
+        ];
+    }
+
+    /**
+     * Page through orders, optionally by queue, task list stage and order number or customer name.
+     */
+    protected function orderList(?string $queue, ?string $search, int $perPage, ?string $workflow = null)
     {
         $rows = $this->orderQueueRepository->resetScope()
             ->with(['payment', 'shipments'])
-            ->scopeQuery(function ($query) use ($queue, $search) {
+            ->scopeQuery(function ($query) use ($queue, $search, $workflow) {
                 if ($queue) {
                     $this->orderQueueRepository->constrainQueue($query, $queue);
+                }
+
+                if ($workflow) {
+                    $this->orderQueueRepository->constrainWorkflow($query, $workflow);
                 }
 
                 if ($search !== null && $search !== '') {
@@ -426,7 +573,8 @@ class SellerWorkspaceController extends Controller
 
                 return $query->orderByDesc('orders.id');
             })
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         $rows->getCollection()->each(fn ($order) => $order->setAttribute('workspace_status', $this->orderStatusKey($order)));
 
@@ -454,19 +602,13 @@ class SellerWorkspaceController extends Controller
     }
 
     /**
-     * Render a page inside the admin layout with the workspace menu and side panel.
+     * Render a page in the standalone workspace layout with the shared admin menu.
      */
     protected function page(string $page, array $data): View
     {
-        $allowed = collect(self::PAGES)->filter(fn (string $permission) => bouncer()->hasPermission($permission))->keys();
-
         return view('manpleasure-admin::seller-workspace.page', $data + [
             'page' => $page,
-            'menuGroups' => collect(self::MENU)
-                ->map(fn (array $items) => array_values(array_filter($items, fn (string $item) => $item === 'add'
-                    ? bouncer()->hasPermission('catalog.product_entry')
-                    : $allowed->contains($item))))
-                ->filter(),
+            'overviewUrl' => $this->adminMenu->overviewUrl(),
             'queues' => $this->orderQueueRepository->queueCounts(),
             'admin' => auth()->guard('admin')->user(),
         ]);

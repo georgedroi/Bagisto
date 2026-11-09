@@ -251,10 +251,10 @@ it('sends the old Seller Center addresses to the matching workspace pages', func
 
     $this->loginAsAdmin();
 
-    get('/'.config('app.admin_url').'/seller-center')->assertRedirect('/'.config('app.admin_url').'/seller-workspace');
-    get('/'.config('app.admin_url').'/seller-center/products')->assertRedirect('/'.config('app.admin_url').'/seller-workspace/products');
-    get('/'.config('app.admin_url').'/seller-center/products/add')->assertRedirect('/'.config('app.admin_url').'/seller-workspace/products/add');
-    get('/'.config('app.admin_url').'/seller-center/products/'.$product->id.'/edit')->assertRedirect('/'.config('app.admin_url').'/seller-workspace/products/'.$product->id.'/edit');
+    get('/'.config('app.admin_url').'/seller-center')->assertRedirect('/'.config('app.admin_url').'/overview');
+    get('/'.config('app.admin_url').'/seller-center/products')->assertRedirect('/'.config('app.admin_url').'/products');
+    get('/'.config('app.admin_url').'/seller-center/products/add')->assertRedirect('/'.config('app.admin_url').'/products/add');
+    get('/'.config('app.admin_url').'/seller-center/products/'.$product->id.'/edit')->assertRedirect('/'.config('app.admin_url').'/products/'.$product->id.'/edit');
     expect($this->post('/'.config('app.admin_url').'/seller-center/products/'.$product->id.'/lifecycle', ['state' => 'obsolete'])->getStatusCode())->toBeIn([404, 405])
         ->and((bool) ProductModel::query()->findOrFail($product->id)->status)->toBeTrue();
 
