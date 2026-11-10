@@ -91,6 +91,15 @@ it('preserves search and workflow filters when navigating order queues', functio
         ->assertSee(route('admin.sales.orders.index', ['workflow' => 'packing', 'search' => 'QA-order', 'queue' => 'shipping']));
 });
 
+it('applies the order management stage on selection with a single visible filter button', function () {
+    $this->loginAsAdmin();
+
+    get(route('admin.sales.orders.index'))
+        ->assertOk()
+        ->assertSee('id="order-workflow-filter" name="workflow" onchange="this.form.requestSubmit()"', false)
+        ->assertSee('<noscript><button class="secondary-button">'.trans('admin::order-status.filter').'</button></noscript>', false);
+});
+
 it('opens category-first product entry from the catalog primary action', function () {
     $this->loginAsAdmin();
 

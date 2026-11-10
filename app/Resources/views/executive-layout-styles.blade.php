@@ -4,8 +4,8 @@
     body { margin: 0; font-family: 'Geist', system-ui, sans-serif; }
     #app { height: 100dvh; }
     .mp-admin-header { height: 56px; min-height: 56px; padding: 0 20px; background: #fff; border-color: #e2e8f0; gap: 16px; }
-    .mp-environment { display: inline-flex; align-items: center; gap: 6px; margin-inline: 16px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 10px; color: #64748b; text-transform: capitalize; }
-    .mp-environment span { color: #16a34a; font-size: 9px; }
+    .mp-environment { display: inline-flex; align-items: center; gap: 6px; margin-inline: 16px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 12px; color: #64748b; text-transform: capitalize; }
+    .mp-environment span { color: #16a34a; font-size: 10px; }
     .mp-header-page { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #64748b; }
     .mp-admin-header [data-action="nav-search"] { height: 34px; background: #f8f9ff; border-color: #e2e8f0; font-size: 12px; }
     .mp-admin-header div:has(> [data-action="nav-search"]) { width: clamp(180px, 23vw, 360px); }
@@ -47,7 +47,7 @@
     .msp-page-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-block-end: 24px; }
     .msp-page-header h1 { margin: 5px 0; font-size: 24px; line-height: 1.3; font-weight: 650; letter-spacing: -.035em; }
     .msp-page-header p:not(.msp-eyebrow) { max-width: 600px; color: #64748b; font-size: 12px; line-height: 1.6; }
-    .msp-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #475569; }
+    .msp-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #475569; }
     .msp-header-actions { display: flex; flex-shrink: 0; align-items: center; gap: 10px; }
     .msp-panel, .msp-todo-panel { margin-block: 20px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px #0f172a04; }
     .msp-todo-panel { background: #f0f3ff; border-color: #e0e7ff; }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Repositories\OrderQueueRepository;
 use App\Support\OrderWorkflow;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
@@ -206,7 +207,7 @@ it('treats a fully invoiced order saved before the workflow as confirmed and let
 
     $this->loginAsAdmin();
     getJson(route('admin.sales.orders.index', ['workflow' => 'awaiting_payment']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
-    expect(getJson(route('admin.sales.orders.index'), ['X-Requested-With' => 'XMLHttpRequest'])->json('records.0.status'))->toContain(trans('admin::order-status.to-ship'));
+    expect(getJson(route('admin.sales.orders.index'), ['X-Requested-With' => 'XMLHttpRequest'])->json('records.0.status'))->toContain(trans('admin::order-status.order-confirmed'));
     post(route('admin.sales.orders.workflow.update', $order->id), ['expected_status' => 'confirmed', 'workflow_status' => 'packing'])->assertRedirect();
     expect($order->fresh()->workflow_status)->toBe('packing');
 });
@@ -229,6 +230,58 @@ it('lets an administrator review a pending receipt saved before the workflow', f
     post(route('admin.sales.receipts.approve', $receipt->id))->assertRedirect();
     expect($order->fresh()->workflow_status)->toBe('confirmed')
         ->and($order->invoices()->count())->toBe(1);
+});
+
+it('keeps legacy receipt stages consistent across order details, filters and dashboard tasks', function (string $receiptStatus, string $stage, string $label) {
+    $order = createDuitNowWorkflowOrder();
+    app(PaymentReceiptRepository::class)->create(['order_id' => $order->id, 'receipt_path' => 'receipts/legacy.png', 'original_name' => 'legacy.png', 'status' => $receiptStatus]);
+    $this->loginAsAdmin();
+
+    expect(OrderWorkflow::current($order->fresh()))->toBe($stage);
+
+    $records = collect(getJson(route('admin.sales.orders.index', ['workflow' => $stage]), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->json('records'));
+    expect($records->pluck('id')->all())->toContain($order->id)
+        ->and(strip_tags($records->firstWhere('id', $order->id)['status']))->toBe(trans('admin::order-status.'.$label));
+
+    getJson(route('admin.sales.orders.index', ['workflow' => 'awaiting_payment']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
+    getJson(route('admin.sales.orders.index', ['queue' => 'awaiting_payment']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
+    expect(app(OrderQueueRepository::class)->workflowCounts()[$stage])->toBe(1);
+    get(route('admin.seller_workspace.orders', ['workflow' => $stage]))->assertOk()->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->contains($order->id));
+})->with([
+    'pending receipt' => ['pending', 'awaiting_verification', 'awaiting-verification'],
+    'rejected receipt' => ['rejected', 'payment_clarification', 'payment-clarification'],
+    'approved receipt' => ['approved', 'confirmed', 'order-confirmed'],
+]);
+
+it('counts a fully paid legacy order in fulfillment even when its last receipt was pending', function () {
+    $order = createDuitNowWorkflowOrder();
+    $order->update(['status' => Order::STATUS_PROCESSING, 'grand_total_invoiced' => 10, 'base_grand_total_invoiced' => 10]);
+    app(PaymentReceiptRepository::class)->create(['order_id' => $order->id, 'receipt_path' => 'receipts/legacy.png', 'status' => 'pending']);
+    $this->loginAsAdmin();
+
+    expect(app(OrderQueueRepository::class)->workflowCounts()['confirmed'])->toBe(1)
+        ->and(app(OrderQueueRepository::class)->workflowCounts()['awaiting_verification'])->toBe(0);
+    getJson(route('admin.sales.orders.index', ['workflow' => 'confirmed']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(1, 'records');
+    getJson(route('admin.sales.orders.index', ['queue' => 'to_ship']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(1, 'records');
+});
+
+it('uses the latest legacy receipt and preserves a saved or terminal workflow stage in every list', function () {
+    $order = createDuitNowWorkflowOrder();
+    $receipts = app(PaymentReceiptRepository::class);
+    $receipts->create(['order_id' => $order->id, 'receipt_path' => 'receipts/old.png', 'status' => 'pending']);
+    $receipts->create(['order_id' => $order->id, 'receipt_path' => 'receipts/latest.png', 'status' => 'rejected']);
+    $this->loginAsAdmin();
+
+    getJson(route('admin.sales.orders.index', ['workflow' => 'awaiting_verification']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
+    getJson(route('admin.sales.orders.index', ['workflow' => 'payment_clarification']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(1, 'records');
+
+    $order->update(['workflow_status' => 'packing']);
+    getJson(route('admin.sales.orders.index', ['workflow' => 'payment_clarification']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
+    getJson(route('admin.sales.orders.index', ['workflow' => 'packing']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(1, 'records');
+
+    $order->update(['status' => Order::STATUS_CANCELED]);
+    getJson(route('admin.sales.orders.index', ['workflow' => 'packing']), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()->assertJsonCount(0, 'records');
+    expect(app(OrderQueueRepository::class)->workflowCounts()['packing'])->toBe(0);
 });
 
 it('asks for a new receipt when the last receipt saved before the workflow was rejected', function () {

@@ -54,6 +54,7 @@ class OrderDataGrid extends DataGrid
                 DB::raw('CONCAT('.DB::getTablePrefix().'orders.customer_first_name, " ", '.DB::getTablePrefix().'orders.customer_last_name) as full_name'),
                 DB::raw('CONCAT('.DB::getTablePrefix().'order_address_billing.city, ", ", '.DB::getTablePrefix().'order_address_billing.state,", ", '.DB::getTablePrefix().'order_address_billing.country) as location')
             )
+            ->selectRaw(app(OrderQueueRepository::class)->workflowStatusExpression().' as resolved_workflow_status')
             ->groupBy('orders.id');
 
         $queue = request()->query('queue');
@@ -67,14 +68,7 @@ class OrderDataGrid extends DataGrid
         $workflow = request()->query('workflow');
 
         if (in_array($workflow, ['awaiting_payment', 'awaiting_verification', 'payment_clarification', ...array_keys(OrderWorkflow::TRANSITIONS), 'delivered'], true)) {
-            $queryBuilder->whereNotIn('orders.status', [Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD]);
-
-            if ($workflow === 'awaiting_payment') {
-                $queryBuilder->where('order_payment.method', 'duitnowqr_manual')
-                    ->where(fn ($query) => $query->where(fn ($query) => $query->whereNull('orders.workflow_status')->whereIn('orders.status', [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT]))->orWhere('orders.workflow_status', $workflow));
-            } else {
-                $queryBuilder->where('orders.workflow_status', $workflow);
-            }
+            app(OrderQueueRepository::class)->constrainWorkflow($queryBuilder, $workflow);
         }
 
         $this->addFilter('full_name', DB::raw('CONCAT('.DB::getTablePrefix().'orders.customer_first_name, " ", '.DB::getTablePrefix().'orders.customer_last_name)'));
@@ -142,7 +136,7 @@ class OrderDataGrid extends DataGrid
                     return '<p class="label-pending">'.e(trans('admin::order-status.to-return-refund')).'</p>';
                 }
 
-                $workflowStatus = $row->workflow_status ?: (in_array('duitnowqr_manual', explode('|', (string) $row->method), true) && in_array($row->status, [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT], true) ? 'awaiting_payment' : null);
+                $workflowStatus = $row->resolved_workflow_status;
                 $workflowLabel = [
                     'awaiting_payment' => ['pending-payment', 'label-pending'],
                     'awaiting_verification' => ['awaiting-verification', 'label-pending'],

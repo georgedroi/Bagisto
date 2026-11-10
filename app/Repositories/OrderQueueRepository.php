@@ -2,8 +2,10 @@
 
 namespace App\Repositories;
 
+use App\Support\OrderWorkflow;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 use Webkul\RMA\Enums\DefaultRMAStatusEnum;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Repositories\OrderRepository;
@@ -23,7 +25,7 @@ class OrderQueueRepository extends OrderRepository
     ];
 
     /**
-     * Saved workflow stages listed in the dashboard task list, by group.
+     * Workflow stages listed in the dashboard task list, by group.
      */
     public const WORKFLOW_TASKS = [
         'task-payments' => ['awaiting_verification', 'payment_clarification'],
@@ -39,25 +41,25 @@ class OrderQueueRepository extends OrderRepository
 
         $counts = $this->model->newQuery()
             ->whereNotIn('orders.status', [Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD])
-            ->whereIn('orders.workflow_status', $stages)
-            ->selectRaw('workflow_status, COUNT(*) as total')
-            ->groupBy('orders.workflow_status')
-            ->pluck('total', 'workflow_status');
+            ->whereIn(DB::raw($this->workflowStatusExpression()), $stages)
+            ->selectRaw($this->workflowStatusExpression().' as resolved_workflow_status, COUNT(*) as total')
+            ->groupBy('resolved_workflow_status')
+            ->pluck('total', 'resolved_workflow_status');
 
         return collect($stages)->mapWithKeys(fn ($stage) => [$stage => (int) ($counts[$stage] ?? 0)])->all();
     }
 
     /**
-     * Keep only open orders saved at one task list stage, as the task list counts them.
+     * Keep only open orders at one resolved stage, as the task list counts them.
      */
     public function constrainWorkflow(Builder|EloquentBuilder $query, string $stage): Builder|EloquentBuilder
     {
-        if (! in_array($stage, array_merge(...array_values(self::WORKFLOW_TASKS)), true)) {
+        if (! in_array($stage, ['awaiting_payment', 'awaiting_verification', 'payment_clarification', ...array_keys(OrderWorkflow::TRANSITIONS), 'delivered'], true)) {
             return $query;
         }
 
         return $query->whereNotIn('orders.status', [Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD])
-            ->where('orders.workflow_status', $stage);
+            ->whereRaw($this->workflowStatusExpression().' = ?', [$stage]);
     }
 
     /**
@@ -98,22 +100,52 @@ class OrderQueueRepository extends OrderRepository
         }
 
         $query->whereNotIn('orders.status', [Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD]);
+        $workflow = DB::raw($this->workflowStatusExpression());
 
         return match ($queue) {
             'awaiting_payment' => $query->whereIn('orders.status', [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT])
-                ->where(fn ($query) => $query->whereNull('orders.workflow_status')->orWhere('orders.workflow_status', 'awaiting_payment')),
+                ->where(fn ($query) => $query->whereNull($workflow)->orWhere($workflow, 'awaiting_payment')),
             'to_ship' => $query->where(fn ($query) => $query
-                ->whereIn('orders.workflow_status', ['confirmed', 'packing', 'ready_to_ship'])
-                ->orWhere(fn ($query) => $query->whereNull('orders.workflow_status')
+                ->whereIn($workflow, ['confirmed', 'packing', 'ready_to_ship'])
+                ->orWhere(fn ($query) => $query->whereNull($workflow)
                     ->where('orders.status', Order::STATUS_PROCESSING)
                     ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('shipments')->whereColumn('shipments.order_id', 'orders.id')))),
             'shipping' => $query->where(fn ($query) => $query
-                ->whereIn('orders.workflow_status', ['handed_to_courier', 'in_transit', 'out_for_delivery'])
-                ->orWhere(fn ($query) => $query->whereNull('orders.workflow_status')
+                ->whereIn($workflow, ['handed_to_courier', 'in_transit', 'out_for_delivery'])
+                ->orWhere(fn ($query) => $query->whereNull($workflow)
                     ->whereIn('orders.status', [Order::STATUS_PROCESSING, Order::STATUS_COMPLETED])
                     ->whereExists(fn ($query) => $query->selectRaw('1')->from('shipments')->whereColumn('shipments.order_id', 'orders.id')))),
-            'failed_delivery' => $query->where('orders.workflow_status', 'failed_to_deliver'),
-            'delivered' => $query->where('orders.workflow_status', 'delivered'),
+            'failed_delivery' => $query->where($workflow, 'failed_to_deliver'),
+            'delivered' => $query->where($workflow, 'delivered'),
         };
+    }
+
+    /**
+     * Resolve legacy DuitNow stages for filtering and counting without loading orders individually.
+     */
+    public function workflowStatusExpression(): string
+    {
+        $grammar = $this->model->getConnection()->getQueryGrammar();
+        $orders = $grammar->wrapTable('orders');
+        $payments = $grammar->wrapTable('order_payment');
+        $receipts = $grammar->wrapTable('payment_receipts');
+        $shipments = $grammar->wrapTable('shipments');
+
+        return <<<SQL
+            COALESCE(NULLIF({$orders}.workflow_status, ''), CASE
+                WHEN EXISTS (SELECT 1 FROM {$payments} WHERE {$payments}.order_id = {$orders}.id AND {$payments}.method = 'duitnowqr_manual') THEN CASE
+                    WHEN {$orders}.base_grand_total_invoiced > 0 AND {$orders}.base_grand_total - {$orders}.base_grand_total_invoiced <= 0.01 THEN CASE
+                        WHEN EXISTS (SELECT 1 FROM {$shipments} WHERE {$shipments}.order_id = {$orders}.id) THEN 'handed_to_courier'
+                        ELSE 'confirmed'
+                    END
+                    ELSE CASE (SELECT {$receipts}.status FROM {$receipts} WHERE {$receipts}.order_id = {$orders}.id ORDER BY {$receipts}.id DESC LIMIT 1)
+                        WHEN 'pending' THEN 'awaiting_verification'
+                        WHEN 'rejected' THEN 'payment_clarification'
+                        WHEN 'approved' THEN 'confirmed'
+                        ELSE 'awaiting_payment'
+                    END
+                END
+            END)
+            SQL;
     }
 }

@@ -26,6 +26,11 @@
     .msw-menu-toggle { position: absolute; top: 70px; right: -12px; z-index: 4; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 2px 12px rgba(0, 0, 0, .16); color: #2e3346; cursor: pointer; opacity: 0; transition: opacity .15s; }
     .msw-menu-toggle .msw-icon { width: 14px; height: 14px; transform: rotate(180deg); }
     .msw-menu:hover .msw-menu-toggle, .msw-menu-toggle:focus-visible { opacity: 1; }
+    @media (min-width: 1024px) and (pointer: coarse) {
+        .msw-menu summary, .msw-menu-list a { height: 44px; }
+        .msw-menu-toggle { opacity: 1; }
+        .msw-menu-toggle::before { content: ""; position: absolute; inset: -10px; }
+    }
     @media (min-width: 1024px) {
         html.msw-collapsed .msw-menu { width: 55px; }
         html.msw-collapsed .msw-menu-toggle .msw-icon { transform: none; }

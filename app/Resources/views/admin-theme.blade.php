@@ -35,7 +35,7 @@
     html.dark .mp-admin-shell .mp-admin-content { scrollbar-color: var(--lux-gold-deep) transparent; }
     html.dark body .mp-admin-header, html.dark body .mp-config-footer { background: var(--lux-navy-900); border-color: var(--lux-gold-faint); color: var(--lux-cream-soft); box-shadow: none; }
     html.dark .mp-environment { border-color: var(--lux-gold-faint); color: var(--lux-cream-soft); }
-    html.dark .mp-header-page { color: var(--lux-muted); }
+    html.dark .mp-header-page, html.dark .msp-eyebrow { color: var(--lux-muted); }
     html.dark .mp-admin-header [data-action="nav-search"] { background: var(--lux-well); border-color: var(--lux-gold-line); color: var(--lux-cream); }
     html.dark .mp-admin-header [data-mp-theme-toggle], html.dark .mp-admin-header span.icon-dark, html.dark .mp-admin-header span.icon-light { display: none; }
 
@@ -54,6 +54,7 @@
     html.dark .shimmer { background: linear-gradient(to right, rgba(201, 164, 92, .08) 8%, rgba(201, 164, 92, .2) 18%, rgba(201, 164, 92, .08) 33%); background-size: 1250px 100%; }
     html.dark .dark\:text-white { color: var(--lux-cream); }
     html.dark .dark\:text-gray-300, html.dark .dark\:text-gray-200 { color: var(--lux-cream-soft); }
+    html.dark .msp-workflow-stage { background-color: var(--lux-wine-900); }
     html.dark .text-blue-600, html.dark .text-blue-500, html.dark .dark\:text-blue-600, html.dark .text-sky-600 { color: var(--lux-gold-light); }
     html.dark .mp-admin-content .text-xl.font-bold, html.dark .msp-page-header h1 { font-family: var(--lux-serif); font-weight: 400; letter-spacing: .01em; color: var(--lux-cream); }
 

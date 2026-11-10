@@ -18,11 +18,11 @@
         @endif
     @endforeach
     <label for="order-workflow-filter" class="text-sm font-medium">{{ trans('admin::order-status.management') }}</label>
-    <select id="order-workflow-filter" name="workflow" class="min-h-[44px] max-w-full rounded border border-gray-300 px-3 py-2 dark:bg-gray-900">
+    <select id="order-workflow-filter" name="workflow" onchange="this.form.requestSubmit()" class="min-h-[44px] max-w-full rounded border border-gray-300 px-3 py-2 dark:bg-gray-900">
         <option value="">{{ trans('admin::executive-layout.all-orders') }}</option>
         @foreach (['awaiting_payment', 'awaiting_verification', 'payment_clarification', ...array_keys(\App\Support\OrderWorkflow::TRANSITIONS), 'delivered'] as $stage)
             <option value="{{ $stage }}" @selected(request('workflow') === $stage)>{{ trans('admin::order-status.'.$stage) }}</option>
         @endforeach
     </select>
-    <button class="secondary-button">{{ trans('admin::order-status.filter') }}</button>
+    <noscript><button class="secondary-button">{{ trans('admin::order-status.filter') }}</button></noscript>
 </form>

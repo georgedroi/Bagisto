@@ -106,7 +106,7 @@
                         <div
                             v-if="selected && (selected.instructions.title || selected.qr_image)"
                             class="mt-6 rounded-xl border border-zinc-200 p-5 max-md:mt-4 max-md:p-4"
-                            style="background-color: #fafafa;"
+                            style="background-color: var(--panel, #fafafa);"
                         >
                             <p
                                 class="text-base font-medium max-md:text-sm"
@@ -189,7 +189,6 @@
                         .then(response => {
                             this.$emit('processed', response.data.cart);
 
-                            // Used in mobile view. 
                             if (window.innerWidth <= 768) {
                                 window.scrollTo({
                                     top: document.body.scrollHeight,
