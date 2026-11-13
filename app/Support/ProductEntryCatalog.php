@@ -11,6 +11,9 @@ use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Inventory\Repositories\InventorySourceRepository;
 use Webkul\Product\Repositories\ProductRepository;
 
+/**
+ * Resolve the categories and saved values used by product entry.
+ */
 class ProductEntryCatalog
 {
     /**
@@ -232,6 +235,8 @@ class ProductEntryCatalog
 
         $money = fn ($value) => $value === null ? '' : number_format((float) $value, 2, '.', '');
 
+        $weight = (string) $product->weight;
+
         return [
             'id' => $product->id,
             'category_id' => $category->id,
@@ -246,7 +251,7 @@ class ProductEntryCatalog
             'special_price_to' => substr((string) $product->special_price_to, 0, 10),
             'cost' => $money($product->cost),
             'stock' => (int) $product->inventories->where('inventory_source_id', $this->inventorySourceId())->sum('qty'),
-            'weight' => $product->weight === null ? '' : rtrim(rtrim((string) $product->weight, '0'), '.'),
+            'weight' => str_contains($weight, '.') ? rtrim(rtrim($weight, '0'), '.') : $weight,
             'short_description' => (string) $product->short_description,
             'description' => (string) $product->description,
             'status' => (bool) $product->status,

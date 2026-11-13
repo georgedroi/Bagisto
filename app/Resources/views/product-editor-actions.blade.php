@@ -16,37 +16,43 @@
 
 @pushOnce('scripts')
     <script type="module">
-        const actions = document.querySelector('[data-editor-actions]');
-        const form = actions?.closest('form');
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-editor-action]');
+            const actions = button?.closest('[data-editor-actions]');
+            const form = actions?.closest('form');
 
-        if (actions && form) {
+            if (! actions || ! form) {
+                return;
+            }
+
             const message = actions.querySelector('[data-editor-message]');
 
-            const setStatus = (value) => {
-                form.querySelectorAll('[name="status"], [name="status[]"]').forEach((control) => {
-                    if (control.type === 'checkbox' || control.type === 'radio') {
-                        control.checked = value === '1';
-                    } else {
-                        control.value = value;
-                    }
-                });
-            };
-
-            actions.querySelector('[data-editor-action="draft"]')?.addEventListener('click', () => {
-                setStatus('0');
-                message.textContent = @js(trans('admin::product-editor.saving-draft'));
-                form.requestSubmit();
-            });
-
-            actions.querySelector('[data-editor-action="publish"]')?.addEventListener('click', () => {
-                setStatus('1');
-                message.textContent = @js(trans('admin::product-editor.publishing'));
-                form.requestSubmit();
-            });
-
-            actions.querySelector('[data-editor-action="preview"]')?.addEventListener('click', () => {
+            if (button.dataset.editorAction === 'preview') {
                 message.textContent = @js(trans('admin::product-editor.save-first'));
+
+                return;
+            }
+
+            const value = button.dataset.editorAction === 'draft' ? '0' : '1';
+
+            form.querySelectorAll('[name="status"], [name="status[]"]').forEach((control) => {
+                if (control.type === 'checkbox') {
+                    control.checked = value === '1';
+                } else if (control.type === 'radio') {
+                    control.checked = control.value === value;
+                } else {
+                    control.value = value;
+                }
+
+                control.dispatchEvent(new Event('input', { bubbles: true }));
+                control.dispatchEvent(new Event('change', { bubbles: true }));
             });
-        }
+
+            message.textContent = value === '0'
+                ? @js(trans('admin::product-editor.saving-draft'))
+                : @js(trans('admin::product-editor.publishing'));
+
+            form.requestSubmit();
+        });
     </script>
 @endPushOnce
