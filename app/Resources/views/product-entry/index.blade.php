@@ -194,7 +194,7 @@
                                 <p class="mpe-hint">@{{ detailsHint }}</p>
                                 <div class="msp-form-grid">
                                     <div class="msp-form-field" v-for="field in fields" :key="field.code" :class="{ 'msp-form-field--wide': field.type === 'textarea' }">
-                                        <label v-if="field.type !== 'boolean'" :for="'mpe-f-' + field.code">@{{ field.label }} <span class="mpe-required" v-if="field.required">*</span></label>
+                                        <label v-if="field.type !== 'boolean'" :for="'mpe-f-' + field.code">@{{ field.label }}</label>
                                         <select v-if="field.type === 'select'" :id="'mpe-f-' + field.code" v-model="values[field.code]">
                                             <option value="">@lang('admin::product-entry.select')</option>
                                             <option v-for="option in field.options" :key="option.value" :value="option.value">@{{ option.label }}</option>
@@ -574,13 +574,11 @@
 
                     checklist() {
                         const filled = value => String(value ?? '').trim() !== '';
-                        const required = this.fields.filter(field => field.required);
 
                         return [
                             { label: @js(trans('admin::product-entry.check-category')), done: !! this.selected && filled(this.form.mp_product_type) },
                             { label: @js(trans('admin::product-entry.check-identifiers')), done: filled(this.form.name) && filled(this.form.sku) && filled(this.form.url_key) },
                             { label: @js(trans('admin::product-entry.check-price')), done: filled(this.form.price) && filled(this.form.stock) && filled(this.form.weight) },
-                            { label: @js(trans('admin::product-entry.check-required')), done: required.every(field => field.type === 'boolean' ? true : filled(this.values[field.code])) },
                             { label: @js(trans('admin::product-entry.check-description')), done: this.form.short_description.trim().length >= 20 && this.form.description.trim().length >= 60 },
                             { label: @js(trans('admin::product-entry.check-image')), done: this.images.length > 0 },
                         ];

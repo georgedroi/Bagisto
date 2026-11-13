@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'নাম, SKU ও ওয়েব ঠিকানা পূরণ হয়েছে',
     'check-image' => 'কমপক্ষে একটি ছবি',
     'check-price' => 'দাম, স্টক ও ওজন পূরণ হয়েছে',
-    'check-required' => 'প্রয়োজনীয় বিবরণ পূরণ হয়েছে',
     'checklist-title' => 'প্রকাশের আগে',
     'choose-category' => 'একটি ক্যাটাগরি বেছে নিন',
     'created-by' => 'তৈরি করেছেন',

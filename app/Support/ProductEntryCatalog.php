@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
@@ -10,6 +11,9 @@ use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Inventory\Repositories\InventorySourceRepository;
 use Webkul\Product\Repositories\ProductRepository;
 
+/**
+ * Resolve the categories and saved values used by product entry.
+ */
 class ProductEntryCatalog
 {
     /**
@@ -39,6 +43,7 @@ class ProductEntryCatalog
             'urls' => [
                 'store' => route('admin.catalog.product_entry.store'),
                 'sku' => route('admin.catalog.product_entry.suggest_sku'),
+                'descriptionImage' => route('admin.catalog.product_entry.description_image'),
                 'back' => route('admin.catalog.products.index'),
             ],
         ];
@@ -94,6 +99,10 @@ class ProductEntryCatalog
             $hasCost = false;
 
             foreach ($family->attribute_groups as $group) {
+                if ($group->code === ProductVariations::GROUP_CODE) {
+                    continue;
+                }
+
                 foreach ($group->custom_attributes as $attribute) {
                     $hasCost = $hasCost || $attribute->code === 'cost';
 
@@ -105,7 +114,6 @@ class ProductEntryCatalog
                         'code' => $attribute->code,
                         'label' => $attribute->admin_name,
                         'type' => $attribute->type,
-                        'required' => (bool) $attribute->is_required,
                         'options' => $attribute->options->map(fn ($option) => [
                             'value' => $option->id,
                             'label' => $option->admin_name,
@@ -185,11 +193,74 @@ class ProductEntryCatalog
 
         $highest = $this->productRepository
             ->where('sku', 'like', $prefix.'%')
+            ->whereNull('parent_id')
             ->pluck('sku')
             ->map(fn ($sku) => (int) Str::afterLast($sku, '-'))
             ->max() ?? 0;
 
         return $prefix.str_pad((string) ($highest + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Where a product is edited: the Add Product page for what it can hold, the product editor otherwise.
+     */
+    public function editUrl(int $productId, ?string $type): string
+    {
+        $simple = in_array($type, ['simple', 'configurable'], true)
+            && bouncer()->hasPermission('catalog.product_entry')
+            && bouncer()->hasPermission('catalog.products.edit');
+
+        return route($simple ? 'admin.seller_workspace.edit_product' : 'admin.catalog.products.edit', $productId);
+    }
+
+    /**
+     * A product's saved values for the Add Product page, or null when that page cannot hold it.
+     */
+    public function productData(int $id): ?array
+    {
+        $product = $this->productRepository->findOrFail($id);
+
+        if (! in_array($product->type, ['simple', 'configurable'], true)) {
+            return null;
+        }
+
+        $category = $product->categories->first(fn ($category) => ($resolved = $this->resolve($category->id))
+            && $resolved['family'] === $product->attribute_family->code);
+
+        if (! $category) {
+            return null;
+        }
+
+        $fields = $this->families()[$product->attribute_family->code]['fields'] ?? [];
+
+        $money = fn ($value) => $value === null ? '' : number_format((float) $value, 2, '.', '');
+
+        $weight = (string) $product->weight;
+
+        return [
+            'id' => $product->id,
+            'category_id' => $category->id,
+            'family' => $product->attribute_family->code,
+            'name' => (string) $product->name,
+            'sku' => $product->sku,
+            'url_key' => (string) $product->url_key,
+            'mp_product_type' => $product->mp_product_type,
+            'price' => $money($product->price),
+            'special_price' => $money($product->special_price),
+            'special_price_from' => substr((string) $product->special_price_from, 0, 10),
+            'special_price_to' => substr((string) $product->special_price_to, 0, 10),
+            'cost' => $money($product->cost),
+            'stock' => (int) $product->inventories->where('inventory_source_id', $this->inventorySourceId())->sum('qty'),
+            'weight' => str_contains($weight, '.') ? rtrim(rtrim($weight, '0'), '.') : $weight,
+            'short_description' => (string) $product->short_description,
+            'description' => (string) $product->description,
+            'status' => (bool) $product->status,
+            'new' => (bool) $product->new,
+            'featured' => (bool) $product->featured,
+            'values' => collect($fields)->mapWithKeys(fn (array $field) => [$field['code'] => (string) $product->{$field['code']}])->all(),
+            'images' => $product->images->map(fn ($image) => ['id' => $image->id, 'url' => Storage::url($image->path)])->values()->all(),
+            'variation_data' => $product->type === 'configurable' ? app(ProductVariations::class)->forPage($product) : null,
+        ];
     }
 
     /**

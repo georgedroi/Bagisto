@@ -15,7 +15,8 @@ it('should return the product index page', function () {
     get(route('admin.catalog.products.index'))
         ->assertOk()
         ->assertSeeText(trans('admin::app.catalog.products.index.title'))
-        ->assertSeeText(trans('admin::app.catalog.products.index.create-btn'));
+        ->assertSee(route('admin.seller_workspace.add_product'), false)
+        ->assertSeeText(trans('admin::product-entry.menu'));
 });
 
 it('should copy the existing product', function () {

@@ -150,13 +150,6 @@
 
                     stepForward(step) {
                         this.currentStep = step;
-
-                        if (step == 'review') {
-                            this.canPlaceOrder = true;
-
-                            return;
-                        }
-
                         this.canPlaceOrder = false;
 
                         if (this.currentStep == 'shipping') {
@@ -171,6 +164,8 @@
                             this.shippingMethods = data;
                         } else if (this.currentStep == 'payment') {
                             this.paymentMethods = data;
+                        } else if (this.currentStep == 'review') {
+                            this.canPlaceOrder = true;
                         }
 
                         this.getCart();
@@ -194,6 +189,10 @@
                     },
 
                     placeOrder() {
+                        if (! this.canPlaceOrder || this.isPlacingOrder) {
+                            return;
+                        }
+
                         if ((this.selectedPaymentMethod || this.cart.payment_method) == 'paypal_smart_button') {
                             return;
                         }
@@ -211,7 +210,7 @@
                                 this.isPlacingOrder = false;
                             })
                             .catch(error => {
-                                this.isPlacingOrder = false
+                                this.isPlacingOrder = false;
 
                                 this.$emitter.emit('add-flash', { type: 'error', message: error.response.data.message });
                             });

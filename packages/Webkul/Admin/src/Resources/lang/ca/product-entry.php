@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Nom, SKU i adreça web omplerts',
     'check-image' => 'Almenys una imatge',
     'check-price' => 'Preu, estoc i pes omplerts',
-    'check-required' => 'Dades obligatòries omplertes',
     'checklist-title' => 'Abans de publicar',
     'choose-category' => 'Trieu una categoria',
     'created-by' => 'Creat per',

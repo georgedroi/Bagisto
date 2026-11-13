@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'නම, SKU සහ වෙබ් ලිපිනය පුරවා ඇත',
     'check-image' => 'අවම වශයෙන් එක් රූපයක්',
     'check-price' => 'මිල, තොගය සහ බර පුරවා ඇත',
-    'check-required' => 'අවශ්‍ය විස්තර පුරවා ඇත',
     'checklist-title' => 'ප්‍රකාශ කිරීමට පෙර',
     'choose-category' => 'ප්‍රවර්ගයක් තෝරන්න',
     'created-by' => 'සාදන ලද්දේ',

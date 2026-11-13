@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Nombre, SKU y dirección web rellenados',
     'check-image' => 'Al menos una imagen',
     'check-price' => 'Precio, stock y peso rellenados',
-    'check-required' => 'Datos obligatorios rellenados',
     'checklist-title' => 'Antes de publicar',
     'choose-category' => 'Elegir una categoría',
     'created-by' => 'Creado por',

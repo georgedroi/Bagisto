@@ -20,7 +20,6 @@ return [
     'check-identifiers' => '名前、SKU、Webアドレスを入力済み',
     'check-image' => '画像が1枚以上',
     'check-price' => '価格、在庫、重量を入力済み',
-    'check-required' => '必須項目を入力済み',
     'checklist-title' => '公開前の確認',
     'choose-category' => 'カテゴリーを選択',
     'created-by' => '作成者',

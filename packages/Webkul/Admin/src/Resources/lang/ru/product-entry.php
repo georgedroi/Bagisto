@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Заполнены название, SKU и веб-адрес',
     'check-image' => 'Хотя бы одно изображение',
     'check-price' => 'Заполнены цена, остаток и вес',
-    'check-required' => 'Заполнены обязательные данные',
     'checklist-title' => 'Перед публикацией',
     'choose-category' => 'Выберите категорию',
     'created-by' => 'Создал',

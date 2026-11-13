@@ -8,8 +8,11 @@
             <p>{{ trans('admin::executive-layout.catalog-info') }}</p>
         </div>
         <div class="msp-header-actions">
+            @include('manpleasure-admin::product-columns')
             <x-admin::datagrid.export :src="route('admin.catalog.products.index')" />
-            @if (bouncer()->hasPermission('catalog.products.create'))
+            @if (bouncer()->hasPermission('catalog.product_entry'))
+                <a href="{{ route('admin.seller_workspace.add_product') }}" class="primary-button" data-action="create-product">+ {{ trans('admin::product-entry.menu') }}</a>
+            @elseif (bouncer()->hasPermission('catalog.products.create'))
                 <a href="{{ route('admin.catalog.products.create') }}" class="primary-button" data-action="create-product">+ {{ trans('admin::app.catalog.products.index.create-btn') }}</a>
             @endif
         </div>
@@ -39,5 +42,7 @@
 
     @include('manpleasure-admin::stitch-product-grid')
 
-    @include('manpleasure-admin::product-pricing-modal')
+    @if (bouncer()->hasPermission('catalog.product_pricing'))
+        @include('manpleasure-admin::product-pricing-modal')
+    @endif
 </x-admin::layouts>

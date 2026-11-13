@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Ad, SKU ve web adresi dolduruldu',
     'check-image' => 'En az bir görsel',
     'check-price' => 'Fiyat, stok ve ağırlık dolduruldu',
-    'check-required' => 'Zorunlu ayrıntılar dolduruldu',
     'checklist-title' => 'Yayınlamadan önce',
     'choose-category' => 'Bir kategori seçin',
     'created-by' => 'Oluşturan',

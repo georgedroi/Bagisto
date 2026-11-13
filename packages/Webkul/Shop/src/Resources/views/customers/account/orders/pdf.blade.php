@@ -452,9 +452,11 @@
                     <table class="{{ core()->getCurrentLocale()->direction }}">
                         <thead>
                             <tr>
-                                <th>
-                                    @lang('shop::app.customers.account.orders.invoice-pdf.sku')
-                                </th>
+                                @unless ($discreet ?? false)
+                                    <th>
+                                        @lang('shop::app.customers.account.orders.invoice-pdf.sku')
+                                    </th>
+                                @endunless
 
                                 <th>
                                     @lang('shop::app.customers.account.orders.invoice-pdf.product-name')
@@ -477,14 +479,20 @@
                         <tbody>
                             @foreach ($invoice->items as $item)
                                 <tr>
-                                    <td>
-                                        {{ $item->getTypeInstance()->getOrderedItem($item)->sku }}
-                                    </td>
+                                    @unless ($discreet ?? false)
+                                        <td>
+                                            {{ $item->getTypeInstance()->getOrderedItem($item)->sku }}
+                                        </td>
+                                    @endunless
 
                                     <td>
-                                        {{ $item->name }}
+                                        @if ($discreet ?? false)
+                                            {{ trans('shop::discreet.item', ['number' => $loop->iteration]) }}
+                                        @else
+                                            {{ $item->name }}
+                                        @endif
 
-                                        @if (isset($item->additional['attributes']))
+                                        @if (! ($discreet ?? false) && isset($item->additional['attributes']))
                                             <div>
                                                 @foreach ($item->additional['attributes'] as $attribute)
                                                     @if (

@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'نام، SKU و نشانی وب پر شد',
     'check-image' => 'حداقل یک تصویر',
     'check-price' => 'قیمت، موجودی و وزن پر شد',
-    'check-required' => 'جزئیات الزامی پر شد',
     'checklist-title' => 'پیش از انتشار',
     'choose-category' => 'انتخاب دسته‌بندی',
     'created-by' => 'ایجادشده توسط',

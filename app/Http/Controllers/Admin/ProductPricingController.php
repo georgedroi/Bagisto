@@ -95,7 +95,7 @@ class ProductPricingController
             'cost' => $product->cost !== null ? (float) $product->cost : null,
             'has_cost_field' => $this->hasCostField($product),
             'status' => (bool) $product->status,
-            'currency' => core()->currencySymbol(core()->getBaseCurrencyCode()),
+            'currency' => preg_replace('/[\d.,\s]/u', '', core()->formatBasePrice(0)),
             'storefront_url' => $product->url_key ? route('shop.product_or_category.index', $product->url_key) : null,
         ];
     }

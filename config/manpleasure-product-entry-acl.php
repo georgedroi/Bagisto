@@ -8,6 +8,12 @@ return [
             'admin.catalog.product_entry.index',
             'admin.catalog.product_entry.suggest_sku',
             'admin.catalog.product_entry.store',
+            'admin.catalog.product_entry.update',
+            'admin.catalog.product_entry.description_image',
+            'admin.seller_workspace.edit_product',
+            'admin.seller_workspace.add_product',
+            'admin.seller_center.edit_product',
+            'admin.seller_center.add_product',
         ],
         'sort' => 5,
     ], [
@@ -18,6 +24,15 @@ return [
             'admin.catalog.product_pricing.update',
         ],
         'sort' => 7,
+    ], [
+        'key' => 'catalog.product_stock',
+        'name' => 'admin::product-pricing.stock-modal-title',
+        'route' => [
+            'admin.catalog.product_stock.show',
+            'admin.catalog.product_stock.update',
+            'admin.catalog.product_stock.alert',
+        ],
+        'sort' => 8,
     ], [
         'key' => 'catalog.media_bank',
         'name' => 'admin::product-editor.media-bank',

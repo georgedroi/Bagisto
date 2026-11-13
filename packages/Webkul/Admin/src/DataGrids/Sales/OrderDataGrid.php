@@ -2,9 +2,12 @@
 
 namespace Webkul\Admin\DataGrids\Sales;
 
+use App\Repositories\OrderQueueRepository;
+use App\Support\OrderWorkflow;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
+use Webkul\RMA\Enums\DefaultRMAStatusEnum;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderAddress;
 use Webkul\Sales\Repositories\OrderRepository;
@@ -35,20 +38,37 @@ class OrderDataGrid extends DataGrid
                 'orders.total_qty_ordered',
                 'orders.base_grand_total',
                 'orders.created_at',
+                'orders.updated_at',
+                'orders.shipping_title',
+                'orders.shipping_method',
+                'orders.shipping_description',
+                DB::raw('(SELECT COUNT(*) FROM '.DB::getTablePrefix().'shipments WHERE shipments.order_id = '.DB::getTablePrefix().'orders.id) as shipment_count'),
+                DB::raw('(SELECT COUNT(*) FROM '.DB::getTablePrefix().'rma WHERE rma.order_id = '.DB::getTablePrefix().'orders.id AND rma.rma_status_id NOT IN ('.implode(',', [DefaultRMAStatusEnum::RECEIVED_PACKAGE->value, DefaultRMAStatusEnum::SOLVED->value, DefaultRMAStatusEnum::DECLINED->value, DefaultRMAStatusEnum::ITEM_CANCELED->value, DefaultRMAStatusEnum::CANCELED->value]).')) as active_rma_count'),
+                DB::raw('(SELECT GROUP_CONCAT(DISTINCT CONCAT_WS(": ", inventory_sources.name, shipments.carrier_title, shipments.track_number) SEPARATOR " | ") FROM '.DB::getTablePrefix().'shipments LEFT JOIN '.DB::getTablePrefix().'inventory_sources ON inventory_sources.id = shipments.inventory_source_id WHERE shipments.order_id = '.DB::getTablePrefix().'orders.id) as shipment_tracking'),
                 'channel_name',
                 'channel_id',
                 'status',
+                'workflow_status',
                 'customer_email',
                 'orders.cart_id as items',
                 DB::raw('CONCAT('.DB::getTablePrefix().'orders.customer_first_name, " ", '.DB::getTablePrefix().'orders.customer_last_name) as full_name'),
                 DB::raw('CONCAT('.DB::getTablePrefix().'order_address_billing.city, ", ", '.DB::getTablePrefix().'order_address_billing.state,", ", '.DB::getTablePrefix().'order_address_billing.country) as location')
             )
+            ->selectRaw(app(OrderQueueRepository::class)->workflowStatusExpression().' as resolved_workflow_status')
             ->groupBy('orders.id');
 
         $queue = request()->query('queue');
 
-        if (in_array($queue, [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT, Order::STATUS_PROCESSING, Order::STATUS_COMPLETED, Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD], true)) {
+        if (is_string($queue) && array_key_exists($queue, OrderQueueRepository::QUEUES)) {
+            app(OrderQueueRepository::class)->constrainQueue($queryBuilder, $queue);
+        } elseif (in_array($queue, [Order::STATUS_PENDING, Order::STATUS_PENDING_PAYMENT, Order::STATUS_PROCESSING, Order::STATUS_COMPLETED, Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD], true)) {
             $queryBuilder->where('orders.status', $queue);
+        }
+
+        $workflow = request()->query('workflow');
+
+        if (in_array($workflow, ['awaiting_payment', 'awaiting_verification', 'payment_clarification', ...array_keys(OrderWorkflow::TRANSITIONS), 'delivered'], true)) {
+            app(OrderQueueRepository::class)->constrainWorkflow($queryBuilder, $workflow);
         }
 
         $this->addFilter('full_name', DB::raw('CONCAT('.DB::getTablePrefix().'orders.customer_first_name, " ", '.DB::getTablePrefix().'orders.customer_last_name)'));
@@ -112,28 +132,43 @@ class OrderDataGrid extends DataGrid
             ],
             'sortable' => true,
             'closure' => function ($row) {
-                switch ($row->status) {
-                    case Order::STATUS_PROCESSING:
-                        return '<p class="label-processing">'.trans('admin::app.sales.orders.index.datagrid.processing').'</p>';
-
-                    case Order::STATUS_COMPLETED:
-                        return '<p class="label-active">'.trans('admin::app.sales.orders.index.datagrid.completed').'</p>';
-
-                    case Order::STATUS_CANCELED:
-                        return '<p class="label-canceled">'.trans('admin::app.sales.orders.index.datagrid.canceled').'</p>';
-
-                    case Order::STATUS_CLOSED:
-                        return '<p class="label-closed">'.trans('admin::app.sales.orders.index.datagrid.closed').'</p>';
-
-                    case Order::STATUS_PENDING:
-                        return '<p class="label-pending">'.trans('admin::app.sales.orders.index.datagrid.pending').'</p>';
-
-                    case Order::STATUS_PENDING_PAYMENT:
-                        return '<p class="label-pending">'.trans('admin::app.sales.orders.index.datagrid.pending-payment').'</p>';
-
-                    case Order::STATUS_FRAUD:
-                        return '<p class="label-canceled">'.trans('admin::app.sales.orders.index.datagrid.fraud').'</p>';
+                if ((int) $row->active_rma_count > 0) {
+                    return '<p class="label-pending">'.e(trans('admin::order-status.to-return-refund')).'</p>';
                 }
+
+                $workflowStatus = $row->resolved_workflow_status;
+                $workflowLabel = [
+                    'awaiting_payment' => ['pending-payment', 'label-pending'],
+                    'awaiting_verification' => ['awaiting-verification', 'label-pending'],
+                    'payment_clarification' => ['payment-clarification', 'label-canceled'],
+                    'confirmed' => ['order-confirmed', 'label-active'],
+                    'packing' => ['packing', 'label-processing'],
+                    'ready_to_ship' => ['ready-to-ship', 'label-processing'],
+                    'handed_to_courier' => ['handed-to-courier', 'label-processing'],
+                    'in_transit' => ['in-transit', 'label-processing'],
+                    'out_for_delivery' => ['out-for-delivery', 'label-processing'],
+                    'failed_to_deliver' => ['failed-to-deliver', 'label-canceled'],
+                    'delivered' => ['delivered', 'label-active'],
+                ][$workflowStatus] ?? null;
+
+                if ($workflowLabel && ! in_array($row->status, [Order::STATUS_CANCELED, Order::STATUS_CLOSED, Order::STATUS_FRAUD], true)) {
+                    return '<p class="'.$workflowLabel[1].'">'.e(trans('admin::order-status.'.$workflowLabel[0])).'</p>';
+                }
+
+                [$label, $class] = match ($row->status) {
+                    Order::STATUS_PENDING => [trans('admin::order-status.to-confirm'), 'label-pending'],
+                    Order::STATUS_PENDING_PAYMENT => [trans('admin::order-status.pending-payment'), 'label-pending'],
+                    Order::STATUS_PROCESSING => $row->shipment_count > 0
+                        ? [trans('admin::order-status.shipping'), 'label-processing']
+                        : [trans('admin::order-status.to-ship'), 'label-processing'],
+                    Order::STATUS_COMPLETED => [trans('admin::order-status.shipping'), 'label-processing'],
+                    Order::STATUS_CANCELED => [trans('admin::order-status.cancelled'), 'label-canceled'],
+                    Order::STATUS_FRAUD => [trans('admin::app.sales.orders.index.datagrid.fraud'), 'label-canceled'],
+                    Order::STATUS_CLOSED => [trans('admin::app.sales.orders.index.datagrid.closed'), 'label-closed'],
+                    default => [(string) $row->status, 'label-pending'],
+                };
+
+                return '<p class="'.$class.'">'.e($label).'</p>';
             },
         ]);
 
@@ -200,9 +235,9 @@ class OrderDataGrid extends DataGrid
             'type' => 'string',
             'exportable' => false,
             'closure' => function ($value) {
-                $order = app(OrderRepository::class)->with('items')->find($value->id);
+                $order = app(OrderRepository::class)->with(['items.product.images'])->find($value->id);
 
-                return view('admin::sales.orders.items', compact('order'))->render();
+                return view('manpleasure-admin::order-card-items', compact('order'))->render();
             },
         ]);
 
@@ -213,6 +248,36 @@ class OrderDataGrid extends DataGrid
             'filterable' => true,
             'filterable_type' => 'date_range',
             'sortable' => true,
+        ]);
+
+        $this->addColumn([
+            'index' => 'updated_at',
+            'label' => trans('admin::app.sales.orders.index.datagrid.date'),
+            'type' => 'date',
+        ]);
+
+        $this->addColumn([
+            'index' => 'shipping_title',
+            'label' => trans('admin::app.sales.orders.view.shipping-method'),
+            'type' => 'string',
+        ]);
+
+        $this->addColumn([
+            'index' => 'shipping_description',
+            'label' => trans('admin::app.sales.orders.view.shipping-method'),
+            'type' => 'string',
+        ]);
+
+        $this->addColumn([
+            'index' => 'shipping_method',
+            'label' => trans('admin::app.sales.orders.view.shipping-method'),
+            'type' => 'string',
+        ]);
+
+        $this->addColumn([
+            'index' => 'shipment_tracking',
+            'label' => trans('admin::app.sales.shipments.view.tracking-number'),
+            'type' => 'string',
         ]);
     }
 

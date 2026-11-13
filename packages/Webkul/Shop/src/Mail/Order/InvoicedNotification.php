@@ -64,6 +64,7 @@ class InvoicedNotification extends Mailable
                 view('shop::customers.account.orders.pdf', [
                     'invoice' => $this->invoice,
                     'orderCurrencyCode' => $orderCurrencyCode,
+                    'discreet' => true,
                 ])->render(),
                 'invoice-'.$this->invoice->created_at->format('d-m-Y')
             );

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <html
-    class="{{ (request()->cookie('dark_mode') ?? 0) ? 'dark' : '' }}"
+    class="dark"
     lang="{{ app()->getLocale() }}"
     dir="{{ core()->getCurrentLocale()->direction }}"
 >
@@ -74,11 +74,13 @@
         />
     @endif
 
-    @include('manpleasure-admin::admin-navigation-styles')
+    @include('manpleasure-admin::admin-menu-styles')
 
     @stack('styles')
 
     @include('manpleasure-admin::executive-layout-styles')
+
+    @include('manpleasure-admin::admin-theme')
 
     <style>
         {!! core()->getConfigData('general.content.custom_scripts.custom_css') !!}
@@ -89,6 +91,8 @@
 
 <body class="h-full dark:bg-gray-950">
     {!! view_render_event('bagisto.admin.layout.body.before') !!}
+
+    @include('manpleasure-admin::admin-menu')
 
     <div
         id="app"
@@ -103,14 +107,10 @@
         <x-admin::layouts.header />
 
         <div
-            class="mp-admin-shell group/container {{ request()->cookie('sidebar_collapsed') ?? 0 ? 'sidebar-collapsed' : 'sidebar-not-collapsed' }} flex flex-col lg:flex-row gap-0 lg:gap-4"
+            class="mp-admin-shell group/container flex flex-col lg:flex-row gap-0 lg:gap-4"
             ref="appLayout"
         >
-            <div class="mp-sidebar-container">
-                <x-admin::layouts.sidebar />
-            </div>
-
-            <div class="mp-admin-content flex min-h-[calc(100vh-62px)] max-w-full flex-1 flex-col bg-white transition-all duration-300 dark:bg-gray-950 pt-3 px-2 sm:px-4 lg:pt-3 lg:px-4 lg:ltr:pl-[286px] lg:group-[.sidebar-collapsed]/container:ltr:pl-[85px] lg:rtl:pr-[286px] lg:group-[.sidebar-collapsed]/container:rtl:pr-[85px]">
+            <div class="mp-admin-content flex min-h-[calc(100vh-62px)] max-w-full flex-1 flex-col bg-white transition-all duration-300 dark:bg-gray-950 pt-3 px-2 sm:px-4 lg:pt-3 lg:px-4">
                 <div class="pb-4 lg:pb-6">
                     <div class="w-full overflow-x-hidden">
                         {{ $slot }}
@@ -119,15 +119,14 @@
             </div>
         </div>
 
-        @include('manpleasure-admin::executive-utility-dock')
-
         {!! view_render_event('bagisto.admin.layout.content.after') !!}
     </div>
 
+    @include('manpleasure-admin::admin-rail')
+
     {!! view_render_event('bagisto.admin.layout.body.after') !!}
 
-    @include('manpleasure-admin::admin-navigation-script')
-    @include('manpleasure-admin::executive-layout-script')
+    @include('manpleasure-admin::admin-menu-script')
 
     @stack('scripts')
 

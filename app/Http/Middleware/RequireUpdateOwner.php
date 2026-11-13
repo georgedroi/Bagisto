@@ -13,15 +13,18 @@ class RequireUpdateOwner
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $admin = auth('admin')->user();
-
-        abort_unless(
-            $admin && $admin->status
-            && $admin->role?->permission_type === 'all'
-            && in_array((int) $admin->id, config('manpleasure-updates.owner_ids', []), true),
-            403
-        );
+        abort_unless(self::allows(auth('admin')->user()), 403);
 
         return $next($request);
+    }
+
+    /**
+     * Tell whether this admin is an active configured owner with full admin access.
+     */
+    public static function allows($admin): bool
+    {
+        return $admin && $admin->status
+            && $admin->role?->permission_type === 'all'
+            && in_array((int) $admin->id, config('manpleasure-updates.owner_ids', []), true);
     }
 }

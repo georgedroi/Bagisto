@@ -20,7 +20,6 @@ return [
     'check-identifiers' => '已填写名称、SKU 和网址',
     'check-image' => '至少有一张图片',
     'check-price' => '已填写价格、库存和重量',
-    'check-required' => '已填写必填信息',
     'checklist-title' => '发布前检查',
     'choose-category' => '选择分类',
     'created-by' => '创建者',

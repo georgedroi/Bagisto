@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'नाम, SKU और वेब पता भरा गया',
     'check-image' => 'कम से कम एक चित्र',
     'check-price' => 'कीमत, स्टॉक और वज़न भरा गया',
-    'check-required' => 'ज़रूरी विवरण भरे गए',
     'checklist-title' => 'प्रकाशित करने से पहले',
     'choose-category' => 'श्रेणी चुनें',
     'created-by' => 'बनाने वाला',

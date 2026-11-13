@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'Naam, SKU en webadres ingevuld',
     'check-image' => 'Minstens één afbeelding',
     'check-price' => 'Prijs, voorraad en gewicht ingevuld',
-    'check-required' => 'Verplichte gegevens ingevuld',
     'checklist-title' => 'Voordat je publiceert',
     'choose-category' => 'Kies een categorie',
     'created-by' => 'Aangemaakt door',

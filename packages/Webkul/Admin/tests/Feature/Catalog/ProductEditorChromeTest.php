@@ -21,11 +21,11 @@ it('should show the product editor without the blueprint panel and with a bar th
         ->assertSeeText(trans('admin::product-editor.publish'));
 });
 
-it('should link the media bank from the catalog menu', function () {
+it('should link the media bank from the admin settings page', function () {
     // Act and Assert.
     $this->loginAsAdmin();
 
-    get(route('admin.catalog.product_entry.index'))
+    get(route('admin.seller_workspace.settings'))
         ->assertOk()
         ->assertSee(route('admin.media.index'), false)
         ->assertSeeText(trans('admin::product-editor.media-bank'));

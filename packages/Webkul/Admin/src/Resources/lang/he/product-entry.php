@@ -20,7 +20,6 @@ return [
     'check-identifiers' => 'שם, SKU וכתובת אתר מולאו',
     'check-image' => 'לפחות תמונה אחת',
     'check-price' => 'מחיר, מלאי ומשקל מולאו',
-    'check-required' => 'הפרטים הנדרשים מולאו',
     'checklist-title' => 'לפני הפרסום',
     'choose-category' => 'בחירת קטגוריה',
     'created-by' => 'נוצר על ידי',

@@ -40,7 +40,7 @@
 
 			<p class="text-xl text-zinc-500 max-md:text-center max-md:text-xs">
 				@if (! empty($order->checkout_message))
-					{!! nl2br($order->checkout_message) !!}
+					{!! nl2br(e($order->checkout_message)) !!}
 				@else
 					@lang('shop::app.checkout.success.info')
 				@endif
@@ -53,7 +53,7 @@
 			@if (! empty($instructions['details']) || $instructions['qr_image'])
 				<div
 					class="w-full max-w-xl rounded-xl border border-zinc-200 p-5 max-md:p-4"
-					style="text-align: left; background-color: #fafafa;"
+					style="text-align: left; background-color: var(--panel, #fafafa);"
 				>
 					<h3 class="text-lg font-medium max-md:text-base">
 						@lang('payment::app.how-to-pay')
@@ -98,7 +98,7 @@
 				</div>
 			@endif
 
-			{{ view_render_event('bagisto.shop.checkout.success.continue-shopping.before', ['order' => $order]) }}
+			{!! view_render_event('bagisto.shop.checkout.success.continue-shopping.before', ['order' => $order]) !!}
 
 			<a href="{{ route('shop.home.index') }}">
 				<div class="w-max cursor-pointer rounded-2xl bg-navyBlue px-11 py-3 text-center text-base font-medium text-white max-md:rounded-lg max-md:px-6 max-md:py-1.5">
