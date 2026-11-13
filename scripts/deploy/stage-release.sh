@@ -39,6 +39,7 @@ composer validate --no-check-publish --strict
 composer install --no-dev --prefer-dist --no-interaction --no-scripts --optimize-autoloader
 composer check-platform-reqs --no-dev
 ln -s "$base/shared/storage/app/public" "$release/public/storage"
-(npm ci --no-audit --no-fund && npm run build)
+test -s public/build/manifest.json
+test -s public/themes/admin/default/build/manifest.json
 (cd packages/Webkul/Shop && npm ci --no-audit --no-fund && npm run build)
 printf 'Source and assets staged: %s. Import/review data before package discovery, cache commands, migrations and activation.\n' "$release_id"
