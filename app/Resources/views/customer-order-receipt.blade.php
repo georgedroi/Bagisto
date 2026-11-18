@@ -17,7 +17,7 @@
         @endif
 
         @if ($receipts->isNotEmpty())
-            <ul class="mt-4 grid gap-2">
+            <ul class="mt-4 grid gap-2" v-pre>
                 @foreach ($receipts as $receipt)
                     <li class="text-sm text-zinc-700">{{ $receipt->original_name ?: trans('payment::app.receipt') }} · {{ trans('admin::order-status.receipt-'.$receipt->status) }} @if ($receipt->admin_notes) — {{ $receipt->admin_notes }} @endif</li>
                 @endforeach

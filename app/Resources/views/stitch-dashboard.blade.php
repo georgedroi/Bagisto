@@ -94,7 +94,7 @@
                     @endphp
                     <tr data-entity="order" data-id="{{ $queueOrder->increment_id }}">
                         <td><strong class="msp-mono">#{{ $queueOrder->increment_id }}</strong><small>{{ $queueOrder->created_at }}</small></td>
-                        <td>{{ $queueOrder->customer_first_name }} {{ $queueOrder->customer_last_name }}</td>
+                        <td v-pre>{{ $queueOrder->customer_first_name }} {{ $queueOrder->customer_last_name }}</td>
                         <td><span class="msp-stock-pill">{{ trans('admin::order-status.'.$recentStatus) }}</span></td>
                         <td class="msp-money">{{ core()->formatBasePrice($queueOrder->base_grand_total) }}<small>{{ trans('admin::executive-layout.items', ['count' => $queueOrder->total_qty_ordered]) }}</small></td>
                         <td>

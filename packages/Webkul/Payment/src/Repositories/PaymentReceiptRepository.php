@@ -3,6 +3,7 @@
 namespace Webkul\Payment\Repositories;
 
 use App\Support\OrderWorkflow;
+use App\Support\UploadedFileName;
 use Illuminate\Container\Container;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +63,7 @@ class PaymentReceiptRepository extends Repository
                 $receipt = $this->create([
                     'order_id' => $orderId,
                     'receipt_path' => $path,
-                    'original_name' => mb_substr($file->getClientOriginalName(), 0, 255),
+                    'original_name' => UploadedFileName::clean($file->getClientOriginalName()),
                     'status' => 'pending',
                 ]);
 

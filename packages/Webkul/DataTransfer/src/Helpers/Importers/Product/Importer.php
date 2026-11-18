@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Webkul\Attribute\Enums\AttributeTypeEnum;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
@@ -1113,6 +1114,8 @@ class Importer extends AbstractImporter
         $flatData = [];
 
         foreach ($batch->data as $rowData) {
+            $rowData = $this->cleanRichTextValues($rowData);
+
             /**
              * Prepare products for import
              */
@@ -1171,6 +1174,24 @@ class Importer extends AbstractImporter
         $this->saveFlatData($flatData);
 
         return true;
+    }
+
+    /**
+     * Clean the row's rich text attributes the way the product form does, leaving every other column as given.
+     */
+    protected function cleanRichTextValues(array $rowData): array
+    {
+        $richTextCodes = $this->getProductTypeFamilyAttributes($rowData['type'], $rowData['attribute_family_code'])
+            ->filter(fn ($attribute) => $attribute->type === AttributeTypeEnum::TEXTAREA->value && $attribute->enable_wysiwyg)
+            ->pluck('code');
+
+        foreach ($richTextCodes as $code) {
+            if (isset($rowData[$code]) && is_string($rowData[$code])) {
+                $rowData[$code] = clean_content($rowData[$code]);
+            }
+        }
+
+        return $rowData;
     }
 
     /**

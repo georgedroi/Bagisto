@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\MediaAsset;
+use App\Support\UploadedFileName;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -55,7 +56,7 @@ class MediaAssetRepository extends Repository
         $asset = $this->model->newQuery()->create([
             'disk' => 'public',
             'path' => $path,
-            'original_name' => $file->getClientOriginalName(),
+            'original_name' => UploadedFileName::clean($file->getClientOriginalName()),
             'mime_type' => $file->getMimeType(),
             'size' => $file->getSize(),
             'width' => $dimensions[0] ?? null,

@@ -14,7 +14,7 @@
         <p class="p-2.5 text-base font-semibold text-gray-600 dark:text-gray-300">{{ trans('admin::order-status.management') }}</p>
     </x-slot:header>
     <x-slot:content>
-        <div class="grid gap-4">
+        <div class="grid gap-4" v-pre>
             <div class="msp-workflow-stage rounded border p-3 {{ $stageClass }}">
                 <p class="font-semibold text-gray-800 dark:text-white">{{ trans('admin::order-status.'.$workflowStatus) }}</p>
                 @if (in_array($workflowStatus, ['awaiting_payment', 'awaiting_verification', 'payment_clarification'], true))
