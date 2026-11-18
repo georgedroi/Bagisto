@@ -2,7 +2,9 @@
 
 namespace Webkul\Payment\Providers;
 
+use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\ServiceProvider;
+use Webkul\Payment\Listeners\RejectUnapprovedGateway;
 use Webkul\Payment\Payment\Adapters\DefaultPaymentGatewayAdapter;
 use Webkul\Payment\Payment\Adapters\PaymentGatewayAdapterInterface;
 
@@ -16,6 +18,11 @@ class PaymentServiceProvider extends ServiceProvider
     public function boot()
     {
         include __DIR__.'/../Http/helpers.php';
+
+        $this->app['events']->listen(
+            RouteMatched::class,
+            RejectUnapprovedGateway::class
+        );
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 

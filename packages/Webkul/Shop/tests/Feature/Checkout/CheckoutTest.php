@@ -8,6 +8,7 @@ use Webkul\Checkout\Models\CartAddress;
 use Webkul\Checkout\Models\CartItem;
 use Webkul\Checkout\Models\CartPayment;
 use Webkul\Checkout\Models\CartShippingRate;
+use Webkul\Core\Repositories\CoreConfigRepository;
 use Webkul\Customer\Models\Customer;
 use Webkul\Customer\Models\CustomerAddress;
 use Webkul\Faker\Helpers\Product as ProductFaker;
@@ -20,6 +21,20 @@ use Webkul\Sales\Models\OrderPayment;
 use Webkul\Shop\Mail\Order\CreatedNotification as ShopOrderCreatedNotification;
 
 use function Pest\Laravel\postJson;
+
+beforeEach(function () {
+    foreach ([
+        'banktransfer' => ['active' => '1', 'title' => 'Bank Transfer', 'bank_name' => 'QA Bank', 'account_name' => 'QA Store', 'account_number' => 'QA-000', 'instructions' => 'Transfer the order total with your order reference.', 'sort' => '2'],
+        'duitnowqr_manual' => ['active' => '1', 'title' => 'QR Code Payment', 'qr_image' => 'qa/qr.png', 'sort' => '1'],
+    ] as $method => $fields) {
+        foreach ($fields as $field => $value) {
+            app(CoreConfigRepository::class)->updateOrCreate(
+                ['code' => 'sales.payment_methods.'.$method.'.'.$field, 'channel_code' => 'default', 'locale_code' => 'en'],
+                ['value' => $value],
+            );
+        }
+    }
+});
 
 it('should handle certain validation errors when storing the guest user address for cart billing and shipping', function () {
     // Arrange.
@@ -456,34 +471,9 @@ it('should store the billing address for non stockable items for guest user', fu
         ],
     ])
         ->assertOk()
-        ->assertJsonPath('data.payment_methods.0.method', 'stripe')
-        ->assertJsonPath('data.payment_methods.0.method_title', 'Stripe')
-        ->assertJsonPath('data.payment_methods.0.description', 'Stripe')
-        ->assertJsonPath('data.payment_methods.0.sort', 1)
-        ->assertJsonPath('data.payment_methods.1.method', 'razorpay')
-        ->assertJsonPath('data.payment_methods.1.method_title', 'Razorpay')
-        ->assertJsonPath('data.payment_methods.1.description', 'Razorpay')
-        ->assertJsonPath('data.payment_methods.1.sort', 2)
-        ->assertJsonPath('data.payment_methods.2.method', 'payu')
-        ->assertJsonPath('data.payment_methods.2.method_title', 'PayU')
-        ->assertJsonPath('data.payment_methods.2.description', 'PayU')
-        ->assertJsonPath('data.payment_methods.2.sort', 3)
-        ->assertJsonPath('data.payment_methods.3.method', 'phonepe')
-        ->assertJsonPath('data.payment_methods.3.method_title', 'PhonePe')
-        ->assertJsonPath('data.payment_methods.3.description', 'PhonePe')
-        ->assertJsonPath('data.payment_methods.3.sort', 4)
-        ->assertJsonPath('data.payment_methods.4.method', 'paypal_smart_button')
-        ->assertJsonPath('data.payment_methods.4.method_title', 'PayPal Smart Button')
-        ->assertJsonPath('data.payment_methods.4.description', 'PayPal')
-        ->assertJsonPath('data.payment_methods.4.sort', 5)
-        ->assertJsonPath('data.payment_methods.5.method', 'paypal_standard')
-        ->assertJsonPath('data.payment_methods.5.method_title', 'PayPal Standard')
-        ->assertJsonPath('data.payment_methods.5.description', 'PayPal Standard')
-        ->assertJsonPath('data.payment_methods.5.sort', 6)
-        ->assertJsonPath('data.payment_methods.6.method', 'moneytransfer')
-        ->assertJsonPath('data.payment_methods.6.method_title', 'Money Transfer')
-        ->assertJsonPath('data.payment_methods.6.description', 'Money Transfer')
-        ->assertJsonPath('data.payment_methods.6.sort', 8);
+        ->assertJsonCount(2, 'data.payment_methods')
+        ->assertJsonPath('data.payment_methods.0.method', 'duitnowqr_manual')
+        ->assertJsonPath('data.payment_methods.1.method', 'banktransfer');
 
     $this->assertModelWise([
         CartAddress::class => [
@@ -799,34 +789,9 @@ it('should store the billing address for non stockable items for customer', func
         ],
     ])
         ->assertOk()
-        ->assertJsonPath('data.payment_methods.0.method', 'stripe')
-        ->assertJsonPath('data.payment_methods.0.method_title', 'Stripe')
-        ->assertJsonPath('data.payment_methods.0.description', 'Stripe')
-        ->assertJsonPath('data.payment_methods.0.sort', 1)
-        ->assertJsonPath('data.payment_methods.1.method', 'razorpay')
-        ->assertJsonPath('data.payment_methods.1.method_title', 'Razorpay')
-        ->assertJsonPath('data.payment_methods.1.description', 'Razorpay')
-        ->assertJsonPath('data.payment_methods.1.sort', 2)
-        ->assertJsonPath('data.payment_methods.2.method', 'payu')
-        ->assertJsonPath('data.payment_methods.2.method_title', 'PayU')
-        ->assertJsonPath('data.payment_methods.2.description', 'PayU')
-        ->assertJsonPath('data.payment_methods.2.sort', 3)
-        ->assertJsonPath('data.payment_methods.3.method', 'phonepe')
-        ->assertJsonPath('data.payment_methods.3.method_title', 'PhonePe')
-        ->assertJsonPath('data.payment_methods.3.description', 'PhonePe')
-        ->assertJsonPath('data.payment_methods.3.sort', 4)
-        ->assertJsonPath('data.payment_methods.4.method', 'paypal_smart_button')
-        ->assertJsonPath('data.payment_methods.4.method_title', 'PayPal Smart Button')
-        ->assertJsonPath('data.payment_methods.4.description', 'PayPal')
-        ->assertJsonPath('data.payment_methods.4.sort', 5)
-        ->assertJsonPath('data.payment_methods.5.method', 'paypal_standard')
-        ->assertJsonPath('data.payment_methods.5.method_title', 'PayPal Standard')
-        ->assertJsonPath('data.payment_methods.5.description', 'PayPal Standard')
-        ->assertJsonPath('data.payment_methods.5.sort', 6)
-        ->assertJsonPath('data.payment_methods.6.method', 'moneytransfer')
-        ->assertJsonPath('data.payment_methods.6.method_title', 'Money Transfer')
-        ->assertJsonPath('data.payment_methods.6.description', 'Money Transfer')
-        ->assertJsonPath('data.payment_methods.6.sort', 8)
+        ->assertJsonCount(2, 'data.payment_methods')
+        ->assertJsonPath('data.payment_methods.0.method', 'duitnowqr_manual')
+        ->assertJsonPath('data.payment_methods.1.method', 'banktransfer')
         ->assertJsonPath('redirect', false);
 
     $this->assertModelWise([
@@ -1285,38 +1250,9 @@ it('should store the shipping method for guest user', function () {
         'shipping_method' => 'free_free',
     ])
         ->assertOk()
-        ->assertJsonPath('payment_methods.0.method', 'stripe')
-        ->assertJsonPath('payment_methods.0.method_title', 'Stripe')
-        ->assertJsonPath('payment_methods.0.description', 'Stripe')
-        ->assertJsonPath('payment_methods.0.sort', 1)
-        ->assertJsonPath('payment_methods.1.method', 'razorpay')
-        ->assertJsonPath('payment_methods.1.method_title', 'Razorpay')
-        ->assertJsonPath('payment_methods.1.description', 'Razorpay')
-        ->assertJsonPath('payment_methods.1.sort', 2)
-        ->assertJsonPath('payment_methods.2.method', 'payu')
-        ->assertJsonPath('payment_methods.2.method_title', 'PayU')
-        ->assertJsonPath('payment_methods.2.description', 'PayU')
-        ->assertJsonPath('payment_methods.2.sort', 3)
-        ->assertJsonPath('payment_methods.3.method', 'phonepe')
-        ->assertJsonPath('payment_methods.3.method_title', 'PhonePe')
-        ->assertJsonPath('payment_methods.3.description', 'PhonePe')
-        ->assertJsonPath('payment_methods.3.sort', 4)
-        ->assertJsonPath('payment_methods.4.method', 'paypal_smart_button')
-        ->assertJsonPath('payment_methods.4.method_title', 'PayPal Smart Button')
-        ->assertJsonPath('payment_methods.4.description', 'PayPal')
-        ->assertJsonPath('payment_methods.4.sort', 5)
-        ->assertJsonPath('payment_methods.5.method', 'paypal_standard')
-        ->assertJsonPath('payment_methods.5.method_title', 'PayPal Standard')
-        ->assertJsonPath('payment_methods.5.description', 'PayPal Standard')
-        ->assertJsonPath('payment_methods.5.sort', 6)
-        ->assertJsonPath('payment_methods.6.method', 'cashondelivery')
-        ->assertJsonPath('payment_methods.6.method_title', 'Cash On Delivery')
-        ->assertJsonPath('payment_methods.6.description', 'Cash On Delivery')
-        ->assertJsonPath('payment_methods.6.sort', 7)
-        ->assertJsonPath('payment_methods.7.method', 'moneytransfer')
-        ->assertJsonPath('payment_methods.7.method_title', 'Money Transfer')
-        ->assertJsonPath('payment_methods.7.description', 'Money Transfer')
-        ->assertJsonPath('payment_methods.7.sort', 8);
+        ->assertJsonCount(2, 'payment_methods')
+        ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
+        ->assertJsonPath('payment_methods.1.method', 'banktransfer');
 });
 
 it('should store the shipping method for customer', function () {
@@ -1391,38 +1327,9 @@ it('should store the shipping method for customer', function () {
         'shipping_method' => 'free_free',
     ])
         ->assertOk()
-        ->assertJsonPath('payment_methods.0.method', 'stripe')
-        ->assertJsonPath('payment_methods.0.method_title', 'Stripe')
-        ->assertJsonPath('payment_methods.0.description', 'Stripe')
-        ->assertJsonPath('payment_methods.0.sort', 1)
-        ->assertJsonPath('payment_methods.1.method', 'razorpay')
-        ->assertJsonPath('payment_methods.1.method_title', 'Razorpay')
-        ->assertJsonPath('payment_methods.1.description', 'Razorpay')
-        ->assertJsonPath('payment_methods.1.sort', 2)
-        ->assertJsonPath('payment_methods.2.method', 'payu')
-        ->assertJsonPath('payment_methods.2.method_title', 'PayU')
-        ->assertJsonPath('payment_methods.2.description', 'PayU')
-        ->assertJsonPath('payment_methods.2.sort', 3)
-        ->assertJsonPath('payment_methods.3.method', 'phonepe')
-        ->assertJsonPath('payment_methods.3.method_title', 'PhonePe')
-        ->assertJsonPath('payment_methods.3.description', 'PhonePe')
-        ->assertJsonPath('payment_methods.3.sort', 4)
-        ->assertJsonPath('payment_methods.4.method', 'paypal_smart_button')
-        ->assertJsonPath('payment_methods.4.method_title', 'PayPal Smart Button')
-        ->assertJsonPath('payment_methods.4.description', 'PayPal')
-        ->assertJsonPath('payment_methods.4.sort', 5)
-        ->assertJsonPath('payment_methods.5.method', 'paypal_standard')
-        ->assertJsonPath('payment_methods.5.method_title', 'PayPal Standard')
-        ->assertJsonPath('payment_methods.5.description', 'PayPal Standard')
-        ->assertJsonPath('payment_methods.5.sort', 6)
-        ->assertJsonPath('payment_methods.6.method', 'cashondelivery')
-        ->assertJsonPath('payment_methods.6.method_title', 'Cash On Delivery')
-        ->assertJsonPath('payment_methods.6.description', 'Cash On Delivery')
-        ->assertJsonPath('payment_methods.6.sort', 7)
-        ->assertJsonPath('payment_methods.7.method', 'moneytransfer')
-        ->assertJsonPath('payment_methods.7.method_title', 'Money Transfer')
-        ->assertJsonPath('payment_methods.7.description', 'Money Transfer')
-        ->assertJsonPath('payment_methods.7.sort', 8);
+        ->assertJsonCount(2, 'payment_methods')
+        ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
+        ->assertJsonPath('payment_methods.1.method', 'banktransfer');
 });
 
 it('should fails the validation error when store the payment method for guest user', function () {
@@ -1560,7 +1467,7 @@ it('should store the payment method for guest user', function () {
     // Act and Assert.
     $response = postJson(route('shop.checkout.onepage.payment_methods.store'), [
         'payment' => [
-            'method' => 'cashondelivery',
+            'method' => 'banktransfer',
             'method_title' => 'Cash On Delivery',
             'description' => 'Cash On Delivery',
             'sort' => 1,
@@ -1619,8 +1526,8 @@ it('should store the payment method for guest user', function () {
         ->assertJsonPath('cart.shipping_address.phone', $cartShippingAddress->phone)
         ->assertJsonPath('cart.shipping_address.vat_id', $cartShippingAddress->vat_id)
         ->assertJsonPath('cart.have_stockable_items', true)
-        ->assertJsonPath('cart.payment_method', 'cashondelivery')
-        ->assertJsonPath('cart.payment_method_title', 'Cash On Delivery')
+        ->assertJsonPath('cart.payment_method', 'banktransfer')
+        ->assertJsonPath('cart.payment_method_title', 'Bank Transfer')
         ->assertOk();
 
     $this->assertPrice($product->price, $response['cart']['grand_total']);
@@ -1700,7 +1607,7 @@ it('should store the payment method for customer', function () {
 
     $response = postJson(route('shop.checkout.onepage.payment_methods.store'), [
         'payment' => [
-            'method' => 'cashondelivery',
+            'method' => 'banktransfer',
             'method_title' => 'Cash On Delivery',
             'description' => 'Cash On Delivery',
             'sort' => 1,
@@ -1759,8 +1666,8 @@ it('should store the payment method for customer', function () {
         ->assertJsonPath('cart.shipping_address.phone', $cartShippingAddress->phone)
         ->assertJsonPath('cart.shipping_address.vat_id', $cartShippingAddress->vat_id)
         ->assertJsonPath('cart.have_stockable_items', true)
-        ->assertJsonPath('cart.payment_method', 'cashondelivery')
-        ->assertJsonPath('cart.payment_method_title', 'Cash On Delivery')
+        ->assertJsonPath('cart.payment_method', 'banktransfer')
+        ->assertJsonPath('cart.payment_method_title', 'Bank Transfer')
         ->assertOk();
 
     $this->assertPrice($product->price, $response['cart']['grand_total']);
@@ -1915,7 +1822,7 @@ it('should place a simple product order for a guest user', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -2075,7 +1982,7 @@ it('should place a simple product order for a guest user and send mail to guest 
     ]);
 
     $cartPayment = CartPayment::factory()->create([
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
         'cart_id' => $cart->id,
     ]);
@@ -2247,7 +2154,7 @@ it('should place a simple product order for a customer', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -2413,7 +2320,7 @@ it('should place a simple product order for a customer and send email to the cus
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -2602,7 +2509,7 @@ it('should place a configurable product order for a guest user', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -2775,7 +2682,7 @@ it('should place a configurable product order for a guest user and send email to
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -2958,7 +2865,7 @@ it('should place a configurable product order for a customer', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -3139,7 +3046,7 @@ it('should place a configurable product order for a customer and send email to t
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -3296,7 +3203,7 @@ it('should place a virtual product order for a guest user', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -3433,7 +3340,7 @@ it('should place a virtual product order for a guest user and send email to the 
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -3580,7 +3487,7 @@ it('should place a virtual product order for a customer', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -3725,7 +3632,7 @@ it('should place a virtual product order for a customer and send email to the us
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -3877,7 +3784,7 @@ it('should place a downloadable product order for a customer', function () {
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4018,7 +3925,7 @@ it('should place a downloadable product order for a customer and send email to t
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4165,7 +4072,7 @@ it('should not return the cash on delivery payment method if product is download
 
     CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4192,7 +4099,7 @@ it('should not return the cash on delivery payment method if product is download
     ])
         ->assertOk()
         ->assertJsonPath('redirect', false)
-        ->assertJsonCount(8, 'data.payment_methods')
+        ->assertJsonCount(2, 'data.payment_methods')
         ->assertDontSeeText('cashondelivery');
 });
 
@@ -4267,7 +4174,7 @@ it('should not return the shipping methods if product is downloadable', function
 
     CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4368,7 +4275,7 @@ it('should not return the cash on delivery payment method if product is virtual'
 
     CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4395,7 +4302,7 @@ it('should not return the cash on delivery payment method if product is virtual'
     ])
         ->assertOk()
         ->assertJsonPath('redirect', false)
-        ->assertJsonCount(8, 'data.payment_methods')
+        ->assertJsonCount(2, 'data.payment_methods')
         ->assertDontSeeText('cashondelivery');
 });
 
@@ -4470,7 +4377,7 @@ it('should not return the shipping methods if product is virtual', function () {
 
     CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4637,7 +4544,7 @@ it('should place order with two products with simple and configurable product ty
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -4869,7 +4776,7 @@ it('should place order with two products with simple and grouped product type', 
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -5112,7 +5019,7 @@ it('should place order with two products with simple and downloadable product ty
 
     $cartPayment = CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'moneytransfer',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 

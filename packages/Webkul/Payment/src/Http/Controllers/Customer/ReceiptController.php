@@ -6,6 +6,7 @@ use App\Support\OrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Webkul\Payment\PaymentPolicy;
 use Webkul\Payment\Repositories\PaymentReceiptRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 
@@ -41,7 +42,7 @@ class ReceiptController extends Controller
             return redirect()->back();
         }
 
-        if ($order->payment?->method !== 'duitnowqr_manual' || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
+        if (! PaymentPolicy::allows($order->payment?->method) || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
             abort(422, trans('admin::order-status.receipt-upload-unavailable'));
         }
 
@@ -59,7 +60,7 @@ class ReceiptController extends Controller
     {
         $order = $this->orderRepository->with('payment')->findOrFail($orderId);
 
-        abort_unless($order->payment?->method === 'duitnowqr_manual', 404);
+        abort_unless(PaymentPolicy::allows($order->payment?->method), 404);
 
         $receipts = $this->paymentReceiptRepository
             ->scopeQuery(fn ($query) => $query->where('order_id', $orderId)->orderByDesc('id'))->all();

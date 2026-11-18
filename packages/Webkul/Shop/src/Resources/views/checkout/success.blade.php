@@ -46,7 +46,62 @@
 				@endif
 			</p>
 
-			{{ view_render_event('bagisto.shop.checkout.success.continue-shopping.before', ['order' => $order]) }}
+			@php
+				$instructions = \Webkul\Payment\Payment::getInstructions($order->payment?->method);
+			@endphp
+
+			@if (! empty($instructions['details']) || $instructions['qr_image'])
+				<div
+					class="w-full max-w-xl rounded-xl border border-zinc-200 p-5 max-md:p-4"
+					v-pre
+					style="text-align: left; background-color: var(--panel, #fafafa);"
+				>
+					<h3 class="text-lg font-medium max-md:text-base">
+						@lang('payment::app.how-to-pay')
+					</h3>
+
+					@if (! empty($instructions['details']))
+						<p class="mt-3 font-medium">
+							{{ $instructions['details']['title'] }}
+						</p>
+
+						<p class="mt-1 break-words text-zinc-600" style="white-space: pre-line;">{{ $instructions['details']['value'] }}</p>
+					@endif
+
+					@if ($instructions['qr_image'])
+						<img
+							src="{{ $instructions['qr_image'] }}"
+							alt="@lang('payment::app.duitnowqr-details')"
+							class="mt-4 rounded-lg border border-zinc-200 p-2"
+							style="width: 220px; height: 220px; background-color: #fff; object-fit: contain;"
+						>
+
+						<p class="mt-2 text-sm text-zinc-500">
+							@lang('payment::app.duitnowqr-scan')
+						</p>
+					@endif
+
+					<p class="mt-4 text-sm text-zinc-500">
+						@lang('payment::app.payment-reference-note', ['order' => $order->increment_id])
+					</p>
+
+					@if (config('manpleasure-contact.whatsapp'))
+						<a
+							href="https://wa.me/{{ config('manpleasure-contact.whatsapp') }}?text={{ rawurlencode(trans('payment::app.whatsapp-proof-message', ['order' => '#'.$order->increment_id])) }}"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="mt-4 inline-block rounded-xl px-6 py-3 text-center text-base font-medium"
+							style="background-color: #128c7e; color: #fff; text-decoration: none;"
+						>
+							@lang('payment::app.send-proof-whatsapp')
+						</a>
+					@endif
+				</div>
+			@endif
+
+			<p class="mt-2 font-semibold" v-pre>{{ trans('shop::app.checkout.cart.index.grand-total') }}: {{ core()->formatPrice($order->grand_total, $order->order_currency_code) }}</p>
+
+			{!! view_render_event('bagisto.shop.checkout.success.continue-shopping.before', ['order' => $order]) !!}
 
 			<a href="{{ route('shop.home.index') }}">
 				<div class="w-max cursor-pointer rounded-2xl bg-navyBlue px-11 py-3 text-center text-base font-medium text-white max-md:rounded-lg max-md:px-6 max-md:py-1.5">

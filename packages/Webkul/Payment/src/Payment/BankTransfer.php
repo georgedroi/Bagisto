@@ -56,11 +56,15 @@ class BankTransfer extends Payment
     }
 
     /**
-     * Checks if payment method is available. A method without an account number cannot take payment.
+     * Require complete transfer details and instructions before accepting payment.
      */
     public function isAvailable(): bool
     {
-        return (bool) $this->getConfigData('active') && ! empty(trim((string) $this->getConfigData('account_number')));
+        return (bool) $this->getConfigData('active')
+            && trim((string) $this->getConfigData('bank_name')) !== ''
+            && trim((string) $this->getConfigData('account_name')) !== ''
+            && trim((string) $this->getConfigData('account_number')) !== ''
+            && trim((string) $this->getConfigData('instructions')) !== '';
     }
 
     /**

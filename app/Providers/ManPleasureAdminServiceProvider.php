@@ -6,6 +6,7 @@ use App\Support\OrderWorkflow;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\ValidationException;
+use Webkul\Payment\PaymentPolicy;
 use Webkul\Payment\Repositories\PaymentReceiptRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Theme\ViewRenderEventManager;
@@ -46,7 +47,7 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
                 $workflowOrder = app(OrderRepository::class)
                     ->with(['payment', 'shipments'])
                     ->find($order->id);
-                if ($workflowOrder->payment?->method === 'duitnowqr_manual') {
+                if (PaymentPolicy::allows($workflowOrder->payment?->method)) {
                     $receipts = app(PaymentReceiptRepository::class)
                         ->scopeQuery(fn ($query) => $query->where('order_id', $order->id)->orderByDesc('id'))
                         ->all();
@@ -62,7 +63,7 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
                 $workflowOrder = app(OrderRepository::class)
                     ->with('payment')
                     ->find($order->id);
-                if ($workflowOrder->payment?->method === 'duitnowqr_manual') {
+                if (PaymentPolicy::allows($workflowOrder->payment?->method)) {
                     $receipts = app(PaymentReceiptRepository::class)
                         ->scopeQuery(fn ($query) => $query->where('order_id', $order->id)->orderByDesc('id'))
                         ->all();
@@ -75,7 +76,7 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
         Event::listen('sales.shipment.save.before*', function (string $event, array $data): void {
             $order = app(OrderRepository::class)->with('payment')->findOrFail($data['order_id']);
 
-            if ($order->payment?->method === 'duitnowqr_manual' && ! OrderWorkflow::paymentVerified($order)) {
+            if (PaymentPolicy::allows($order->payment?->method) && ! OrderWorkflow::paymentVerified($order)) {
                 throw ValidationException::withMessages(['shipment' => trans('admin::order-status.payment-required')]);
             }
         });
@@ -84,7 +85,7 @@ class ManPleasureAdminServiceProvider extends ServiceProvider
             if ($order = $manager->getParam('order')) {
                 $order = app(OrderRepository::class)->with('payment')->findOrFail($order->id);
 
-                if ($order->payment?->method === 'duitnowqr_manual') {
+                if (PaymentPolicy::allows($order->payment?->method)) {
                     $manager->addTemplate('manpleasure-admin::checkout-receipt-link', compact('order'));
                 }
             }

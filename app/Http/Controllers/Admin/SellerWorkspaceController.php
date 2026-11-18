@@ -22,6 +22,7 @@ use Webkul\Admin\Helpers\Reporting\Sale;
 use Webkul\CartRule\Repositories\CartRuleRepository;
 use Webkul\CatalogRule\Repositories\CatalogRuleRepository;
 use Webkul\Customer\Repositories\CustomerRepository;
+use Webkul\Payment\PaymentPolicy;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Product\Repositories\ProductReviewRepository;
 use Webkul\RMA\Repositories\RMARepository;
@@ -586,7 +587,7 @@ class SellerWorkspaceController extends Controller
      */
     protected function orderStatusKey($order): string
     {
-        if ($order->payment?->method === 'duitnowqr_manual') {
+        if (PaymentPolicy::allows($order->payment?->method)) {
             return OrderWorkflow::current($order);
         }
 

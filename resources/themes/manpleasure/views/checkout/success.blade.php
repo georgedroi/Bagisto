@@ -99,6 +99,8 @@
 				</div>
 			@endif
 
+			<p class="mt-2 font-semibold" v-pre>{{ trans('shop::app.checkout.cart.index.grand-total') }}: {{ core()->formatPrice($order->grand_total, $order->order_currency_code) }}</p>
+
 			{!! view_render_event('bagisto.shop.checkout.success.continue-shopping.before', ['order' => $order]) !!}
 
 			<a href="{{ route('shop.home.index') }}">

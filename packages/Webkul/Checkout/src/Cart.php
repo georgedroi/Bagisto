@@ -14,6 +14,7 @@ use Webkul\Customer\Contracts\Customer as CustomerContract;
 use Webkul\Customer\Contracts\Wishlist as WishlistContract;
 use Webkul\Customer\Repositories\CustomerAddressRepository;
 use Webkul\Customer\Repositories\WishlistRepository;
+use Webkul\Payment\Payment;
 use Webkul\Product\Contracts\Product as ProductContract;
 use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Shipping\Facades\Shipping;
@@ -598,6 +599,10 @@ class Cart
      */
     public function savePaymentMethod(array $params): bool|Contracts\CartPayment
     {
+        if (! app(Payment::class)->isMethodAvailable($params['method'] ?? null)) {
+            return false;
+        }
+
         if (! $this->cart) {
             return false;
         }

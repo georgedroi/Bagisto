@@ -14,12 +14,12 @@ class DuitNowQRManual extends Payment
     protected $code = 'duitnowqr_manual';
 
     /**
-     * Checks if payment method is available. A method with neither a QR code nor an account cannot take payment.
+     * Require a QR image before offering a scan-to-pay method.
      */
     public function isAvailable(): bool
     {
         return (bool) $this->getConfigData('active')
-            && ($this->getConfigData('qr_image') || ! empty(trim((string) $this->getConfigData('account_number'))));
+            && trim((string) $this->getConfigData('qr_image')) !== '';
     }
 
     /**

@@ -26,8 +26,10 @@ it('checks out a manual payment order and records verified payment and physical 
     $methods = array_fill_keys(array_keys(config('payment_methods')), ['active' => false]);
     $methods[$method] = [
         'active' => true,
+        'bank_name' => 'QA Bank',
+        'account_name' => 'QA Store',
         'account_number' => 'QA-ONLY',
-        'usdt_erc20_address' => '0x'.str_repeat('1', 40),
+        'qr_image' => 'qa/qr.png',
         'instructions' => 'QA payment instructions',
     ];
     app(CoreConfigRepository::class)->create([
@@ -70,6 +72,9 @@ it('checks out a manual payment order and records verified payment and physical 
 
     $available = postJson(route('shop.checkout.onepage.shipping_methods.store'), ['shipping_method' => 'zonerate_zonerate'])->assertOk()->json('payment_methods');
     expect(array_column($available, 'method'))->toBe([$method]);
+    $offered = $available[0];
+    expect($method === 'duitnowqr_manual' ? $offered['qr_image'] : json_encode($offered['instructions']))
+        ->toContain($method === 'duitnowqr_manual' ? 'qa/qr.png' : 'QA-ONLY');
     postJson(route('shop.checkout.onepage.payment_methods.store'), ['payment' => ['method' => $method]])->assertOk();
     postJson(route('shop.checkout.onepage.orders.store'))->assertOk()->assertJsonPath('data.redirect_url', route('shop.checkout.onepage.success'));
 
@@ -91,7 +96,7 @@ it('checks out a manual payment order and records verified payment and physical 
             && ! str_contains($html, e($product->sku));
     });
 
-    if ($method === 'duitnowqr_manual') {
+    if (in_array($method, ['duitnowqr_manual', 'banktransfer'], true)) {
         $document = new DOMDocument;
         @$document->loadHTML($success->getContent());
         expect((new DOMXPath($document))->query('//a[contains(@href, "/payment/orders/'.$order->id.'/receipt")]')->length)->toBe(1);
@@ -102,9 +107,6 @@ it('checks out a manual payment order and records verified payment and physical 
         post(route('admin.sales.orders.workflow.update', $order->id), ['expected_status' => 'confirmed', 'workflow_status' => 'packing'])->assertRedirect();
         post(route('admin.sales.orders.awb.upload', $order->id), ['awb' => UploadedFile::fake()->image('awb.png')])->assertRedirect();
         post(route('admin.sales.orders.workflow.update', $order->id), ['expected_status' => 'packing', 'workflow_status' => 'ready_to_ship'])->assertRedirect();
-    } else {
-        $this->loginAsAdmin();
-        post(route('admin.sales.invoices.store', $order->id), ['invoice' => ['items' => [$item->id => 1]]])->assertRedirect();
     }
 
     expect($order->fresh()->invoices)->toHaveCount(1);
@@ -155,11 +157,57 @@ it('checks out a manual payment order and records verified payment and physical 
             && ! str_contains($html, e($product->sku));
     });
 
-    if ($method === 'duitnowqr_manual') {
+    if (in_array($method, ['duitnowqr_manual', 'banktransfer'], true)) {
         foreach (['ready_to_ship' => 'handed_to_courier', 'handed_to_courier' => 'in_transit', 'in_transit' => 'out_for_delivery', 'out_for_delivery' => 'delivered'] as $from => $to) {
             post(route('admin.sales.orders.workflow.update', $order->id), ['expected_status' => $from, 'workflow_status' => $to])->assertRedirect();
         }
 
         expect(OrderWorkflow::current($order->fresh()))->toBe('delivered');
     }
-})->with(['banktransfer', 'duitnowqr_manual', 'cryptotransfer']);
+})->with(['banktransfer', 'duitnowqr_manual']);
+
+it('neither offers nor accepts a disabled method at checkout even when it is fully configured and active', function (string $method) {
+    $methods = array_fill_keys(array_keys(config('payment_methods')), ['active' => false]);
+    $methods[$method] = [
+        'active' => true,
+        'account_number' => 'QA-ONLY',
+        'usdt_erc20_address' => '0x'.str_repeat('1', 40),
+        'usdt_trc20_address' => 'T'.str_repeat('1', 33),
+        'instructions' => 'QA payment instructions',
+    ];
+    app(CoreConfigRepository::class)->create([
+        'channel' => core()->getCurrentChannelCode(),
+        'locale' => 'en',
+        'sales' => ['payment_methods' => $methods],
+    ]);
+
+    $customer = Customer::factory()->create();
+    $product = (new ProductFaker(['attribute_value' => [
+        'price' => ['float_value' => 100],
+        'special_price' => ['float_value' => null],
+    ]]))->getSimpleProductFactory()->create();
+    $this->actingAs($customer, 'customer');
+
+    postJson(route('shop.api.checkout.cart.store'), ['product_id' => $product->id, 'quantity' => 1])->assertOk();
+    $shippingMethods = postJson(route('shop.checkout.onepage.addresses.store'), ['billing' => [
+        'first_name' => $customer->first_name,
+        'last_name' => $customer->last_name,
+        'email' => $customer->email,
+        'address' => ['QA address'],
+        'city' => 'Kuala Lumpur',
+        'country' => 'MY',
+        'state' => 'Kuala Lumpur',
+        'postcode' => '50150',
+        'phone' => '0123456789',
+        'use_for_shipping' => true,
+    ]])->assertOk()->json('data.shippingMethods');
+    $rate = reset($shippingMethods)['rates'][0]['method'];
+
+    $available = postJson(route('shop.checkout.onepage.shipping_methods.store'), ['shipping_method' => $rate])->assertOk()->json('payment_methods');
+
+    expect(array_column($available, 'method'))->not->toContain($method);
+
+    postJson(route('shop.checkout.onepage.payment_methods.store'), ['payment' => ['method' => $method]])->assertForbidden();
+
+    $this->assertDatabaseMissing('cart_payment', ['method' => $method]);
+})->with(['cryptotransfer', 'cashondelivery', 'moneytransfer', 'stripe', 'paypal_standard', 'razorpay', 'payu']);

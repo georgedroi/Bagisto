@@ -15,6 +15,7 @@ use Webkul\Admin\Http\Resources\CartResource;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Checkout\Repositories\CartRepository;
 use Webkul\Customer\Repositories\CustomerGroupRepository;
+use Webkul\Payment\Payment;
 use Webkul\Sales\Repositories\OrderCommentRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Transformers\OrderResource;
@@ -98,7 +99,7 @@ class OrderController extends Controller
 
         $cart = Cart::getCart();
 
-        if (! in_array($cart->payment->method, ['cashondelivery', 'moneytransfer'])) {
+        if (! app(Payment::class)->isMethodAvailable($cart->payment->method)) {
             return response()->json([
                 'message' => trans('admin::app.sales.orders.create.payment-not-supported'),
             ], Response::HTTP_BAD_REQUEST);

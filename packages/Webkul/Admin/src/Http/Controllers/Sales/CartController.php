@@ -234,7 +234,8 @@ class CartController extends Controller
     public function storePaymentMethod(int $id)
     {
         $validatedData = $this->validate(request(), [
-            'payment' => 'required',
+            'payment' => 'required|array',
+            'payment.method' => 'required|string',
         ]);
 
         $cart = $this->cartRepository->findOrFail($id);

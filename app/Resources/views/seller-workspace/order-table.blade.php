@@ -15,7 +15,7 @@
             @if (bouncer()->hasPermission('sales.orders.view'))
                 <a class="msw-blue" href="{{ route('admin.sales.orders.view', $order->id) }}">{{ trans('admin::seller-workspace.open') }}</a>
             @endif
-            @if ($order->payment?->method === 'duitnowqr_manual' && bouncer()->hasPermission('sales.orders.workflow'))
+            @if (\Webkul\Payment\PaymentPolicy::allows($order->payment?->method) && bouncer()->hasPermission('sales.orders.workflow'))
                 @foreach (array_diff(\App\Support\OrderWorkflow::next($order), ['failed_to_deliver']) as $step)
                     <form class="msw-inline" method="post" action="{{ route('admin.sales.orders.workflow.update', $order->id) }}" data-msw-json data-msw-confirm="{{ trans('admin::seller-workspace.actions.confirm-step') }}">
                         @csrf

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Payment\Contracts\PaymentReceipt;
+use Webkul\Payment\PaymentPolicy;
 use Webkul\Sales\Repositories\InvoiceRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 
@@ -55,7 +56,7 @@ class PaymentReceiptRepository extends Repository
                 $order = $this->orderRepository->scopeQuery(fn ($query) => $query->lockForUpdate())
                     ->with('payment')->findOrFail($orderId);
 
-                if ($order->payment?->method !== 'duitnowqr_manual' || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
+                if (! PaymentPolicy::allows($order->payment?->method) || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
                     throw ValidationException::withMessages(['receipt' => trans('admin::order-status.receipt-upload-unavailable')]);
                 }
 
@@ -144,7 +145,7 @@ class PaymentReceiptRepository extends Repository
         $latest = $this->scopeQuery(fn ($query) => $query->where('order_id', $order->id)->orderByDesc('id'))->first();
         $reviewable = $receipt->status === 'pending'
             && $latest?->id === $receipt->id
-            && $order->payment?->method === 'duitnowqr_manual'
+            && PaymentPolicy::allows($order->payment?->method)
             && OrderWorkflow::current($order) === 'awaiting_verification';
 
         return [$receipt, $order, $reviewable];

@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Payment\PaymentPolicy;
 use Webkul\Sales\Repositories\OrderCommentRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 
@@ -38,7 +39,7 @@ class OrderWorkflowController extends Controller
                 ->with(['payment', 'shipments', 'items'])->findOrFail($orderId);
             $current = OrderWorkflow::current($order);
 
-            abort_unless($order->payment?->method === 'duitnowqr_manual', 422);
+            abort_unless(PaymentPolicy::allows($order->payment?->method), 422);
             abort_unless($data['expected_status'] === $current, 409, trans('admin::order-status.stale-order'));
             abort_unless(in_array($data['workflow_status'], OrderWorkflow::next($order), true), 422, trans('admin::order-status.invalid-transition'));
 

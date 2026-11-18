@@ -6,6 +6,7 @@ use Webkul\Checkout\Models\CartAddress;
 use Webkul\Checkout\Models\CartItem;
 use Webkul\Checkout\Models\CartPayment;
 use Webkul\Checkout\Models\CartShippingRate;
+use Webkul\Core\Repositories\CoreConfigRepository;
 use Webkul\Customer\Models\CompareItem;
 use Webkul\Customer\Models\Customer;
 use Webkul\Customer\Models\CustomerAddress;
@@ -21,6 +22,20 @@ use function Pest\Laravel\deleteJson;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\putJson;
+
+beforeEach(function () {
+    foreach ([
+        'banktransfer' => ['active' => '1', 'title' => 'Bank Transfer', 'bank_name' => 'QA Bank', 'account_name' => 'QA Store', 'account_number' => 'QA-000', 'instructions' => 'Transfer the order total with your order reference.', 'sort' => '2'],
+        'duitnowqr_manual' => ['active' => '1', 'title' => 'QR Code Payment', 'qr_image' => 'qa/qr.png', 'sort' => '1'],
+    ] as $method => $fields) {
+        foreach ($fields as $field => $value) {
+            app(CoreConfigRepository::class)->updateOrCreate(
+                ['code' => 'sales.payment_methods.'.$method.'.'.$field, 'channel_code' => 'default', 'locale_code' => 'en'],
+                ['value' => $value],
+            );
+        }
+    }
+});
 
 it('should search the customers via email or name', function () {
     // Arrange.
@@ -724,38 +739,9 @@ it('should the shipping rates after storing address', function () {
         'shipping_method' => 'free_free',
     ])
         ->assertOk()
-        ->assertJsonPath('payment_methods.0.method', 'stripe')
-        ->assertJsonPath('payment_methods.0.method_title', 'Stripe')
-        ->assertJsonPath('payment_methods.0.description', 'Stripe')
-        ->assertJsonPath('payment_methods.0.sort', 1)
-        ->assertJsonPath('payment_methods.1.method', 'razorpay')
-        ->assertJsonPath('payment_methods.1.method_title', 'Razorpay')
-        ->assertJsonPath('payment_methods.1.description', 'Razorpay')
-        ->assertJsonPath('payment_methods.1.sort', 2)
-        ->assertJsonPath('payment_methods.2.method', 'payu')
-        ->assertJsonPath('payment_methods.2.method_title', 'PayU')
-        ->assertJsonPath('payment_methods.2.description', 'PayU')
-        ->assertJsonPath('payment_methods.2.sort', 3)
-        ->assertJsonPath('payment_methods.3.method', 'phonepe')
-        ->assertJsonPath('payment_methods.3.method_title', 'PhonePe')
-        ->assertJsonPath('payment_methods.3.description', 'PhonePe')
-        ->assertJsonPath('payment_methods.3.sort', 4)
-        ->assertJsonPath('payment_methods.4.method', 'paypal_smart_button')
-        ->assertJsonPath('payment_methods.4.method_title', 'PayPal Smart Button')
-        ->assertJsonPath('payment_methods.4.description', 'PayPal')
-        ->assertJsonPath('payment_methods.4.sort', 5)
-        ->assertJsonPath('payment_methods.5.method', 'paypal_standard')
-        ->assertJsonPath('payment_methods.5.method_title', 'PayPal Standard')
-        ->assertJsonPath('payment_methods.5.description', 'PayPal Standard')
-        ->assertJsonPath('payment_methods.5.sort', 6)
-        ->assertJsonPath('payment_methods.6.method', 'cashondelivery')
-        ->assertJsonPath('payment_methods.6.method_title', 'Cash On Delivery')
-        ->assertJsonPath('payment_methods.6.description', 'Cash On Delivery')
-        ->assertJsonPath('payment_methods.6.sort', 7)
-        ->assertJsonPath('payment_methods.7.method', 'moneytransfer')
-        ->assertJsonPath('payment_methods.7.method_title', 'Money Transfer')
-        ->assertJsonPath('payment_methods.7.description', 'Money Transfer')
-        ->assertJsonPath('payment_methods.7.sort', 8);
+        ->assertJsonCount(2, 'payment_methods')
+        ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
+        ->assertJsonPath('payment_methods.1.method', 'banktransfer');
 });
 
 it('should store the payment method after storing the shipping method', function () {
@@ -834,7 +820,7 @@ it('should store the payment method after storing the shipping method', function
     $response = postJson(route('admin.sales.cart.payment_methods.store', $cart->id), [
         'payment' => [
             'description' => 'Cash On Delivery',
-            'method' => 'cashondelivery',
+            'method' => 'banktransfer',
             'method_title' => 'Cash On Delivery',
             'sort' => 1,
         ],
@@ -890,8 +876,8 @@ it('should store the payment method after storing the shipping method', function
         ->assertJsonPath('cart.shipping_address.phone', $cartShippingAddress->phone)
         ->assertJsonPath('cart.shipping_address.vat_id', $cartShippingAddress->vat_id)
         ->assertJsonPath('cart.have_stockable_items', true)
-        ->assertJsonPath('cart.payment_method', 'cashondelivery')
-        ->assertJsonPath('cart.payment_method_title', 'Cash On Delivery')
+        ->assertJsonPath('cart.payment_method', 'banktransfer')
+        ->assertJsonPath('cart.payment_method_title', 'Bank Transfer')
         ->assertOk();
 
     $this->assertPrice($product->price, $response['cart']['grand_total']);
@@ -970,7 +956,7 @@ it('should place order via admin', function () {
 
     CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 
@@ -1498,7 +1484,7 @@ it('should return the list of the recent orders', function () {
 
     CartPayment::factory()->create([
         'cart_id' => $cart->id,
-        'method' => $paymentMethod = 'cashondelivery',
+        'method' => $paymentMethod = 'banktransfer',
         'method_title' => core()->getConfigData('sales.payment_methods.'.$paymentMethod.'.title'),
     ]);
 

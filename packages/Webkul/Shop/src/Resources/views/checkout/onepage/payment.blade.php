@@ -104,6 +104,40 @@
                                 {{-- \Webkul\Payment\Payment::getAdditionalDetails($payment['method'] --}}
                             </div>
                         </div>
+                        <div
+                            v-if="selected && (selected.instructions.title || selected.qr_image)"
+                            class="mt-6 rounded-xl border border-zinc-200 p-5 max-md:mt-4 max-md:p-4"
+                            style="background-color: var(--panel, #fafafa);"
+                        >
+                            <p
+                                class="text-base font-medium max-md:text-sm"
+                                v-text="selected.instructions.title ? selected.instructions.title : selected.method_title"
+                            >
+                            </p>
+
+                            <p
+                                v-if="selected.instructions.value"
+                                class="mt-2 break-words text-sm text-zinc-600"
+                                style="white-space: pre-line;"
+                                v-text="selected.instructions.value"
+                            >
+                            </p>
+
+                            <img
+                                v-if="selected.qr_image"
+                                :src="selected.qr_image"
+                                alt=""
+                                class="mt-4 rounded-lg border border-zinc-200 p-2"
+                                style="width: 200px; height: 200px; background-color: #fff; object-fit: contain;"
+                            >
+
+                            <p
+                                v-if="selected.qr_image"
+                                class="mt-2 text-sm text-zinc-500"
+                            >
+                                @lang('payment::app.duitnowqr-scan')
+                            </p>
+                        </div>
                     </x-slot>
                 </x-shop::accordion>
 
@@ -126,8 +160,25 @@
 
             emits: ['payment-method-selected', 'processing', 'processed'],
 
+            data() {
+                return {
+                    selectedCode: null,
+                };
+            },
+
+            computed: {
+                selected() {
+                    if (! this.methods || ! this.selectedCode) {
+                        return null;
+                    }
+
+                    return Object.values(this.methods).find(method => method.method === this.selectedCode) || null;
+                },
+            },
+
             methods: {
                 store(selectedMethod) {
+                    this.selectedCode = selectedMethod.method;
                     this.$emit('payment-method-selected', selectedMethod.method);
 
                     this.$emit('processing', 'review');
@@ -138,7 +189,6 @@
                         .then(response => {
                             this.$emit('processed', response.data.cart);
 
-                            // Used in mobile view. 
                             if (window.innerWidth <= 768) {
                                 window.scrollTo({
                                     top: document.body.scrollHeight,

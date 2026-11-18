@@ -22,7 +22,7 @@
                 @endif
             </div>
 
-            @if ($order->payment->method === 'duitnowqr_manual')
+            @if (\Webkul\Payment\PaymentPolicy::allows($order->payment->method))
                 <div class="grid gap-3">
                     <h3 class="font-semibold text-gray-800 dark:text-white">{{ trans('admin::order-status.receipts') }}</h3>
                     @forelse ($receipts as $receipt)

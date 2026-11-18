@@ -80,7 +80,7 @@
             <tbody>
                 @forelse ($recentOrders as $queueOrder)
                     @php
-                        $recentStatus = $queueOrder->payment?->method === 'duitnowqr_manual'
+                        $recentStatus = \Webkul\Payment\PaymentPolicy::allows($queueOrder->payment?->method)
                             ? \App\Support\OrderWorkflow::current($queueOrder)
                             : match ($queueOrder->status) {
                                 'pending' => 'to-confirm',

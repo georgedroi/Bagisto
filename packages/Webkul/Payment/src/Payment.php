@@ -28,10 +28,14 @@ class Payment
     {
         $paymentMethods = [];
 
-        foreach (Config::get('payment_methods') as $paymentMethodConfig) {
+        foreach (Config::get('payment_methods', []) as $code => $paymentMethodConfig) {
+            if (! PaymentPolicy::allows($code)) {
+                continue;
+            }
+
             $paymentMethod = app($paymentMethodConfig['class']);
 
-            if ($paymentMethod->isAvailable()) {
+            if (PaymentPolicy::allows($paymentMethod->getCode()) && $paymentMethod->isAvailable()) {
                 $paymentMethods[] = [
                     'method' => $paymentMethod->getCode(),
                     'method_title' => $paymentMethod->getTitle(),
@@ -56,6 +60,20 @@ class Payment
     }
 
     /**
+     * Validate the policy and current configuration without trusting a client-side list.
+     */
+    public function isMethodAvailable(mixed $code): bool
+    {
+        if (! PaymentPolicy::allows($code)) {
+            return false;
+        }
+
+        $class = Config::get('payment_methods.'.$code.'.class');
+
+        return $class && app($class)->getCode() === $code && app($class)->isAvailable();
+    }
+
+    /**
      * Returns payment redirect url if have any
      *
      * @param  Cart  $cart
@@ -63,6 +81,10 @@ class Payment
      */
     public function getRedirectUrl($cart)
     {
+        if (! $this->isMethodAvailable($cart->payment?->method)) {
+            PaymentPolicy::reject();
+        }
+
         $payment = app(Config::get('payment_methods.'.$cart->payment->method.'.class'));
 
         return $payment->getRedirectUrl();
