@@ -272,9 +272,9 @@
             </p>
 		</div>
 
-        <p class="mb-4 mt-8 text-center text-xs text-zinc-500">
+        <div class="mb-4 mt-8 text-center text-xs text-zinc-500" v-pre>
             @lang('shop::app.customers.signup-form.footer', ['current_year'=> date('Y') ])
-        </p>
+        </div>
 	</div>
 
     @push('scripts')
@@ -290,7 +290,7 @@
         </x-slot>
 
         <x-slot:content class="!p-5">
-            <div class="max-h-[500px] overflow-auto">
+            <div class="max-h-[500px] overflow-auto" v-pre>
                 {!! core()->getConfigData('general.gdpr.agreement.agreement_content') !!}
             </div>
         </x-slot>

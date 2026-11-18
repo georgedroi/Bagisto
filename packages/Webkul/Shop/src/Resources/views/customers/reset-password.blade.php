@@ -148,8 +148,8 @@
 
         </div>
 
-        <p class="mb-4 mt-8 text-center text-xs text-zinc-500">
+        <div class="mb-4 mt-8 text-center text-xs text-zinc-500" v-pre>
             @lang('shop::app.customers.reset-password.footer', ['current_year'=> date('Y') ])
-        </p>
+        </div>
     </div>
 </x-shop::layouts>

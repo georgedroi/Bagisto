@@ -159,9 +159,9 @@
             </p>
         </div>
 
-        <p class="mb-4 mt-8 text-center text-xs text-zinc-500">
+        <div class="mb-4 mt-8 text-center text-xs text-zinc-500" v-pre>
             @lang('shop::app.customers.login-form.footer', ['current_year'=> date('Y') ])
-        </p>
+        </div>
     </div>
 
     @push('scripts')

@@ -68,21 +68,33 @@ if (! function_exists('clean_path')) {
 
 if (! function_exists('clean_content')) {
     /**
-     * Clean content.
+     * Clean content. Purifying decodes entities and removing one token can join the pieces of another, so the
+     * content is purified and stripped of template syntax, across lines, until a pass removes nothing. Content that
+     * never settles is dropped. Pages must still print the result inside v-pre: this is not the Vue boundary.
      */
     function clean_content(string $content): string
     {
-        $cleaned = Purify::clean($content);
-
         $patterns = [
-            '/\{\{.*?\}\}/',
-            '/\{!!.*?!!\}/',
+            '/\{\{.*?\}\}/s',
+            '/\{!!.*?!!\}/s',
             '/@(php|if|else|endif|foreach|endforeach|for|endfor|while|endwhile|switch|endswitch|case|break|continue|include|extends|section|endsection|yield|push|endpush|stack|endstack)/',
             '/<\?php.*?\?>/s',
         ];
 
-        foreach ($patterns as $pattern) {
-            $cleaned = preg_replace($pattern, '', $cleaned);
+        $cleaned = $content;
+
+        $settled = false;
+
+        for ($pass = 0; $pass < 10 && ! $settled; $pass++) {
+            $purified = Purify::clean($cleaned);
+
+            $cleaned = preg_replace($patterns, '', $purified) ?? '';
+
+            $settled = $cleaned === $purified;
+        }
+
+        if (! $settled) {
+            return '';
         }
 
         $cleaned = str_replace(
