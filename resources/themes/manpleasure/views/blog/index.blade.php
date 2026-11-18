@@ -11,7 +11,7 @@
         <p class="mp-journal-description">{{ trans('manpleasure.blog-description') }}</p>
 
         @if ($pages->count())
-            <div class="mp-journal-grid">
+            <div class="mp-journal-grid" v-pre>
                 @foreach ($pages as $page)
                     <article class="mp-journal-card">
                         <h2><a href="{{ route('shop.cms.page', ['slug' => $page->url_key]) }}">{{ $page->page_title }}</a></h2>

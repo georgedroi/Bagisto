@@ -5,6 +5,9 @@
 <section
     class="mp-section mp-managed-section"
     id="mp-section-{{ $section->id }}"
+    @if (in_array($section->type, [\Webkul\Theme\Enums\SectionTypeEnum::STATIC_CONTENT->value, \Webkul\Theme\Enums\SectionTypeEnum::SERVICES_CONTENT->value]))
+        v-pre
+    @endif
     @if ($preview ?? false)
         data-section-id="{{ $section->id }}"
         data-section-name="{{ $section->name }}"

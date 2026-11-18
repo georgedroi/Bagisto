@@ -38,7 +38,7 @@
 				@lang('shop::app.checkout.success.thanks')
 			</p>
 
-			<p class="text-xl text-zinc-500 max-md:text-center max-md:text-xs">
+			<p class="text-xl text-zinc-500 max-md:text-center max-md:text-xs" v-pre>
 				@if (! empty($order->checkout_message))
 					{!! nl2br(e($order->checkout_message)) !!}
 				@else
@@ -53,6 +53,7 @@
 			@if (! empty($instructions['details']) || $instructions['qr_image'])
 				<div
 					class="w-full max-w-xl rounded-xl border border-zinc-200 p-5 max-md:p-4"
+					v-pre
 					style="text-align: left; background-color: var(--panel, #fafafa);"
 				>
 					<h3 class="text-lg font-medium max-md:text-base">

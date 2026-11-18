@@ -8,7 +8,7 @@ use HTMLPurifier_Config;
 /**
  * Cleans a product description before it is saved, because the storefront prints it as HTML.
  * It keeps the editor's text formatting and pictures stored on this site, and drops scripts,
- * event handlers and pictures from other hosts.
+ * event handlers, pictures from other hosts and template expressions the storefront's Vue app would run.
  */
 class ProductDescriptionSanitizer
 {
@@ -23,7 +23,7 @@ class ProductDescriptionSanitizer
     protected const STYLES = ['text-align', 'max-width', 'width', 'height'];
 
     /**
-     * Give the description with only the allowed markup left.
+     * Give the description with only the allowed markup and no template expressions left.
      */
     public function clean(?string $html): string
     {
@@ -39,6 +39,6 @@ class ProductDescriptionSanitizer
         $config->set('URI.AllowedSchemes', ['http' => true, 'https' => true]);
         $config->set('URI.DisableExternalResources', true);
 
-        return trim((new HTMLPurifier($config))->purify($html));
+        return TemplateExpressionFilter::purify(new HTMLPurifier($config), $html);
     }
 }

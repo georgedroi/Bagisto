@@ -24,13 +24,15 @@ class ProductEntryRequest extends FormRequest
     }
 
     /**
-     * Clean the description, which the storefront prints as HTML, and unpack the variations,
+     * Clean the description and short description, which the storefront prints as HTML, and unpack the variations,
      * sent as one JSON field because a large list would pass the server's input limit.
      */
     protected function prepareForValidation(): void
     {
-        if ($this->has('description')) {
-            $this->merge(['description' => app(ProductDescriptionSanitizer::class)->clean((string) $this->input('description'))]);
+        foreach (['description', 'short_description'] as $field) {
+            if ($this->has($field)) {
+                $this->merge([$field => app(ProductDescriptionSanitizer::class)->clean((string) $this->input($field))]);
+            }
         }
 
         $data = json_decode((string) $this->input('variation_data'), true);

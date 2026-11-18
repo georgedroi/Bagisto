@@ -82,9 +82,9 @@
                     :is-selected="true"
                 >
                     <div class="container mt-[60px] max-1180:px-5">
-                        <p class="text-lg text-zinc-500 max-1180:text-sm">
+                        <div class="text-lg text-zinc-500 max-1180:text-sm" v-pre>
                             {!! $product->description !!}
-                        </p>
+                        </div>
                     </div>
                 </x-shop::tabs.item>
 
@@ -102,7 +102,7 @@
                                 @foreach ($customAttributeValues as $customAttributeValue)
                                     @if (! empty($customAttributeValue['value']))
                                         <div class="grid">
-                                            <p class="text-base text-black">
+                                            <p class="text-base text-black" v-pre>
                                                 {{ $customAttributeValue['label'] }}
                                             </p>
                                         </div>
@@ -126,7 +126,7 @@
                                             </a>
                                         @else
                                             <div class="grid">
-                                                <p class="text-base text-zinc-500">
+                                                <p class="text-base text-zinc-500" v-pre>
                                                     {{ $customAttributeValue['value'] }}
                                                 </p>
                                             </div>
@@ -163,7 +163,7 @@
             </x-slot>
 
             <x-slot:content class="max-sm:px-0">
-                <div class="mb-5 text-lg text-zinc-500 max-1180:text-sm max-md:mb-1 max-md:px-4">
+                <div class="mb-5 text-lg text-zinc-500 max-1180:text-sm max-md:mb-1 max-md:px-4" v-pre>
                     {!! $product->description !!}
                 </div>
             </x-slot>
@@ -353,9 +353,9 @@
 
                                 {!! view_render_event('bagisto.shop.products.short_description.before', ['product' => $product]) !!}
 
-                                <p class="mt-6 text-lg text-zinc-500 max-sm:mt-1.5 max-sm:text-sm">
+                                <div class="mt-6 text-lg text-zinc-500 max-sm:mt-1.5 max-sm:text-sm" v-pre>
                                     {!! $product->short_description !!}
-                                </p>
+                                </div>
 
                                 {!! view_render_event('bagisto.shop.products.short_description.after', ['product' => $product]) !!}
 
