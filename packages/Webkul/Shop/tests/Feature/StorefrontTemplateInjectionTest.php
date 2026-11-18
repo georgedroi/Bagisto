@@ -82,7 +82,7 @@ it('keeps admin text in the desktop and mobile additional information out of Vue
     expectPayloadNeverCompiled($html, 4);
 });
 
-it('keeps existing product and short descriptions out of Vue compilation on the product page', function () {
+it('removes template expressions from existing product and short descriptions on the product page', function () {
     $product = (new ProductFaker)->getSimpleProductFactory()->create();
     $description = Attribute::query()->where('code', 'description')->firstOrFail();
 
@@ -98,9 +98,13 @@ it('keeps existing product and short descriptions out of Vue compilation on the 
         ['text_value' => '<p>Short stored '.STOREFRONT_TEMPLATE_PAYLOAD.'</p>'],
     );
 
-    $html = get(route('shop.product_or_category.index', $product->fresh()->url_key))->assertOk()->getContent();
+    $html = get(route('shop.product_or_category.index', $product->fresh()->url_key))
+        ->assertOk()
+        ->assertSeeText('Stored before sanitizing')
+        ->assertSeeText('Short stored')
+        ->getContent();
 
-    expectPayloadNeverCompiled($html, 3);
+    expect(payloadOccurrences($html))->toBeEmpty();
 });
 
 it('keeps home services and static content text out of Vue compilation', function () {

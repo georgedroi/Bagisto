@@ -88,7 +88,7 @@
                 >
                     <div class="container mt-[60px] max-1180:px-5">
                         <div class="text-lg text-zinc-500 max-1180:text-sm" v-pre>
-                            {!! $product->description !!}
+                            {!! clean_content((string) $product->description) !!}
                         </div>
                     </div>
                 </x-shop::tabs.item>
@@ -172,7 +172,7 @@
 
             <x-slot:content class="max-sm:px-0">
                 <div class="mb-5 text-lg text-zinc-500 max-1180:text-sm max-md:mb-1 max-md:px-4" v-pre>
-                    {!! $product->description !!}
+                    {!! clean_content((string) $product->description) !!}
                 </div>
             </x-slot>
         </x-shop::accordion>
@@ -367,7 +367,7 @@
                                 {!! view_render_event('bagisto.shop.products.short_description.before', ['product' => $product]) !!}
 
                                 <div class="mt-6 text-lg text-zinc-500 max-sm:mt-1.5 max-sm:text-sm" v-pre>
-                                    {!! $product->short_description !!}
+                                    {!! clean_content((string) $product->short_description) !!}
                                 </div>
 
                                 {!! view_render_event('bagisto.shop.products.short_description.after', ['product' => $product]) !!}

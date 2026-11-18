@@ -132,10 +132,10 @@ it('isolates legacy product rich text after HTML parsing in both themes', functi
         : 'resources/themes/manpleasure/views/products/view.blade.php';
     $product = (object) [$field => '<h2>Boundary sentinel {{ 7*191 }}</h2><p><strong>Gentle care</strong></p><table><tr><td>Size</td></tr></table>'];
 
-    foreach (contentBoundaryFragments($file, '{!! $product->'.$field.' !!}') as $fragment) {
+    foreach (contentBoundaryFragments($file, '{!! clean_content((string) $product->'.$field.') !!}') as $fragment) {
         $html = contentBoundaryRender($fragment, compact('product'));
         expectContentBoundary($html, 'Boundary sentinel');
-        expect($html)->toContain('<strong>Gentle care</strong>')->toContain('<td>Size</td>');
+        expect($html)->toContain('<strong>Gentle care</strong>')->toContain('<td>Size</td>')->not->toContain('7*191');
     }
 })->with(['default', 'manpleasure'])->with(['description', 'short_description']);
 

@@ -16,6 +16,6 @@
 
     <!-- Page Content -->
     <div class="container mt-8 px-[60px] max-lg:px-8" data-cms-content v-pre>
-        {!! $page->html_content !!}
+        {!! clean_content((string) $page->html_content) !!}
     </div>
 </x-shop::layouts>

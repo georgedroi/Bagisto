@@ -116,7 +116,7 @@ it('stores no Vue template expression from a CMS page edited through the admin f
         ->and($stored)->toContain('QA sentinel');
 })->with('vue expression variants');
 
-it('renders a CMS page body where Vue never compiles it, whatever is already stored', function (string $theme, string $stored) {
+it('removes template expressions from a stored CMS page body and keeps its text where Vue never compiles it', function (string $theme, string $stored) {
     if ($theme === 'manpleasure') {
         useManpleasureTheme();
     }
@@ -136,7 +136,7 @@ it('renders a CMS page body where Vue never compiles it, whatever is already sto
 
     $html = get(route('shop.cms.page', 'qa-legacy-body'))->assertOk()->getContent();
 
-    expectIsolatedFromVue($html, '7*191');
+    expect(vueRootTextNodes($html, '7*191'))->toBeEmpty();
     expectIsolatedFromVue($html, 'QA legacy sentinel');
 })->with(['default', 'manpleasure'])->with([
     'raw multi-line' => ["<h2>QA legacy sentinel</h2><p>{{\n7*191\n}}</p>"],
@@ -186,7 +186,7 @@ it('keeps normal CMS formatting, links, headings, images and tables when saved a
         ->and($xpath->query($container.'//ul/li')->length)->toBe(2);
 });
 
-it('renders a category description where Vue never compiles it', function (string $theme) {
+it('removes template expressions from a stored category description and keeps its text where Vue never compiles it', function (string $theme) {
     if ($theme === 'manpleasure') {
         useManpleasureTheme();
     }
@@ -201,7 +201,7 @@ it('renders a category description where Vue never compiles it', function (strin
 
     $html = get(route('shop.product_or_category.index', 'qa-isolation-category'))->assertOk()->getContent();
 
-    expectIsolatedFromVue($html, '7*191');
+    expect(vueRootTextNodes($html, '7*191'))->toBeEmpty();
     expectIsolatedFromVue($html, 'QA category sentinel');
 })->with(['default', 'manpleasure']);
 
