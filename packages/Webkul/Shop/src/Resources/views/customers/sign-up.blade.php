@@ -291,7 +291,7 @@
 
         <x-slot:content class="!p-5">
             <div class="max-h-[500px] overflow-auto" v-pre>
-                {!! core()->getConfigData('general.gdpr.agreement.agreement_content') !!}
+                {!! clean_content((string) core()->getConfigData('general.gdpr.agreement.agreement_content')) !!}
             </div>
         </x-slot>
     </x-shop::modal>
