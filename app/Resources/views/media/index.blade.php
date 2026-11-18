@@ -27,7 +27,7 @@
                     @else
                         <div class="mb-3 flex aspect-square items-center justify-center rounded bg-gray-100 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">Video</div>
                     @endif
-                    <p class="truncate text-sm font-semibold text-gray-800 dark:text-white" title="{{ $asset->original_name }}">{{ $asset->original_name }}</p>
+                    <p class="truncate text-sm font-semibold text-gray-800 dark:text-white" title="{{ $asset->original_name }}" v-pre>{{ $asset->original_name }}</p>
                     <p class="mt-1 text-xs text-gray-500">{{ $asset->mime_type }} · {{ number_format($asset->size / 1024, 1) }} KB</p>
                     <p class="mt-1 text-xs text-gray-500">{{ $asset->width ? $asset->width.'×'.$asset->height : 'Video' }}</p>
                     <form method="POST" action="{{ route('admin.media.assets.delete', $asset) }}" class="mt-3">

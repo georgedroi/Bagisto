@@ -59,6 +59,8 @@
 
                 @break
             @case (\Webkul\Theme\Enums\SectionTypeEnum::STATIC_CONTENT->value)
+                @php ($data = $section->getTypeInstance()?->sanitize((array) $data) ?? $data)
+
                 <!-- Push Style -->
                 @if (! empty($data['css']))
                     @push ('styles')
@@ -70,7 +72,9 @@
 
                 <!-- Render HTML -->
                 @if (! empty($data['html']))
-                    {!! $data['html'] !!}
+                    <div v-pre>
+                        {!! $data['html'] !!}
+                    </div>
                 @endif
 
                 @break

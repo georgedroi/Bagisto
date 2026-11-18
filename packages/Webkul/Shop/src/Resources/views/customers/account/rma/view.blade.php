@@ -65,7 +65,7 @@
                     @if (! empty($rma->additionalFields))
                         @foreach ($rma->additionalFields as $field)
                             <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
-                                <span class="font-medium text-gray-500">{{ $field->customField->label }} :</span>
+                                <span class="font-medium text-gray-500"><span v-pre>{{ $field->customField->label }}</span> :</span>
 
                                 <span
                                     class="font-medium text-gray-800"
@@ -120,7 +120,7 @@
                                 class="inline-block rounded-full px-3 py-1 text-xs font-medium"
                                 style="background: {{ $rmaStatus->color }}20; color: {{ $rmaStatus->color }}"
                             >
-                                {{ $rmaStatus->title }}
+                                <span v-pre>{{ $rmaStatus->title }}</span>
                             </span>
                         </div>
                     </div>
@@ -228,11 +228,11 @@
                                                     class="text-sm font-medium text-blue-600 hover:underline"
                                                     target="_blank"
                                                 >
-                                                    {{ $item->orderItem->name }}
+                                                    <span v-pre>{{ $item->orderItem->name }}</span>
                                                 </a>
                                             @else
                                                 <span class="text-sm font-medium text-gray-800">
-                                                    {{ $item->orderItem->name }}
+                                                    <span v-pre>{{ $item->orderItem->name }}</span>
                                                 </span>
                                             @endif
 
@@ -244,8 +244,8 @@
                                                 <div class="mt-1 space-y-0.5">
                                                     @foreach ($attributes as $attribute)
                                                         <p class="text-xs text-gray-500">
-                                                            {{ $attribute['attribute_name'] }}:
-                                                            <span class="font-medium text-gray-700">{{ $attribute['option_label'] }}</span>
+                                                            <span v-pre>{{ $attribute['attribute_name'] }}</span>:
+                                                            <span class="font-medium text-gray-700"><span v-pre>{{ $attribute['option_label'] }}</span></span>
                                                         </p>
                                                     @endforeach
                                                 </div>
@@ -275,7 +275,7 @@
                                 </td>
                                 
                                 <td class="px-4 py-4 align-top text-sm text-gray-600">
-                                    {{ $item->reason->title }}
+                                    <span v-pre>{{ $item->reason->title }}</span>
                                 </td>
                             </tr>
                         @endif
@@ -307,11 +307,11 @@
                                         class="text-blue-600 hover:underline text-sm font-medium"
                                         target="_blank"
                                     >
-                                        {{ $item->orderItem->name }}
+                                        <span v-pre>{{ $item->orderItem->name }}</span>
                                     </a>
                                 @else
                                     <span class="text-sm font-medium text-gray-800">
-                                        {{ $item->orderItem->name }}
+                                        <span v-pre>{{ $item->orderItem->name }}</span>
                                     </span>
                                 @endif
 
@@ -323,8 +323,8 @@
                                     <div class="mt-1 space-y-0.5">
                                         @foreach ($attributes as $attribute)
                                             <p class="text-xs text-gray-500">
-                                                {{ $attribute['attribute_name'] }}:
-                                                <span class="font-medium text-gray-700">{{ $attribute['option_label'] }}</span>
+                                                <span v-pre>{{ $attribute['attribute_name'] }}</span>:
+                                                <span class="font-medium text-gray-700"><span v-pre>{{ $attribute['option_label'] }}</span></span>
                                             </p>
                                         @endforeach
                                     </div>
@@ -357,7 +357,7 @@
                         <div>
                             <span class="font-medium text-gray-600">@lang('shop::app.rma.table-heading.reason')</span>
 
-                            <p class="text-gray-600">{{ $item->reason->title }}</p>
+                            <p class="text-gray-600"><span v-pre>{{ $item->reason->title }}</span></p>
                         </div>
                     </div>
                 @endif

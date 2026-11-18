@@ -691,7 +691,7 @@
                     @foreach ($customAttributes as $attribute)
                         <x-shop::form.control-group>
                             <x-shop::form.control-group.label class="flex text-sm mt-4">
-                                {{ $attribute->label }} @if ($attribute->is_required == '1')<span class="required"></span>@endif
+                                <span v-pre>{{ $attribute->label }}</span> @if ($attribute->is_required == '1')<span class="required"></span>@endif
                             </x-shop::form.control-group.label>
 
                             @if ($attribute->is_required == '1')
@@ -771,6 +771,7 @@
                                         @foreach($attribute->options ?? [] as $option)
                                             <option
                                                 value="{{ $option->value }}"
+                                                v-pre
                                             >
                                                 {{ $option->name }}
                                             </option>
@@ -798,6 +799,7 @@
                                         @foreach($attribute->options ?? [] as $option)
                                             <option
                                                 value="{{ $option->value }}"
+                                                v-pre
                                             >
                                                 {{ $option->name }}
                                             </option>
@@ -836,6 +838,7 @@
                                             <label
                                                 class="icon-uncheck peer-checked:icon-check-box cursor-pointer text-base peer-checked:text-navyBlue"
                                                 for="{{ $attribute->id }}-{{ $index }}"
+                                                v-pre
                                             >
                                                 {{ $option->name }}
                                             </label>
@@ -874,6 +877,7 @@
                                             <label
                                                 class="icon-radio-unselect text-base peer-checked:icon-radio-select peer-checked:text-navyBlue cursor-pointer"
                                                 for="option_{{ $loop->index }}"
+                                                v-pre
                                             >
                                                 {{ $option->name }}
                                             </label>

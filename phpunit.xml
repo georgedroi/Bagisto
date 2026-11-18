@@ -85,6 +85,11 @@
         <testsuite name="Stripe Feature Test">
             <directory suffix="Test.php">packages/Webkul/Stripe/tests/Feature</directory>
         </testsuite>
+
+        <!-- Application testsuites. -->
+        <testsuite name="Application Unit Test">
+            <directory suffix="Test.php">tests/Unit</directory>
+        </testsuite>
     </testsuites>
 
     <source>

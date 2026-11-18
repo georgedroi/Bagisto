@@ -63,8 +63,9 @@
                                 <label
                                     class="cursor-pointer select-none max-sm:text-sm"
                                     for="strictly_necessary"
+                                    v-pre
                                 >
-                                    {!! core()->getConfigData('general.gdpr.cookie_consent.strictly_necessary') !!}
+                                    {!! clean_content((string) core()->getConfigData('general.gdpr.cookie_consent.strictly_necessary')) !!}
                                 </label>
                             </div>
                         </x-shop::form.control-group> 
@@ -94,8 +95,9 @@
                                     <label
                                         class="cursor-pointer select-none max-sm:text-sm"
                                         for="{{ $key }}"
+                                        v-pre
                                     >
-                                        {!! core()->getConfigData('general.gdpr.cookie_consent.' . $key) !!}
+                                        {!! clean_content((string) core()->getConfigData('general.gdpr.cookie_consent.' . $key)) !!}
                                     </label>
                                 </div>
                             </x-shop::form.control-group>

@@ -71,7 +71,7 @@
                     class="overflow-y-auto rounded border border-gray-200 bg-gray-50 p-4" 
                     style="min-height: 400px; max-height: 500px;"
                 >
-                    <div class="prose prose-sm max-w-none text-gray-700">
+                    <div class="prose prose-sm max-w-none text-gray-700" v-pre>
                         {{ core()->getConfigData('sales.rma.setting.return_policy') }}
                     </div>
                 </div>
