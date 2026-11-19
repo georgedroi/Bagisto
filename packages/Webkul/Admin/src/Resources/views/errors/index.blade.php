@@ -1,17 +1,15 @@
 <x-admin::layouts.anonymous>
-    <!-- Page Title -->
     <x-slot:title>
-        @lang("admin::app.errors.{$errorCode}.title")
+        {{ $errorTitle ?? trans("admin::app.errors.{$errorCode}.title") }}
     </x-slot>
 
-    <!-- Error page Information -->
 	<div class="flex h-[100vh] items-center justify-center bg-white dark:bg-gray-900">
         <div class="flex max-w-[745px] items-center gap-5">
             <div class="w-full">
                 @php
                     $logoUrl = core()->getConfigData('general.design.admin_logo.logo_image') 
                                 ? Storage::url(core()->getConfigData('general.design.admin_logo.logo_image')) 
-                                : bagisto_asset('images/logo.svg');
+                                : bagisto_asset('images/logo.svg', 'admin');
                 @endphp
 
                 <img
@@ -26,7 +24,7 @@
                 </div>
 
                 <p class="mb-6 text-sm text-gray-800">
-                    @lang("admin::app.errors.{$errorCode}.description")
+                    {{ $errorDescription ?? trans("admin::app.errors.{$errorCode}.description") }}
                 </p>
 
                 <div class="mb-6">
@@ -54,16 +52,16 @@
                 </div>
 
                 <p class="text-sm text-gray-800">
-                    @lang('admin::app.errors.support', [
+                    {!! clean_content(trans('admin::app.errors.support', [
                         'link'  => 'mailto:' . (core()->getAdminEmailDetails()['email'] ?? 'support@example.com'),
                         'email' => core()->getAdminEmailDetails()['email'] ?? 'support@example.com',
                         'class' => 'font-semibold text-blue-600 transition-all hover:underline',
-                    ])
+                    ])) !!}
                 </p>
             </div>
 
             <div class="w-full">
-                <img src="{{ bagisto_asset('images/error.svg') }}" />
+                <img src="{{ bagisto_asset('images/error.svg', 'admin') }}" alt="" />
             </div>
         </div>
 	</div>

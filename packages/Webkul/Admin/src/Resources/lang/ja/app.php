@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'パスワードを忘れましたか？',
             'password' => 'パスワード',
             'powered-by-description' => ':webkul によるオープンソースプロジェクト :bagisto によって提供されています。',
+            'show-password' => 'パスワードを表示',
             'submit-btn' => 'サインイン',
             'title' => 'サインイン',
         ],

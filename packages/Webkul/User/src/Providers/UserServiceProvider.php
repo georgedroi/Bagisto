@@ -2,6 +2,9 @@
 
 namespace Webkul\User\Providers;
 
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Webkul\User\Http\Middleware\Bouncer as BouncerMiddleware;
@@ -26,6 +29,13 @@ class UserServiceProvider extends ServiceProvider
     public function boot(Router $router)
     {
         $router->aliasMiddleware('admin', BouncerMiddleware::class);
+
+        $this->callAfterResolving(Kernel::class, function ($kernel) {
+            $kernel->addToMiddlewarePriorityBefore([
+                ThrottleRequests::class,
+                ThrottleRequestsWithRedis::class,
+            ], BouncerMiddleware::class);
+        });
 
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
     }

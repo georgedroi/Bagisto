@@ -2,14 +2,27 @@
 
 namespace App\Support;
 
+use SimpleSoftwareIO\QrCode\Generator;
 use Webkul\Sales\Contracts\Order;
 
+/**
+ * Build discreet manual WhatsApp handoffs with payment and shipment guards.
+ */
 class WhatsAppMessage
 {
+    /**
+     * Supported administrator message types.
+     */
     public const RECEIVED = 'received';
 
+    /**
+     * Payment confirmation message.
+     */
     public const PAID = 'paid';
 
+    /**
+     * Shipment confirmation message.
+     */
     public const SHIPPED = 'shipped';
 
     /**
@@ -51,6 +64,12 @@ class WhatsAppMessage
      */
     public static function linkFor(Order $order, string $type): ?string
     {
+        if (! in_array($type, [static::RECEIVED, static::PAID, static::SHIPPED], true)
+            || ($type === static::PAID && ! static::paymentReceived($order))
+            || ($type === static::SHIPPED && ! static::isShipped($order))) {
+            return null;
+        }
+
         $phone = static::phoneFor($order);
 
         if (! $phone) {
@@ -58,6 +77,51 @@ class WhatsAppMessage
         }
 
         return 'https://wa.me/'.$phone.'?text='.rawurlencode(static::messageFor($order, $type));
+    }
+
+    /**
+     * Prepare a customer receipt handoff without product names or automatic sending.
+     */
+    public static function proofLinkFor(Order $order): ?string
+    {
+        $phone = config('manpleasure-contact.whatsapp');
+
+        if (! is_string($phone) || ! preg_match('/\A[1-9][0-9]{8,14}\z/', $phone)
+            || ! in_array($order->payment?->method, ManualPaymentPolicy::METHODS, true)) {
+            return null;
+        }
+
+        return 'https://wa.me/'.$phone.'?text='.rawurlencode(trans('payment::app.whatsapp-proof-message', ['order' => '#'.$order->increment_id]));
+    }
+
+    /**
+     * Render the handoff as a local QR image using the installed QR encoder.
+     */
+    public static function proofQrFor(Order $order): ?string
+    {
+        $link = static::proofLinkFor($order);
+
+        if (! $link) {
+            return null;
+        }
+
+        $svg = (new Generator)->format('svg')->size(240)->margin(4)->errorCorrection('M')->generate($link);
+
+        return 'data:image/svg+xml;base64,'.base64_encode((string) $svg);
+    }
+
+    /**
+     * Require verified manual payment or a fully invoiced standard order before messaging.
+     */
+    public static function paymentReceived(Order $order): bool
+    {
+        if (in_array($order->status, ['canceled', 'closed', 'fraud'], true)) {
+            return false;
+        }
+
+        return OrderWorkflow::supports($order)
+            ? OrderWorkflow::paymentVerified($order)
+            : $order->base_grand_total_invoiced > 0 && $order->base_total_due <= 0.01;
     }
 
     /**

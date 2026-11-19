@@ -11,4 +11,6 @@ return [
     'publishing' => 'S\'està publicant aquest producte…',
     'save-first' => 'Deseu el producte abans de previsualitzar-lo.',
     'saving-draft' => 'S\'està desant aquest producte com a esborrany…',
+    'media-in-use' => 'This file is used by saved content. Remove its references before deleting it.',
+    'media-delete-failed' => 'The file could not be deleted. Its media record has been retained.',
 ];

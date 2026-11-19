@@ -22,13 +22,7 @@ class SessionController extends Controller
             return redirect()->route('admin.dashboard.index');
         }
 
-        if (strpos(url()->previous(), 'admin') !== false) {
-            $intendedUrl = url()->previous();
-        } else {
-            $intendedUrl = route('admin.dashboard.index');
-        }
-
-        session()->put('url.intended', $intendedUrl);
+        session()->put('url.intended', route('admin.dashboard.index'));
 
         return view('admin::users.sessions.create');
     }
@@ -42,7 +36,7 @@ class SessionController extends Controller
     {
         $this->validate(request(), [
             'email' => 'required|email',
-            'password' => 'required',
+            'password' => 'required|string',
         ]);
 
         $remember = request('remember');
@@ -52,6 +46,8 @@ class SessionController extends Controller
 
             return redirect()->back();
         }
+
+        session()->forget('two_factor_passed');
 
         if (! auth()->guard('admin')->user()->status) {
             session()->flash('warning', trans('admin::app.settings.users.activate-warning'));
@@ -77,7 +73,8 @@ class SessionController extends Controller
     {
         auth()->guard('admin')->logout();
 
-        session()->forget('two_factor_passed');
+        session()->invalidate();
+        session()->regenerateToken();
 
         return redirect()->route('admin.session.create');
     }

@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'पासवर्ड भूल गए?',
             'password' => 'पासवर्ड',
             'powered-by-description' => ':bagisto द्वारा संचालित, :webkul द्वारा एक ओपन-सोर्स परियोजना।',
+            'show-password' => 'पासवर्ड दिखाएं',
             'submit-btn' => 'साइन इन करें',
             'title' => 'साइन इन करें',
         ],

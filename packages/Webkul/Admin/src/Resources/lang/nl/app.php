@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Wachtwoord Vergeten?',
             'password' => 'Wachtwoord',
             'powered-by-description' => 'Aangedreven door :bagisto, een open-source project van :webkul.',
+            'show-password' => 'Wachtwoord Weergeven',
             'submit-btn' => 'Aanmelden',
             'title' => 'Aanmelden',
         ],

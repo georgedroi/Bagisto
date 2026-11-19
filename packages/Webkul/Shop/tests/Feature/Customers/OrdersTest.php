@@ -19,7 +19,6 @@ use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
 it('should returns the index page customers orders', function () {
-    // Act and Assert.
     $this->loginAsCustomer();
 
     get(route('shop.customers.account.orders.index'))
@@ -28,7 +27,6 @@ it('should returns the index page customers orders', function () {
 });
 
 it('should view the order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -102,6 +100,9 @@ it('should view the order', function () {
     ]);
 
     $order = Order::factory()->create([
+        'base_currency_code' => core()->getBaseCurrencyCode(),
+        'channel_currency_code' => core()->getBaseCurrencyCode(),
+        'order_currency_code' => core()->getBaseCurrencyCode(),
         'cart_id' => $cart->id,
         'customer_id' => $customer->id,
         'customer_email' => $customer->email,
@@ -132,8 +133,6 @@ it('should view the order', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsCustomer($customer);
 
     get(route('shop.customers.account.orders.view', $order->id))
@@ -205,7 +204,6 @@ it('should view the order', function () {
 });
 
 it('should cancel the customer order', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -279,6 +277,9 @@ it('should cancel the customer order', function () {
     ]);
 
     $order = Order::factory()->create([
+        'base_currency_code' => core()->getBaseCurrencyCode(),
+        'channel_currency_code' => core()->getBaseCurrencyCode(),
+        'order_currency_code' => core()->getBaseCurrencyCode(),
         'cart_id' => $cart->id,
         'customer_id' => $customer->id,
         'customer_email' => $customer->email,
@@ -309,8 +310,6 @@ it('should cancel the customer order', function () {
     $orderPayment = OrderPayment::factory()->create([
         'order_id' => $order->id,
     ]);
-
-    // Act and Assert.
     $this->loginAsCustomer($customer);
 
     postJson(route('shop.customers.account.orders.cancel', $order->id))
@@ -378,7 +377,6 @@ it('should cancel the customer order', function () {
 });
 
 it('should print the order invoice', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -452,6 +450,9 @@ it('should print the order invoice', function () {
     ]);
 
     $order = Order::factory()->create([
+        'base_currency_code' => core()->getBaseCurrencyCode(),
+        'channel_currency_code' => core()->getBaseCurrencyCode(),
+        'order_currency_code' => core()->getBaseCurrencyCode(),
         'cart_id' => $cart->id,
         'customer_id' => $customer->id,
         'customer_email' => $customer->email,
@@ -485,6 +486,9 @@ it('should print the order invoice', function () {
 
     $invoice = Invoice::factory([
         'order_id' => $order->id,
+        'base_currency_code' => $order->base_currency_code,
+        'channel_currency_code' => $order->channel_currency_code,
+        'order_currency_code' => $order->order_currency_code,
         'state' => 'paid',
     ])->create();
 
@@ -506,8 +510,6 @@ it('should print the order invoice', function () {
         'product_type' => $orderItem->product_type,
         'additional' => $orderItem->additional,
     ]);
-
-    // Act and Assert.
     $this->loginAsCustomer($customer);
 
     getJson(route('shop.customers.account.orders.print-invoice', $invoice->id))

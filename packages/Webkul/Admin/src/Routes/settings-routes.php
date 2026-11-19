@@ -60,7 +60,7 @@ Route::prefix('settings')->group(function () {
 
         Route::get('edit/{id}', 'edit')->name('admin.settings.exchange_rates.edit');
 
-        Route::get('update-rates', 'updateRates')->name('admin.settings.exchange_rates.update_rates');
+        Route::post('update-rates', 'updateRates')->name('admin.settings.exchange_rates.update_rates');
 
         Route::put('edit', 'update')->name('admin.settings.exchange_rates.update');
 
@@ -189,25 +189,25 @@ Route::prefix('settings')->group(function () {
 
             Route::get('import/{id}', 'import')->name('admin.settings.data_transfer.imports.import');
 
-            Route::get('validate/{id}', 'validateImport')->name('admin.settings.data_transfer.imports.validate');
+            Route::post('validate/{id}', 'validateImport')->name('admin.settings.data_transfer.imports.validate');
 
-            Route::get('validate-chunk/{id}', 'validateChunk')->name('admin.settings.data_transfer.imports.validate_chunk');
+            Route::post('validate-chunk/{id}', 'validateChunk')->name('admin.settings.data_transfer.imports.validate_chunk');
 
-            Route::get('validate-queued/{id}', 'validateQueued')->name('admin.settings.data_transfer.imports.validate_queued');
+            Route::post('validate-queued/{id}', 'validateQueued')->name('admin.settings.data_transfer.imports.validate_queued');
 
-            Route::get('validate-status/{id}', 'validateStatus')->name('admin.settings.data_transfer.imports.validate_status');
+            Route::post('validate-status/{id}', 'validateStatus')->name('admin.settings.data_transfer.imports.validate_status');
 
-            Route::get('download-images/{id}', 'downloadImages')->name('admin.settings.data_transfer.imports.download_images');
+            Route::post('download-images/{id}', 'downloadImages')->name('admin.settings.data_transfer.imports.download_images');
 
-            Route::get('download-images-queued/{id}', 'downloadImagesQueued')->name('admin.settings.data_transfer.imports.download_images_queued');
+            Route::post('download-images-queued/{id}', 'downloadImagesQueued')->name('admin.settings.data_transfer.imports.download_images_queued');
 
             Route::get('download-images-status/{id}', 'downloadImagesStatus')->name('admin.settings.data_transfer.imports.download_images_status');
 
-            Route::get('start/{id}', 'start')->name('admin.settings.data_transfer.imports.start');
+            Route::post('start/{id}', 'start')->name('admin.settings.data_transfer.imports.start');
 
-            Route::get('link/{id}', 'link')->name('admin.settings.data_transfer.imports.link');
+            Route::post('link/{id}', 'link')->name('admin.settings.data_transfer.imports.link');
 
-            Route::get('index/{id}', 'indexData')->name('admin.settings.data_transfer.imports.index_data');
+            Route::post('index/{id}', 'indexData')->name('admin.settings.data_transfer.imports.index_data');
 
             Route::get('stats/{id}/{state?}', 'stats')->name('admin.settings.data_transfer.imports.stats');
 

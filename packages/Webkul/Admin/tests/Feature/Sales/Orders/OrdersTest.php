@@ -661,7 +661,106 @@ it('should add billing and shipping address after add item to the cart', functio
     ]);
 });
 
-it('should the shipping rates after storing address', function () {
+it('returns the configured manual payment method after storing shipping', function () {
+    config(['payment_methods' => Arr::only(config('payment_methods'), ['duitnowqr_manual'])]);
+    app(CoreConfigRepository::class)->create([
+        'locale' => 'en',
+        'channel' => core()->getCurrentChannelCode(),
+        'sales' => ['payment_methods' => ['duitnowqr_manual' => ['active' => 1, 'qr_image' => 'testing/manual-qr.png', 'title' => 'QA manual payment', 'sort' => 1]]],
+    ]);
+    // Arrange.
+    $product = (new ProductFaker([
+        'attributes' => [
+            5 => 'new',
+            26 => 'guest_checkout',
+        ],
+
+        'attribute_value' => [
+            'new' => [
+                'boolean_value' => true,
+            ],
+
+            'guest_checkout' => [
+                'boolean_value' => true,
+            ],
+        ],
+    ]))
+        ->getSimpleProductFactory()
+        ->create();
+
+    $customer = (new CustomerFaker)->factory()->create();
+
+    $cart = Cart::factory()->create([
+        'customer_id' => $customer->id,
+        'customer_first_name' => $customer->first_name,
+        'customer_last_name' => $customer->last_name,
+        'customer_email' => $customer->email,
+        'is_guest' => 0,
+        'is_active' => 0,
+        'items_count' => null,
+    ]);
+
+    $additional = [
+        'product_id' => $product->id,
+        'rating' => '0',
+        'is_buy_now' => '0',
+        'quantity' => '1',
+    ];
+
+    CartItem::factory()->create([
+        'cart_id' => $cart->id,
+        'product_id' => $product->id,
+        'sku' => $product->sku,
+        'quantity' => $additional['quantity'],
+        'name' => $product->name,
+        'price' => $convertedPrice = core()->convertPrice($price = $product->price),
+        'base_price' => $price,
+        'total' => $convertedPrice * $additional['quantity'],
+        'base_total' => $price * $additional['quantity'],
+        'weight' => $product->weight ?? 0,
+        'total_weight' => ($product->weight ?? 0) * $additional['quantity'],
+        'base_total_weight' => ($product->weight ?? 0) * $additional['quantity'],
+        'type' => $product->type,
+        'additional' => $additional,
+    ]);
+
+    CartAddress::factory()->create([
+        'cart_id' => $cart->id,
+        'customer_Id' => $customer->id,
+        'address_type' => CartAddress::ADDRESS_TYPE_BILLING,
+    ]);
+
+    CartAddress::factory()->create([
+        'cart_id' => $cart->id,
+        'customer_Id' => $customer->id,
+        'address_type' => CartAddress::ADDRESS_TYPE_SHIPPING,
+    ]);
+
+    cart()->setCart($cart);
+
+    // Act and Assert.
+    $this->loginAsAdmin();
+
+    postJson(route('admin.sales.cart.shipping_methods.store', $cart->id), [
+        'shipping_method' => 'free_free',
+    ])
+        ->assertOk()
+        ->assertJsonCount(1, 'payment_methods')
+        ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
+        ->assertJsonPath('payment_methods.0.method_title', 'QA manual payment')
+        ->assertJsonPath('payment_methods.0.sort', '1');
+});
+
+it('offers both QR Code and Bank Transfer and no other method after storing shipping', function () {
+    foreach (['cryptotransfer' => ['active' => '1', 'usdt_erc20_address' => '0x'.str_repeat('1', 40)], 'cashondelivery' => ['active' => '1']] as $method => $fields) {
+        foreach ($fields as $field => $value) {
+            app(CoreConfigRepository::class)->updateOrCreate(
+                ['code' => 'sales.payment_methods.'.$method.'.'.$field, 'channel_code' => 'default', 'locale_code' => 'en'],
+                ['value' => $value],
+            );
+        }
+    }
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -741,7 +840,10 @@ it('should the shipping rates after storing address', function () {
         ->assertOk()
         ->assertJsonCount(2, 'payment_methods')
         ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
-        ->assertJsonPath('payment_methods.1.method', 'banktransfer');
+        ->assertJsonPath('payment_methods.0.method_title', 'QR Code Payment')
+        ->assertJsonPath('payment_methods.0.qr_image', fn ($image) => filled($image))
+        ->assertJsonPath('payment_methods.1.method', 'banktransfer')
+        ->assertJsonPath('payment_methods.1.method_title', 'Bank Transfer');
 });
 
 it('should store the payment method after storing the shipping method', function () {

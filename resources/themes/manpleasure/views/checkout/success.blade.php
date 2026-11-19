@@ -26,11 +26,9 @@
 
 			<p class="text-xl max-md:text-sm">
 				@if (auth()->guard('customer')->user())
-					@lang('shop::app.checkout.success.order-id-info', [
-						'order_id' => '<a class="text-blue-700" href="'.route('shop.customers.account.orders.view', $order->id).'">'.$order->increment_id.'</a>'
-					])
+					<a class="text-blue-700" href="{{ route('shop.customers.account.orders.view', $order->id) }}">{{ trans('shop::app.checkout.success.order-id-info', ['order_id' => $order->increment_id]) }}</a>
 				@else
-					@lang('shop::app.checkout.success.order-id-info', ['order_id' => $order->increment_id])
+					{{ trans('shop::app.checkout.success.order-id-info', ['order_id' => $order->increment_id]) }}
 				@endif
 			</p>
 
@@ -48,9 +46,16 @@
 
 			@php
 				$instructions = \Webkul\Payment\Payment::getInstructions($order->payment?->method);
+                $awaitingPayment = $order->payment?->method === 'duitnowqr_manual'
+                    ? in_array(\App\Support\OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)
+                    : ! \App\Support\WhatsAppMessage::paymentReceived($order);
 			@endphp
 
-			@if (! empty($instructions['details']) || $instructions['qr_image'])
+            @if ($order->payment?->method === 'duitnowqr_manual')
+                <p role="status" class="text-base font-semibold">{{ trans('admin::order-status.current-order-stage') }}: {{ trans('admin::order-status.'.\App\Support\OrderWorkflow::current($order)) }}</p>
+            @endif
+
+			@if ($awaitingPayment && (! empty($instructions['details']) || $instructions['qr_image']))
 				<div
 					class="w-full max-w-xl rounded-xl border border-zinc-200 p-5 max-md:p-4"
 					v-pre
@@ -65,7 +70,11 @@
 							{{ $instructions['details']['title'] }}
 						</p>
 
-						<p class="mt-1 break-words text-zinc-600" style="white-space: pre-line;">{{ $instructions['details']['value'] }}</p>
+						<div class="mt-1 break-words text-zinc-600">
+                            @foreach (explode("\n", $instructions['details']['value']) as $line)
+                                <p>{{ $line }}</p>
+                            @endforeach
+                        </div>
 					@endif
 
 					@if ($instructions['qr_image'])
@@ -85,21 +94,11 @@
 						@lang('payment::app.payment-reference-note', ['order' => $order->increment_id])
 					</p>
 
-					@if (config('manpleasure-contact.whatsapp'))
-						<a
-							href="https://wa.me/{{ config('manpleasure-contact.whatsapp') }}?text={{ rawurlencode(trans('payment::app.whatsapp-proof-message', ['order' => '#'.$order->increment_id])) }}"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="mt-4 inline-block rounded-xl px-6 py-3 text-center text-base font-medium"
-							style="background-color: #128c7e; color: #fff; text-decoration: none;"
-						>
-							@lang('payment::app.send-proof-whatsapp')
-						</a>
-					@endif
+					@include('manpleasure-admin::whatsapp-proof')
 				</div>
 			@endif
 
-			<p class="mt-2 font-semibold" v-pre>{{ trans('shop::app.checkout.cart.index.grand-total') }}: {{ core()->formatPrice($order->grand_total, $order->order_currency_code) }}</p>
+			<p class="mt-2 font-semibold" v-pre>{{ trans('shop::app.checkout.onepage.summary.grand-total') }}: {{ core()->formatPrice($order->grand_total, $order->order_currency_code) }}</p>
 
 			{!! view_render_event('bagisto.shop.checkout.success.continue-shopping.before', ['order' => $order]) !!}
 

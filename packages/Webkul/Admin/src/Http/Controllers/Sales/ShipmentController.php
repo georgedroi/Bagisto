@@ -75,7 +75,7 @@ class ShipmentController extends Controller
             'shipment.items.*.*' => 'required|numeric|min:0',
         ]);
 
-        $data = request()->only(['shipment', 'carrier_name']);
+        $data = array_merge(request()->only(['shipment', 'carrier_name']), ['order_id' => $order->id]);
 
         if (! $this->isInventoryValidate($data)) {
             session()->flash('error', trans('admin::app.sales.shipments.create.quantity-invalid'));
@@ -83,9 +83,7 @@ class ShipmentController extends Controller
             return redirect()->back();
         }
 
-        $this->shipmentRepository->create(array_merge($data, [
-            'order_id' => $orderId,
-        ]));
+        $this->shipmentRepository->create($data);
 
         session()->flash('success', trans('admin::app.sales.shipments.create.success'));
 
@@ -93,7 +91,7 @@ class ShipmentController extends Controller
     }
 
     /**
-     * Checks if requested quantity available or not.
+     * Checks that every requested line belongs to the order and its quantity is available.
      *
      * @param  array  $data
      * @return bool
@@ -101,7 +99,7 @@ class ShipmentController extends Controller
     public function isInventoryValidate(&$data)
     {
         if (! isset($data['shipment']['items'])) {
-            return;
+            return false;
         }
 
         $valid = false;
@@ -112,9 +110,9 @@ class ShipmentController extends Controller
             $qty = $inventorySource[$inventorySourceId];
 
             if ((int) $qty) {
-                $orderItem = $this->orderItemRepository->find($itemId);
+                $orderItem = $this->orderItemRepository->findOneWhere(['id' => $itemId, 'order_id' => $data['order_id']]);
 
-                if ($orderItem->qty_to_ship < $qty) {
+                if (! $orderItem || $orderItem->qty_to_ship < $qty) {
                     return false;
                 }
 

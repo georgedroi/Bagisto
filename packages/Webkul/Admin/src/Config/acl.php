@@ -350,7 +350,10 @@ return [
     ], [
         'key' => 'catalog.products.create',
         'name' => 'admin::app.acl.create',
-        'route' => 'admin.catalog.products.store',
+        'route' => [
+            'admin.catalog.products.create',
+            'admin.catalog.products.store',
+        ],
         'sort' => 1,
     ], [
         'key' => 'catalog.products.copy',

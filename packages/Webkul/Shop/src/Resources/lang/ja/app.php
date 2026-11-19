@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. 無断転載を禁じます。',
         'forgot-password' => [
             'already-sent' => 'すでにパスワードリセットメールが送信されました。',
             'back' => 'サインインに戻る？',
@@ -632,7 +634,7 @@ return [
                 'currency' => '通貨',
                 'customer-service' => 'カスタマーサービス',
                 'email' => 'Email',
-                'footer-content' => 'フッターコンテンツ',
+                'footer-content' => 'ヘルプとご案内',
                 'footer-text' => '© 著作権 2010 - :current_year, Webkul Software (インドで登録済み)。全ての権利を保有しています。',
                 'locale' => 'ロケール',
                 'newsletter-text' => '楽しいニュースレターの準備をしてください！',

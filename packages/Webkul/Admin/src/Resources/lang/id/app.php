@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Lupa Kata Sandi?',
             'password' => 'Kata Sandi',
             'powered-by-description' => 'Dibuat oleh :bagisto, proyek open-source dari :webkul.',
+            'show-password' => 'Tampilkan Kata Sandi',
             'submit-btn' => 'Masuk',
             'title' => 'Masuk',
         ],

@@ -69,12 +69,15 @@ class RefundController extends Controller
         $this->validate(request(), [
             'refund.items' => 'array',
             'refund.items.*' => 'required|numeric|min:0',
+            'refund.shipping' => 'nullable|numeric|min:0',
+            'refund.adjustment_refund' => 'nullable|numeric|min:0',
+            'refund.adjustment_fee' => 'nullable|numeric|min:0',
         ]);
 
         $data = request()->all();
 
-        if (! isset($data['refund']['shipping'])) {
-            $data['refund']['shipping'] = 0;
+        foreach (['shipping', 'adjustment_refund', 'adjustment_fee'] as $field) {
+            $data['refund'][$field] ??= 0;
         }
 
         try {
@@ -89,11 +92,21 @@ class RefundController extends Controller
             return redirect()->back();
         }
 
-        $maxRefundAmount = $totals['grand_total']['price'] - $order->refunds()->sum('base_adjustment_refund');
+        $maxShippingAmount = $this->refundRepository->getRefundableShippingAmount($order);
 
-        $refundAmount = $totals['grand_total']['price'] - $totals['shipping']['price'] + $data['refund']['shipping'] + $data['refund']['adjustment_refund'] - $data['refund']['adjustment_fee'];
+        if (round((float) $data['refund']['shipping'], 4) > $maxShippingAmount) {
+            session()->flash('error', trans('admin::app.sales.refunds.create.refund-limit-error', [
+                'amount' => core()->formatBasePrice((float) $data['refund']['shipping']),
+            ]));
 
-        if (! $refundAmount) {
+            return redirect()->back();
+        }
+
+        $maxRefundAmount = $this->refundRepository->getRefundableAmount($order);
+
+        $refundAmount = round($totals['grand_total']['price'], 4);
+
+        if ($refundAmount <= 0) {
             session()->flash('error', trans('admin::app.sales.refunds.create.invalid-refund-amount-error'));
 
             return redirect()->back();

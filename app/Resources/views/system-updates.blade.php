@@ -77,6 +77,7 @@
             .mp-updates pre { overflow-wrap: anywhere; white-space: pre-wrap; font: inherit; font-size: 13px; line-height: 1.8; }
             .mp-updates button:disabled { cursor: default; opacity: .5; }
             .mp-updates__rollback { margin-block-start: 24px; }
+            .mp-updates__rollback .secondary-button { max-width: 100%; white-space: normal; text-align: center; }
         </style>
     @endPushOnce
 

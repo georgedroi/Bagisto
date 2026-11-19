@@ -20,18 +20,7 @@
 
         <!-- Company Logo -->
         <div class="flex items-center gap-x-14 max-[1180px]:gap-x-9">
-            <a
-                href="{{ route('shop.home.index') }}"
-                class="m-[0_auto_20px_auto]"
-                aria-label="@lang('shop::app.customers.login-form.bagisto')"
-            >
-                <img
-                    src="{{ core()->getCurrentChannel()->logo_url ?? bagisto_asset('images/logo.svg') }}"
-                    alt="{{ core()->getCurrentChannel()->logo_alt ?: config('app.name') }}"
-                    width="131"
-                    height="29"
-                >
-            </a>
+            @include('manpleasure-storefront::auth-brand')
         </div>
 
         {!! view_render_event('bagisto.shop.customers.login.logo.after') !!}
@@ -65,7 +54,7 @@
                             rules="required|email"
                             value=""
                             :label="trans('shop::app.customers.login-form.email')"
-                            placeholder="email@example.com"
+                            :placeholder="trans('shop::app.customers.login-form.email')"
                             :aria-label="trans('shop::app.customers.login-form.email')"
                             aria-required="true"
                         />
@@ -160,7 +149,7 @@
         </div>
 
         <div class="mb-4 mt-8 text-center text-xs text-zinc-500" v-pre>
-            @lang('shop::app.customers.login-form.footer', ['current_year'=> date('Y') ])
+            @include('manpleasure-storefront::store-copyright')
         </div>
     </div>
 

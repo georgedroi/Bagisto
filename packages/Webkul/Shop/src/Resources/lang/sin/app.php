@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. සියලු හිමිකම් ඇවිරිණි.',
         'forgot-password' => [
             'already-sent' => 'දැනටමත් මුරපදය යළි පිහිටුවීමේ තැපැල් යවා ඇත.',
             'back' => 'ආපසු සන්නියට ආරයැකිනන්න ?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'මුදල්',
                 'customer-service' => 'ප්‍රශ්නය හා සේවය',
                 'email' => 'ඊමේල්',
-                'footer-content' => 'පිටුවේ අන්තර්ගතය',
+                'footer-content' => 'උදව් සහ තොරතුරු',
                 'footer-text' => '© වෙබ්කල් සොෆ්ට්වෙයර් (ශ්‍රී ලංකාවේ ලියාපදිංචි) සම්පූර්ණයේ සිට 2010 - :current_year දක්වා. සියලු අභිරුචිකරුවන් සමඟ සම්පූර්ණයෙන් පහසුවෙනි.',
                 'locale' => 'පිටු මාධ්‍ය',
                 'newsletter-text' => 'අපේ සෙවුම් පනසලේ සම්බන්ධවන්ද බලන්න!',

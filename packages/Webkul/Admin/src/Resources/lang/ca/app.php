@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Has oblidat la contrasenya?',
             'password' => 'Contrasenya',
             'powered-by-description' => 'Impulsat per :bagisto, un projecte de codi obert de :webkul.',
+            'show-password' => 'Mostrar contrasenya',
             'submit-btn' => 'Iniciar sessió',
             'title' => 'Iniciar sessió',
         ],

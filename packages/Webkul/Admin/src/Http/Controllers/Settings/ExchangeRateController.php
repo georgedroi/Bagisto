@@ -47,8 +47,8 @@ class ExchangeRateController extends Controller
         $baseCurrency = core()->getBaseCurrency();
 
         $this->validate(request(), [
-            'target_currency' => ['required', 'unique:currency_exchange_rates,target_currency', 'not_in:'.$baseCurrency->id],
-            'rate' => 'required|numeric',
+            'target_currency' => ['required', 'integer', 'exists:currencies,id', 'unique:currency_exchange_rates,target_currency', 'not_in:'.$baseCurrency->id],
+            'rate' => 'required|numeric|gt:0',
         ]);
 
         Event::dispatch('core.exchange_rate.create.before');
@@ -94,8 +94,9 @@ class ExchangeRateController extends Controller
         $baseCurrency = core()->getBaseCurrency();
 
         $this->validate(request(), [
-            'target_currency' => ['required', 'unique:currency_exchange_rates,target_currency,'.request()->id, 'not_in:'.$baseCurrency->id],
-            'rate' => 'required|numeric',
+            'id' => 'required|integer|exists:currency_exchange_rates,id',
+            'target_currency' => ['required', 'integer', 'exists:currencies,id', 'unique:currency_exchange_rates,target_currency,'.request()->id, 'not_in:'.$baseCurrency->id],
+            'rate' => 'required|numeric|gt:0',
         ]);
 
         Event::dispatch('core.exchange_rate.update.before', request()->id);

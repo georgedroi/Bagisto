@@ -5,6 +5,7 @@ return [
         'key' => 'sales.orders.workflow',
         'name' => 'admin::order-status.management',
         'route' => [
+            'admin.sales.orders.receipt.whatsapp',
             'admin.sales.orders.workflow.update',
             'admin.sales.orders.awb.upload',
             'admin.sales.orders.awb.print',

@@ -1,5 +1,10 @@
 @php
     $value = system_config()->getConfigData($field->getNameKey(), $currentChannel->code, $currentLocale->code);
+
+    if (! in_array($field->getType(), ['image', 'file', 'password'], true)) {
+        $value = old($field->getNameKey(), $value);
+        $value = is_array($value) ? implode(',', array_filter($value, is_scalar(...))) : $value;
+    }
 @endphp
 
 <input
@@ -12,8 +17,9 @@
     <v-configurable
         name="{{ $field->getNameField() }}"
         value="{{ $value }}"
-        label="{{ trans($field->getTitle()) }}"
-        info="{{ trans($field->getInfo()) }}"
+        label="{{ $fieldLabel ?? trans($field->getTitle()) }}"
+        info="{{ $fieldInfo ?? trans($field->getInfo()) }}"
+        file-accept="{{ $fieldAccept ?? '' }}"
         validations="{{ $field->getValidations() }}"
         is-require="{{ $field->isRequired() }}"
         depend-name="{{ $field->getDependFieldName() }}"
@@ -219,7 +225,7 @@
                     :value="0"
                 />
         
-                <label class="relative inline-flex cursor-pointer items-center">
+                <label class="mp-config-toggle relative inline-flex cursor-pointer items-center">
                     <input  
                         type="checkbox"
                         :name="name"
@@ -229,20 +235,21 @@
                         :checked="parseInt(value || 0)"
                     >
 
-                    <div class="peer h-5 w-9 cursor-pointer rounded-full bg-gray-200 after:absolute after:top-0.5 after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-blue-300 after:ltr:left-0.5 peer-checked:after:ltr:translate-x-full after:rtl:right-0.5 peer-checked:after:rtl:-translate-x-full dark:bg-gray-800 dark:after:border-white dark:after:bg-white dark:peer-checked:bg-blue-600"></div>
+                    <div class="peer relative h-5 w-9 cursor-pointer rounded-full bg-gray-200 after:absolute after:top-0.5 after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-blue-300 after:ltr:left-0.5 peer-checked:after:ltr:translate-x-full after:rtl:right-0.5 peer-checked:after:rtl:-translate-x-full dark:bg-gray-800 dark:after:border-white dark:after:bg-white dark:peer-checked:bg-blue-600"></div>
                 </label>
             </template>
         
             <template v-if="field.type == 'image' && field.is_visible">
-                <div class="flex items-center justify-center">
+                <div class="mp-config-image flex items-center justify-center">
                     <a
                         :href="src"
                         target="_blank"
+                        rel="noopener noreferrer"
                         v-if="value"
                     >
                         <img
                             :src="src"
-                            :alt="name"
+                            :alt="label"
                             class="top-15 rounded-3 border-3 relative h-[33px] w-[33px] border-gray-500 ltr:mr-5 rtl:ml-5"
                         />
                     </a>
@@ -253,6 +260,7 @@
                         ::id="name"
                         ::rules="validations"
                         ::label="label"
+                        ::accept="fileAccept || null"
                     />
                 </div>
         
@@ -392,7 +400,7 @@
             </template>
         
             <p
-                v-if="field.info && field.is_visible"
+                v-if="info && field.is_visible"
                 class="mt-1 block text-xs italic leading-5 text-gray-600 dark:text-gray-300"
                 v-text="info"
             >
@@ -447,6 +455,7 @@
                 'dependName',
                 'dependValue',
                 'fieldData',
+                'fileAccept',
                 'info',
                 'isRequire',
                 'label',
@@ -536,11 +545,6 @@
 
             methods: {
                 haveStates() {
-                    /*
-                    * The double negation operator is used to convert the value to a boolean.
-                    * It ensures that the final result is a boolean value,
-                    * true if the array has a length greater than 0, and otherwise false.
-                    */
                     return !!this.countryStates[this.country]?.length;
                 },
             },

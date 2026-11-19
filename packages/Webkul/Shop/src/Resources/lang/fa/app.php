@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. تمامی حقوق محفوظ است.',
         'forgot-password' => [
             'already-sent' => 'از قبل بازنشانی رمز عبور ایمیل ارسال شده است.',
             'back' => 'بازگشت به صفحه ورود؟',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'واحد پول',
                 'customer-service' => 'خدمات مشتری',
                 'email' => 'ایمیل',
-                'footer-content' => 'محتوای فوتر',
+                'footer-content' => 'راهنما و اطلاعات',
                 'footer-text' => '© حق تکثیر 2010 - :current_year ، نرم‌افزار Webkul (ثبت‌شده در هند). تمام حقوق محفوظ است.',
                 'locale' => 'زبان و محل',
                 'newsletter-text' => 'برای دریافت خبرنامه‌ی جذاب ما آماده شوید!',

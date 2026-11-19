@@ -28,7 +28,20 @@
             </p>
         </div>
 
-        <div class="mt-7 flex items-center justify-between gap-4 max-md:flex-wrap">
+        @if ($errors->any())
+            <div role="alert" data-configuration-errors class="mt-5 rounded border p-4" style="border-color: #b06c74; background: #391316; color: #ffdfdf;" v-pre>
+                <ul class="grid gap-2">
+                    @foreach (array_unique($errors->all()) as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+                @if (request()->route('slug') === 'sales' && request()->route('slug2') === 'payment_methods')
+                    <p class="mt-3">{{ trans('payment::setup.reselect-files') }}</p>
+                @endif
+            </div>
+        @endif
+
+        <div class="{{ $activeConfiguration->getKey() === 'sales.payment_methods' && $channels->count() <= 1 && $currentChannel->locales->count() <= 1 ? 'hidden' : 'mt-7 flex' }} items-center justify-between gap-4 max-md:flex-wrap">
             <div class="flex items-center gap-x-1">
                 <!-- Channel Switcher -->
                 <x-admin::dropdown :class="$channels->count() <= 1 ? 'hidden' : ''">
@@ -104,6 +117,9 @@
             </div>
         </div>
 
+        @if ($activeConfiguration->getKey() === 'sales.payment_methods')
+            @include('manpleasure-admin::payment-settings')
+        @else
         <div class="mt-6 grid grid-cols-[1fr_2fr] gap-10 max-xl:grid-cols-1 max-xl:gap-4">
             @foreach ($activeConfiguration->getChildren() as $child)
                 <div class="grid content-start gap-2.5">
@@ -130,6 +146,7 @@
                 </div>
             @endforeach
         </div>
+        @endif
 
         <div
             class="mt-7"
@@ -137,7 +154,7 @@
             aria-hidden="true"
         ></div>
 
-        <div class="mp-config-footer">
+        <div class="mp-config-footer {{ $activeConfiguration->getKey() === 'sales.payment_methods' ? 'mp-payment-footer' : '' }}">
             <a
                 href="{{ route('admin.configuration.index') }}"
                 class="transparent-button hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"

@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'שכחת סיסמה?',
             'password' => 'סיסמה',
             'powered-by-description' => 'מופעל על ידי :bagisto, פרויקט קוד פתוח על ידי :webkul.',
+            'show-password' => 'הצג סיסמה',
             'submit-btn' => 'כניסה',
             'title' => 'כניסה',
         ],

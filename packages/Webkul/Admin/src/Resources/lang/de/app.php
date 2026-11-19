@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Passwort vergessen?',
             'password' => 'Passwort',
             'powered-by-description' => 'Powered by :bagisto, ein Open-Source-Projekt von :webkul.',
+            'show-password' => 'Passwort anzeigen',
             'submit-btn' => 'Anmelden',
             'title' => 'Anmelden',
         ],

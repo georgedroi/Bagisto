@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\ManualPaymentPolicy;
 use Illuminate\Contracts\Console\Kernel;
 use Webkul\Core\Repositories\ChannelRepository;
 use Webkul\Product\Repositories\ProductRepository;
@@ -34,12 +35,7 @@ try {
         'development HMR markers absent' => glob(public_path('*.hot')) === [],
     ];
 
-    foreach (['fpx', 'tngewallet', 'creditdebitcards', 'duitnowqr_auto', 'duitnowqr', 'stripe'] as $method) {
-        $checks['unverified payment method disabled: '.$method] = ! core()->getConfigData('sales.payment_methods.'.$method.'.active');
-        $class = config('payment_methods.'.$method.'.class');
-        $checks['unverified payment method unavailable: '.$method] = is_string($class)
-            && ! app($class)->isAvailable();
-    }
+    $checks += ManualPaymentPolicy::readinessChecks();
 
     foreach ($checks as $name => $passed) {
         fwrite(STDOUT, ($passed ? 'PASS ' : 'FAIL ').$name.PHP_EOL);

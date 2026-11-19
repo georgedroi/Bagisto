@@ -44,57 +44,40 @@ class Bouncer
      */
     public function handle($request, \Closure $next, $guard = 'admin')
     {
-        /**
-         * Only the routes required to set up or complete two-factor
-         * authentication may bypass the verification check below (otherwise
-         * the redirect to the verification/setup screen would loop). Every
-         * other two-factor action - in particular disabling 2FA - must stay
-         * behind the verification check, so that a session which has logged in
-         * with the password but has not passed two-factor verification cannot
-         * use it to switch two-factor authentication off and bypass it.
-         */
-        if (
-            $request->routeIs('admin.two_factor.setup')
-            || $request->routeIs('admin.two_factor.verify.form')
-            || $request->routeIs('admin.two_factor.verify.store')
-            || $request->routeIs('admin.session.destroy')
-        ) {
-            return $next($request);
-        }
-
         if (! auth()->guard($guard)->check()) {
             return redirect()->route('admin.session.create');
         }
 
-        /**
-         * If user status is changed by admin. Then session should be
-         * logged out.
-         */
         if (! (bool) auth()->guard($guard)->user()->status) {
             auth()->guard($guard)->logout();
+            session()->invalidate();
 
             return redirect()->route('admin.session.create');
         }
 
-        /**
-         * If somehow the user deleted all permissions, then it should be
-         * auto logged out and need to contact the administrator again.
-         */
         if ($this->isPermissionsEmpty()) {
-            auth()->guard('admin')->logout();
+            auth()->guard($guard)->logout();
+            session()->invalidate();
 
-            session()->flash('error', trans('admin::app.error.403.message'));
+            session()->flash('error', trans('admin::app.errors.403.title'));
 
             return redirect()->route('admin.session.create');
         }
 
-        /**
-         * If two-factor authentication is enabled for the user,
-         * check if they have completed the verification process.
-         */
+        if ($request->routeIs(
+            'admin.two_factor.setup',
+            'admin.two_factor.verify.form',
+            'admin.two_factor.verify.store',
+            'admin.session.destroy'
+        )) {
+            return $next($request);
+        }
+
         if ($this->isTwoFactorRequired($guard)) {
             return $this->handleTwoFactorRedirect($guard);
         }
+
+        $this->checkIfAuthorized();
 
         return $next($request);
     }
@@ -107,7 +90,7 @@ class Bouncer
     public function isPermissionsEmpty()
     {
         if (! $role = auth()->guard('admin')->user()->role) {
-            abort(401, 'This action is unauthorized.');
+            abort(401, trans('admin::app.errors.401.title'));
         }
 
         if ($role->permission_type === 'all') {
@@ -120,8 +103,6 @@ class Bouncer
         ) {
             return true;
         }
-
-        $this->checkIfAuthorized();
 
         return false;
     }
@@ -142,7 +123,7 @@ class Bouncer
         $roles = acl()->getRoles();
 
         if (! isset($roles[$routeName])) {
-            abort(401, 'This action is unauthorized.');
+            abort(401, trans('admin::app.errors.401.title'));
         }
 
         bouncer()->allow($roles[$routeName]);

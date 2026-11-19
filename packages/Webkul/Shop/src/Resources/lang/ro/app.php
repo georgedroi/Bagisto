@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. Toate drepturile rezervate.',
         'forgot-password' => [
             'already-sent' => 'E-mailul de resetare a parolei a fost deja trimis.',
             'back' => 'Înapoi la autentificare?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Monedă',
                 'customer-service' => 'Serviciu clienți',
                 'email' => 'E-mail',
-                'footer-content' => 'Conținut subsol',
+                'footer-content' => 'Ajutor și informații',
                 'footer-text' => '© Drepturi de autor 2010 - :current_year, Webkul Software (Înregistrat în India). Toate drepturile rezervate.',
                 'locale' => 'Limbă',
                 'newsletter-text' => 'Pregătiți-vă pentru newsletter-ul nostru distractiv!',

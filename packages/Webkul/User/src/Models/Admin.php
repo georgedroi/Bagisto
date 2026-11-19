@@ -56,6 +56,8 @@ class Admin extends Authenticatable implements AdminContract
         'password',
         'api_token',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_backup_codes',
     ];
 
     /**
@@ -108,14 +110,14 @@ class Admin extends Authenticatable implements AdminContract
      */
     public function hasPermission($permission)
     {
-        if (
-            $this->role->permission_type == 'custom'
-            && ! $this->role->permissions
-        ) {
+        $role = $this->role;
+
+        if (! $role) {
             return false;
         }
 
-        return in_array($permission, $this->role->permissions);
+        return $role->permission_type === 'all'
+            || in_array($permission, (array) $role->permissions, true);
     }
 
     /**

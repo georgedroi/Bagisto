@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'درخواست تکمیل نشد',
+            'description' => 'لطفاً اطلاعات را بررسی کنید و دوباره تلاش کنید.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'Template',
         'parents' => 'Parents',

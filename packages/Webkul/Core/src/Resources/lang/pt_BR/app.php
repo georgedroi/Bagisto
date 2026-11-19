@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'Não foi possível concluir a solicitação',
+            'description' => 'Confira as informações e tente novamente.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'Template',
         'parents' => 'Parents',

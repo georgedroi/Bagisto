@@ -21,8 +21,42 @@ use Webkul\Shop\Mail\Order\RefundedNotification as ShopRefundedNotification;
 use function Pest\Laravel\get;
 use function Pest\Laravel\postJson;
 
+/**
+ * Fixed totals for an invoiced order with nothing refunded yet, larger than the refund of its one item, so the
+ * refund limit check never fails by chance.
+ */
+function refundTestOrderTotals(): array
+{
+    return [
+        'grand_total' => 250,
+        'base_grand_total' => 250,
+        'grand_total_invoiced' => 250,
+        'base_grand_total_invoiced' => 250,
+        'grand_total_refunded' => 0,
+        'base_grand_total_refunded' => 0,
+        'sub_total' => 250,
+        'base_sub_total' => 250,
+        'sub_total_invoiced' => 250,
+        'base_sub_total_invoiced' => 250,
+        'sub_total_refunded' => 0,
+        'base_sub_total_refunded' => 0,
+    ];
+}
+
+/**
+ * Fixed prices for the one refundable order item, below the order's invoiced total.
+ */
+function refundTestOrderItemTotals(): array
+{
+    return [
+        'price' => 100,
+        'base_price' => 100,
+        'total' => 100,
+        'base_total' => 100,
+    ];
+}
+
 it('should return the refund index page', function () {
-    // Act and Assert.
     $this->loginAsAdmin();
 
     get(route('admin.sales.refunds.index'))
@@ -31,7 +65,6 @@ it('should return the refund index page', function () {
 });
 
 it('should fails the validation error when refund items data not provided', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -148,7 +181,6 @@ it('should fails the validation error when refund items data not provided', func
         'order_id' => $order->id,
     ]);
 
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.refunds.store', $order->id), [
@@ -229,8 +261,106 @@ it('should fails the validation error when refund items data not provided', func
     ]);
 });
 
+/**
+ * An invoiced order with one refundable item at the fixed item totals, with the given order totals; returns the
+ * order and the refund items payload.
+ */
+function refundTestRefusalOrder(array $orderTotals): array
+{
+    $product = (new ProductFaker)->getSimpleProductFactory()->create();
+
+    $customer = Customer::factory()->create();
+
+    $order = Order::factory()->create([
+        'customer_id' => $customer->id,
+        'customer_email' => $customer->email,
+        'customer_first_name' => $customer->first_name,
+        'customer_last_name' => $customer->last_name,
+        ...$orderTotals,
+    ]);
+
+    OrderItem::factory()->create([
+        'product_id' => $product->id,
+        'order_id' => $order->id,
+        'sku' => $product->sku,
+        'type' => $product->type,
+        'name' => $product->name,
+        'qty_shipped' => 1,
+        'qty_invoiced' => 1,
+        'qty_canceled' => 1,
+        ...refundTestOrderItemTotals(),
+    ]);
+
+    OrderPayment::factory()->create(['order_id' => $order->id]);
+
+    $order->refresh();
+
+    $items = [];
+
+    foreach ($order->items as $item) {
+        foreach ($order->channel->inventory_sources as $inventorySource) {
+            $items[$item->id] = $inventorySource->id;
+        }
+    }
+
+    return [$order, $items];
+}
+
+it('refuses a refund larger than what is still refundable and sends no mail', function () {
+    Mail::fake();
+
+    [$order, $items] = refundTestRefusalOrder([...refundTestOrderTotals(), 'grand_total_refunded' => 200, 'base_grand_total_refunded' => 200]);
+
+    $this->loginAsAdmin();
+
+    postJson(route('admin.sales.refunds.store', $order->id), [
+        'refund' => ['items' => $items, 'shipping' => 0, 'adjustment_refund' => '0', 'adjustment_fee' => '0'],
+    ])
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect(Refund::where('order_id', $order->id)->count())->toBe(0);
+
+    Mail::assertNothingQueued();
+});
+
+it('refuses refunding more shipping than was invoiced', function () {
+    Mail::fake();
+
+    [$order, $items] = refundTestRefusalOrder([...refundTestOrderTotals(), 'shipping_invoiced' => 10, 'base_shipping_invoiced' => 10]);
+
+    $this->loginAsAdmin();
+
+    postJson(route('admin.sales.refunds.store', $order->id), [
+        'refund' => ['items' => $items, 'shipping' => 999, 'adjustment_refund' => '0', 'adjustment_fee' => '0'],
+    ])
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect(Refund::where('order_id', $order->id)->count())->toBe(0);
+
+    Mail::assertNothingQueued();
+});
+
+it('refuses a refund whose total comes to nothing', function () {
+    Mail::fake();
+
+    [$order, $items] = refundTestRefusalOrder(refundTestOrderTotals());
+
+    $this->loginAsAdmin();
+
+    postJson(route('admin.sales.refunds.store', $order->id), [
+        'refund' => ['items' => $items, 'shipping' => 0, 'adjustment_refund' => '0', 'adjustment_fee' => '100'],
+    ])
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect(Refund::where('order_id', $order->id)->count())->toBe(0);
+
+    Mail::assertNothingQueued();
+});
+
 it('should fails the validation error when refund items data provided with wrong way', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -347,7 +477,6 @@ it('should fails the validation error when refund items data provided with wrong
         'order_id' => $order->id,
     ]);
 
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.refunds.store', $order->id), [
@@ -426,7 +555,6 @@ it('should fails the validation error when refund items data provided with wrong
 });
 
 it('should store the order refund', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -517,6 +645,7 @@ it('should store the order refund', function () {
         'customer_email' => $customer->email,
         'customer_first_name' => $customer->first_name,
         'customer_last_name' => $customer->last_name,
+        ...refundTestOrderTotals(),
     ]);
 
     $orderItem = OrderItem::factory()->create([
@@ -528,6 +657,7 @@ it('should store the order refund', function () {
         'qty_shipped' => 1,
         'qty_invoiced' => 1,
         'qty_canceled' => 1,
+        ...refundTestOrderItemTotals(),
     ]);
 
     $orderBillingAddress = OrderAddress::factory()->create([
@@ -552,7 +682,6 @@ it('should store the order refund', function () {
         }
     }
 
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.refunds.store', $order->id), [
@@ -639,7 +768,6 @@ it('should store the order refund', function () {
 });
 
 it('should store the order refund and send email to the customer and admin', function () {
-    // Arrange.
     Mail::fake();
 
     CoreConfig::where('code', 'emails.general.notifications.emails.general.notifications.new_refund_mail_to_admin')->update([
@@ -736,6 +864,7 @@ it('should store the order refund and send email to the customer and admin', fun
         'customer_email' => $customer->email,
         'customer_first_name' => $customer->first_name,
         'customer_last_name' => $customer->last_name,
+        ...refundTestOrderTotals(),
     ]);
 
     $orderItem = OrderItem::factory()->create([
@@ -747,6 +876,7 @@ it('should store the order refund and send email to the customer and admin', fun
         'qty_shipped' => 1,
         'qty_invoiced' => 1,
         'qty_canceled' => 1,
+        ...refundTestOrderItemTotals(),
     ]);
 
     $orderBillingAddress = OrderAddress::factory()->create([
@@ -771,7 +901,6 @@ it('should store the order refund and send email to the customer and admin', fun
         }
     }
 
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.refunds.store', $order->id), [
@@ -864,7 +993,6 @@ it('should store the order refund and send email to the customer and admin', fun
 });
 
 it('should return the order refunded data', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -1018,7 +1146,6 @@ it('should return the order refunded data', function () {
         'adjustment_fee' => 0,
     ];
 
-    // Act and Assert.
     $this->loginAsAdmin();
 
     postJson(route('admin.sales.refunds.update_totals', $order->id), $refund)
@@ -1091,7 +1218,6 @@ it('should return the order refunded data', function () {
 });
 
 it('should return the view page of refund', function () {
-    // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
             5 => 'new',
@@ -1215,7 +1341,6 @@ it('should return the view page of refund', function () {
         'order_id' => $order->id,
     ]);
 
-    // Act and Assert.
     $this->loginAsAdmin();
 
     get(route('admin.sales.refunds.view', $refund->id))

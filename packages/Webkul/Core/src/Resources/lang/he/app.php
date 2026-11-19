@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'לא ניתן להשלים את הבקשה',
+            'description' => 'בדקו את המידע ונסו שוב.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'תבנית',
         'parents' => 'הורים',

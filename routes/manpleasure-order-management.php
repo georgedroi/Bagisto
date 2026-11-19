@@ -8,6 +8,7 @@ Route::middleware(['web', 'admin'])
     ->name('admin.sales.orders.')
     ->where(['orderId' => '[0-9]+'])
     ->group(function () {
+        Route::post('{orderId}/receipt/whatsapp', [OrderWorkflowController::class, 'recordWhatsAppReceipt'])->name('receipt.whatsapp');
         Route::post('{orderId}/workflow', [OrderWorkflowController::class, 'update'])->name('workflow.update');
         Route::post('{orderId}/awb', [OrderWorkflowController::class, 'uploadAwb'])->name('awb.upload');
         Route::get('{orderId}/awb/print', [OrderWorkflowController::class, 'printAwb'])->name('awb.print');

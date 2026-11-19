@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. सर्वाधिकार सुरक्षित।',
         'forgot-password' => [
             'already-sent' => 'पासवर्ड रीसेट मेल पहले ही भेजा जा चुका है।',
             'back' => 'साइन इन पर वापस जाएं?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'मुद्रा',
                 'customer-service' => 'ग्राहक सेवा',
                 'email' => 'ईमेल',
-                'footer-content' => 'फ़ुटर सामग्री',
+                'footer-content' => 'सहायता और जानकारी',
                 'footer-text' => '© कॉपीराइट 2010 - :current_year, वेबकल सॉफ़्टवेयर (भारत में पंजीकृत)। सभी अधिकार सुरक्षित हैं।',
                 'locale' => 'स्थान',
                 'newsletter-text' => 'हमारे मनोरंजन समाचार पत्रिका के लिए तैयार हो जाओ!',

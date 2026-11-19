@@ -59,11 +59,13 @@
                             class="journal-scroll grid max-h-[calc(100vh-330px)] overflow-auto"
                             v-if="notifications.length"
                         >
-                            <a
-                                :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
-                                class="flex h-14 items-start gap-1.5 p-4 hover:bg-gray-50 dark:hover:bg-gray-950"
+                            <form
+                                method="POST"
+                                :action="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
                                 v-for="notification in notifications"
                             >
+                                @csrf
+                                <button type="submit" class="flex h-14 w-full items-start gap-1.5 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-950">
                                 <span
                                     v-if="notification.order.status in orderType"
                                     class="h-fit rounded-full text-2xl"
@@ -84,7 +86,8 @@
                                         @{{ notification.order.datetime }}
                                     </p>
                                 </div>
-                            </a>
+                                </button>
+                            </form>
                         </div>
 
                         <!-- For Empty Data -->

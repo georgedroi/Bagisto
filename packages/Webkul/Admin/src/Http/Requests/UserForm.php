@@ -27,9 +27,9 @@ class UserForm extends FormRequest
         return [
             'name' => 'required',
             'email' => 'required|email|unique:admins,email,'.$this->id,
-            'password' => 'nullable|min:6|confirmed',
+            'password' => ($this->routeIs('admin.settings.users.store') ? 'required' : 'nullable').'|min:6|confirmed',
             'password_confirmation' => 'nullable|required_with:password|same:password',
-            'status' => 'sometimes',
+            'status' => 'sometimes|boolean',
             'role_id' => [
                 'bail',
                 'required',
@@ -42,7 +42,7 @@ class UserForm extends FormRequest
                 },
             ],
             'image' => 'array',
-            'image.*' => 'mimes:jpeg,jpg,png,gif|max:10000',
+            'image.*' => 'mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:10000',
         ];
     }
 }

@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'リクエストを完了できませんでした',
+            'description' => '入力内容を確認して、もう一度お試しください。',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'テンプレート',
         'parents' => '親',

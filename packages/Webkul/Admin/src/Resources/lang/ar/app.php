@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'نسيت كلمة المرور؟',
             'password' => 'كلمة المرور',
             'powered-by-description' => 'مدعوم من :bagisto، مشروع مفتوح المصدر من :webkul.',
+            'show-password' => 'عرض كلمة المرور',
             'submit-btn' => 'تسجيل الدخول',
             'title' => 'تسجيل الدخول',
         ],

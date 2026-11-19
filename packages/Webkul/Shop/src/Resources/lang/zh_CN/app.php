@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. 保留所有权利。',
         'forgot-password' => [
             'already-sent' => '密码重置邮件已发送。',
             'back' => '返回登录？',
@@ -632,7 +634,7 @@ return [
                 'currency' => '货币',
                 'customer-service' => '客户服务',
                 'email' => '电子邮件',
-                'footer-content' => '页脚内容',
+                'footer-content' => '帮助与信息',
                 'footer-text' => '© 版权所有 2010 - :current_year，Webkul Software（印度注册）。保留所有权利。',
                 'locale' => '语言',
                 'newsletter-text' => '准备好我们有趣的新闻通讯！',

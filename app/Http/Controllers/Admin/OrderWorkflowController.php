@@ -7,10 +7,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Admin\Http\Controllers\Controller;
-use Webkul\Payment\PaymentPolicy;
+use Webkul\Payment\Repositories\PaymentReceiptRepository;
 use Webkul\Sales\Repositories\OrderCommentRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 
+/**
+ * Manage verified manual orders, private courier labels and fulfillment stages.
+ */
 class OrderWorkflowController extends Controller
 {
     /**
@@ -20,6 +23,25 @@ class OrderWorkflowController extends Controller
         protected OrderRepository $orderRepository,
         protected OrderCommentRepository $orderCommentRepository
     ) {}
+
+    /**
+     * Register a receipt received in WhatsApp for the existing payment review queue.
+     */
+    public function recordWhatsAppReceipt(int $orderId): RedirectResponse
+    {
+        abort_unless(bouncer()->hasPermission('sales.orders.workflow'), 403);
+
+        $data = request()->validate([
+            'expected_status' => ['required', 'string', 'in:awaiting_payment,payment_clarification'],
+            'receipt' => ['required', 'file', 'extensions:jpg,jpeg,png,webp', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        app(PaymentReceiptRepository::class)->uploadReceipt($orderId, request()->file('receipt'), auth('admin')->id(), $data['expected_status']);
+
+        session()->flash('success', trans('payment::workflow.whatsapp-registered'));
+
+        return redirect()->route('admin.sales.orders.view', $orderId);
+    }
 
     /**
      * Apply a sequential, locked workflow transition and record its activity.
@@ -39,7 +61,7 @@ class OrderWorkflowController extends Controller
                 ->with(['payment', 'shipments', 'items'])->findOrFail($orderId);
             $current = OrderWorkflow::current($order);
 
-            abort_unless(PaymentPolicy::allows($order->payment?->method), 422);
+            abort_unless(OrderWorkflow::supports($order), 422);
             abort_unless($data['expected_status'] === $current, 409, trans('admin::order-status.stale-order'));
             abort_unless(in_array($data['workflow_status'], OrderWorkflow::next($order), true), 422, trans('admin::order-status.invalid-transition'));
 

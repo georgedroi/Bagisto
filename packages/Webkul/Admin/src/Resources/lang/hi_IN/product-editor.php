@@ -11,4 +11,6 @@ return [
     'publishing' => 'इस उत्पाद को प्रकाशित किया जा रहा है…',
     'save-first' => 'पूर्वावलोकन से पहले उत्पाद सहेजें।',
     'saving-draft' => 'इस उत्पाद को ड्राफ़्ट के रूप में सहेजा जा रहा है…',
+    'media-in-use' => 'This file is used by saved content. Remove its references before deleting it.',
+    'media-delete-failed' => 'The file could not be deleted. Its media record has been retained.',
 ];

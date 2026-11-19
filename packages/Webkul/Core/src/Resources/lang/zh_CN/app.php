@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => '无法完成请求',
+            'description' => '请检查信息后重试。',
+        ],
+    ],
+
     'path-hint' => [
         'template' => '模板',
         'parents' => '父母',

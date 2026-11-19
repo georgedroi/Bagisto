@@ -65,20 +65,6 @@
                         {{ $shipment->track_number }}
                     </div>
                 </div>
-
-                @php $additionalDetails = \Webkul\Payment\Payment::getAdditionalDetails($shipment->order->payment->method); @endphp
-
-                @if (! empty($additionalDetails))
-                    <div style="font-size: 16px; color: #384860;">
-                        <div>
-                            <span>{{ $additionalDetails->title }} : </span>
-                        </div>
-
-                        <div>
-                            <span>{{ $additionalDetails->value }} </span>
-                        </div>
-                    </div>
-                @endif
             </div>
         @endif
 
@@ -111,6 +97,12 @@
                 <div style="font-size: 16px;font-weight: 400;color: #384860;">
                     {{ core()->getConfigData('sales.payment_methods.' . $shipment->order->payment->method . '.title') }}
                 </div>
+
+                @if (\App\Support\OrderWorkflow::supports($shipment->order))
+                    <div style="font-size: 16px;font-weight: 400;color: #384860;">
+                        @lang('admin::order-status.receipts') : @lang(\App\Support\OrderWorkflow::paymentVerified($shipment->order) ? 'admin::order-status.receipt-approved' : 'admin::order-status.receipt-pending')
+                    </div>
+                @endif
             </div>
         @endif
     </div>

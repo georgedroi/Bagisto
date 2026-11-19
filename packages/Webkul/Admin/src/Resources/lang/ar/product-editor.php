@@ -11,4 +11,6 @@ return [
     'publishing' => 'جارٍ نشر هذا المنتج…',
     'save-first' => 'احفظ المنتج قبل معاينته.',
     'saving-draft' => 'جارٍ حفظ هذا المنتج كمسودة…',
+    'media-in-use' => 'This file is used by saved content. Remove its references before deleting it.',
+    'media-delete-failed' => 'The file could not be deleted. Its media record has been retained.',
 ];

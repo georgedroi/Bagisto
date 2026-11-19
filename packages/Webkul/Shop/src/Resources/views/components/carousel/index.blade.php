@@ -110,7 +110,7 @@
                     'cursor-pointer hover:opacity-100': direction == 'ltr' ? currentIndex > 0 : currentIndex <= 0
                 }"
                 role="button"
-                aria-label="@lang('shop::components.carousel.previous')"
+                aria-label="@lang('shop::app.components.carousel.previous')"
                 tabindex="0"
                 v-if="images?.length >= 2"
                 @click="navigate('prev')"
@@ -124,7 +124,7 @@
                     'cursor-pointer hover:opacity-100': direction == 'rtl' ? currentIndex < 0 : currentIndex >= 0
                 }"
                 role="button"
-                aria-label="@lang('shop::components.carousel.next')"
+                aria-label="@lang('shop::app.components.carousel.next')"
                 tabindex="0"
                 v-if="images?.length >= 2"
                 @click="navigate('next')"

@@ -5,12 +5,20 @@ use App\Support\UploadedFileName;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Webkul\Customer\Models\Customer;
 use Webkul\Faker\Helpers\Product as ProductFaker;
+use Webkul\Payment\Repositories\PaymentReceiptRepository;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Models\OrderAddress;
 use Webkul\Sales\Models\OrderItem;
 use Webkul\Sales\Models\OrderPayment;
+use Webkul\Sales\Models\Shipment;
+use Webkul\User\Models\Admin;
+use Webkul\User\Models\Role;
+
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
 
 beforeEach(function () {
     config(['responsecache.enabled' => false]);
@@ -113,6 +121,22 @@ function uploadedNameOrder(?Customer $customer = null, array $attributes = []): 
     return $order;
 }
 
+/**
+ * Save a receipt whose name and review note were stored before file names were cleaned.
+ */
+function legacyReceipt(Order $order): void
+{
+    app(PaymentReceiptRepository::class)->create([
+        'order_id' => $order->id,
+        'receipt_path' => 'receipts/legacy.png',
+        'original_name' => "Legacy receipt {{ \$emit.constructor('window.__probe=7*193')() }}.png",
+        'status' => 'rejected',
+        'admin_notes' => 'Legacy note {{ 7*197 }}',
+    ]);
+
+    $order->update(['workflow_status' => 'payment_clarification']);
+}
+
 it('gives a safe display name for any client file name', function (string $given, string $expected) {
     expect(UploadedFileName::clean($given))->toBe($expected);
 })->with([
@@ -125,6 +149,31 @@ it('gives a safe display name for any client file name', function (string $given
     'over the length limit' => [str_repeat('a', 300).'.png', str_repeat('a', 255)],
 ]);
 
+it('stores a receipt file name without template delimiters when a guest uploads through the signed link', function () {
+    $order = uploadedNameOrder();
+    $link = URL::temporarySignedRoute('payment.orders.receipt.show', now()->addDay(), ['id' => $order->id]);
+
+    post($link, ['receipt' => UploadedFile::fake()->image("QA slip {{ \$emit.constructor('window.__probe=7*193')() }}.png")])->assertRedirect();
+
+    $stored = app(PaymentReceiptRepository::class)->findOneWhere(['order_id' => $order->id])->original_name;
+
+    expect($stored)->toStartWith('QA slip')
+        ->toEndWith('.png')
+        ->not->toContain('{')
+        ->not->toContain('}');
+});
+
+it('stores a receipt file name without template delimiters when a signed-in customer uploads', function () {
+    $customer = Customer::factory()->create();
+    $order = uploadedNameOrder($customer);
+
+    $this->actingAs($customer, 'customer');
+
+    post(route('customer.orders.receipt.upload', $order->id), ['receipt' => UploadedFile::fake()->image('QA slip {{ 7*193 }}.png')])->assertRedirect();
+
+    expect(app(PaymentReceiptRepository::class)->findOneWhere(['order_id' => $order->id])->original_name)->toBe('QA slip 7*193 .png');
+});
+
 it('stores a Media Bank file name without template delimiters', function () {
     Storage::fake('public');
 
@@ -133,6 +182,77 @@ it('stores a Media Bank file name without template delimiters', function () {
     $this->post(route('admin.media.assets.store'), ['file' => UploadedFile::fake()->image('QA media {{ 7*191 }}.png', 64, 64)], ['Accept' => 'application/json'])->assertCreated();
 
     expect(app(MediaAssetRepository::class)->all()->last()->original_name)->toBe('QA media 7*191 .png');
+});
+
+it('renders a stored receipt name and review note where Vue never compiles them on the admin order page', function (array $permissions) {
+    $order = uploadedNameOrder();
+
+    legacyReceipt($order);
+
+    $role = Role::factory()->create(['permission_type' => 'custom', 'permissions' => $permissions]);
+
+    $this->loginAsAdmin(Admin::factory()->create(['role_id' => $role->id]));
+
+    $html = get(route('admin.sales.orders.view', $order->id))->assertOk()->getContent();
+
+    expectUploadedNameIsolated($html, 'Legacy receipt');
+    expectUploadedNameIsolated($html, 'Legacy note');
+})->with([
+    'administrator who can manage the workflow' => [['sales', 'sales.orders', 'sales.orders.view', 'sales.orders.workflow']],
+    'read-only administrator' => [['sales', 'sales.orders', 'sales.orders.view']],
+]);
+
+it('keeps the order workflow panel collapsible and its forms intact', function () {
+    $order = uploadedNameOrder();
+
+    app(PaymentReceiptRepository::class)->create([
+        'order_id' => $order->id,
+        'receipt_path' => 'receipts/pending.png',
+        'original_name' => 'Pending slip.png',
+        'status' => 'pending',
+    ]);
+
+    $order->update(['workflow_status' => 'awaiting_verification']);
+
+    $this->loginAsAdmin();
+
+    $document = new DOMDocument;
+    @$document->loadHTML('<?xml encoding="utf-8"?>'.get(route('admin.sales.orders.view', $order->id))->assertOk()->getContent());
+    $xpath = new DOMXPath($document);
+    $panel = '//div[contains(@class, "msp-workflow")]//div[@v-show="isOpen" and not(@v-pre)]/div[@v-pre]';
+
+    expect($xpath->query($panel)->length)->toBe(1)
+        ->and($xpath->query($panel.'//a[contains(@href, "/sales/receipts/") and normalize-space(text()) = "Pending slip.png"]')->length)->toBe(1)
+        ->and($xpath->query($panel.'//form[contains(@action, "/approve")]//input[@name="_token"]')->length)->toBe(1)
+        ->and($xpath->query($panel.'//form[contains(@action, "/reject")]//input[@name="notes"]')->length)->toBe(1);
+});
+
+it('renders a stored receipt name and review note where Vue never compiles them on the customer order page', function () {
+    $customer = Customer::factory()->create();
+    $order = uploadedNameOrder($customer);
+
+    legacyReceipt($order);
+
+    $this->actingAs($customer, 'customer');
+
+    $html = get(route('shop.customers.account.orders.view', $order->id))->assertOk()->getContent();
+
+    expectUploadedNameIsolated($html, 'Legacy receipt');
+    expectUploadedNameIsolated($html, 'Legacy note');
+});
+
+it('renders stored receipt and shipment text where Vue never compiles it on the guest receipt page', function () {
+    $order = uploadedNameOrder();
+
+    legacyReceipt($order);
+
+    Shipment::factory()->create(['order_id' => $order->id, 'carrier_title' => 'Carrier sentinel {{ 7*199 }}', 'track_number' => 'QA{{ 7*211 }}']);
+
+    $html = get(URL::temporarySignedRoute('payment.orders.receipt.show', now()->addDay(), ['id' => $order->id]))->assertOk()->getContent();
+
+    expectUploadedNameIsolated($html, 'Legacy receipt');
+    expectUploadedNameIsolated($html, 'Legacy note');
+    expectUploadedNameIsolated($html, 'Carrier sentinel');
 });
 
 it('renders a buyer name where Vue never compiles it in the dashboard order queue', function () {

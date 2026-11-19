@@ -3,12 +3,10 @@
     :has-feature="false"
     :has-footer="false"
 >
-    <!-- Page Title -->
     <x-slot:title>
-        @lang("shop::app.errors.{$errorCode}.title")
+        {{ $errorTitle ?? trans("shop::app.errors.{$errorCode}.title") }}
     </x-slot>
 
-    <!-- Error page Information -->
 	<div class="container absolute left-1/2 top-0 -translate-x-1/2 px-[60px] max-lg:px-8 max-sm:px-4">
 		<div class="grid h-[100vh] w-full">
 			<div class="wrapper-404 max-868:!text-[294px] max-md:!text-[140px]">
@@ -23,13 +21,13 @@
 
             <div class="absolute left-1/2 top-[74%] mt-10 -translate-x-1/2 -translate-y-1/2 text-center max-868:w-full max-md:top-[60%]">
                 <h1 class="text-3xl font-semibold max-md:text-xl">
-                    @lang("shop::app.errors.{$errorCode}.title")
+                    {{ $errorTitle ?? trans("shop::app.errors.{$errorCode}.title") }}
                 </h1>
 
                 <p class="mt-4 text-lg text-zinc-500 max-md:text-sm">
                     {{ 
                         $errorCode === 503 && core()->getCurrentChannel()->maintenance_mode_text != ""
-                        ? core()->getCurrentChannel()->maintenance_mode_text : trans("shop::app.errors.{$errorCode}.description")
+                        ? core()->getCurrentChannel()->maintenance_mode_text : ($errorDescription ?? trans("shop::app.errors.{$errorCode}.description"))
                     }}
                 </p>
 

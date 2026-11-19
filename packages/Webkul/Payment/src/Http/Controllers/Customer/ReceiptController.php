@@ -6,10 +6,12 @@ use App\Support\OrderWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Webkul\Payment\PaymentPolicy;
 use Webkul\Payment\Repositories\PaymentReceiptRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 
+/**
+ * Accept private customer evidence and render the signed guest order portal.
+ */
 class ReceiptController extends Controller
 {
     /**
@@ -42,7 +44,7 @@ class ReceiptController extends Controller
             return redirect()->back();
         }
 
-        if (! PaymentPolicy::allows($order->payment?->method) || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
+        if (! OrderWorkflow::supports($order) || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
             abort(422, trans('admin::order-status.receipt-upload-unavailable'));
         }
 
@@ -58,9 +60,9 @@ class ReceiptController extends Controller
      */
     public function showSigned(int $orderId)
     {
-        $order = $this->orderRepository->with('payment')->findOrFail($orderId);
+        $order = $this->orderRepository->with(['payment', 'shipments'])->findOrFail($orderId);
 
-        abort_unless(PaymentPolicy::allows($order->payment?->method), 404);
+        abort_unless(OrderWorkflow::supports($order), 404);
 
         $receipts = $this->paymentReceiptRepository
             ->scopeQuery(fn ($query) => $query->where('order_id', $orderId)->orderByDesc('id'))->all();

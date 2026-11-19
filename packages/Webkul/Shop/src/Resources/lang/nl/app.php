@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. Alle rechten voorbehouden.',
         'forgot-password' => [
             'already-sent' => 'Wachtwoord al opnieuw ingesteld E-mail verzonden.',
             'back' => 'Terug naar Aanmelden?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Valuta',
                 'customer-service' => 'Klantenservice',
                 'email' => 'E-mail',
-                'footer-content' => 'Voettekst inhoud',
+                'footer-content' => 'Hulp en informatie',
                 'footer-text' => '© Auteursrecht 2010 - :current_year, Webkul Software (geregistreerd in India). Alle rechten voorbehouden.',
                 'locale' => 'Taal',
                 'newsletter-text' => 'Maak je klaar voor onze leuke nieuwsbrief!',

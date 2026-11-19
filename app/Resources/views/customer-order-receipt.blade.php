@@ -1,4 +1,4 @@
-@if (\Webkul\Payment\PaymentPolicy::allows($order->payment->method))
+@if (\App\Support\OrderWorkflow::supports($order))
     <section class="msp-payment-proof mt-8 rounded-lg border border-zinc-200 p-5" aria-labelledby="payment-receipt-title">
         <h2 id="payment-receipt-title" class="text-lg font-semibold text-zinc-900">{{ trans('admin::order-status.payment-proof-title') }}</h2>
         <p class="mt-1 text-sm text-zinc-600">{{ trans('admin::order-status.payment-proof-help') }}</p>

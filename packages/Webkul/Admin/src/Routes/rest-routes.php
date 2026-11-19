@@ -63,9 +63,9 @@ Route::controller(AccountController::class)->prefix('account')->group(function (
  * Admin two-factor authentication routes.
  */
 Route::controller(TwoFactorController::class)->prefix('two-factor')->group(function () {
-    Route::get('setup', 'setup')->name('admin.two_factor.setup');
+    Route::post('setup', 'setup')->name('admin.two_factor.setup');
 
-    Route::post('enable', 'enable')->middleware('throttle:5,1')->name('admin.two_factor.enable');
+    Route::post('enable', 'enable')->middleware('throttle:admin-two-factor-enable')->name('admin.two_factor.enable');
 
     Route::post('disable', 'disable')->name('admin.two_factor.disable');
 });

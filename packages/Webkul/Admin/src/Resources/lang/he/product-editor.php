@@ -11,4 +11,6 @@ return [
     'publishing' => 'מפרסם את המוצר…',
     'save-first' => 'שמרו את המוצר לפני התצוגה המקדימה.',
     'saving-draft' => 'שומר את המוצר כטיוטה…',
+    'media-in-use' => 'This file is used by saved content. Remove its references before deleting it.',
+    'media-delete-failed' => 'The file could not be deleted. Its media record has been retained.',
 ];

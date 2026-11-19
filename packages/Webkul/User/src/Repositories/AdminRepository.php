@@ -15,6 +15,25 @@ class AdminRepository extends Repository
     }
 
     /**
+     * Consume a single backup code while locking the administrator's current codes.
+     */
+    public function consumeTwoFactorBackupCode(int $id, string $code): bool
+    {
+        return $this->model->getConnection()->transaction(function () use ($id, $code) {
+            $admin = $this->model->newQuery()->lockForUpdate()->findOrFail($id);
+            $codes = two_factor_authentication()->verifyBackupCode($admin->two_factor_backup_codes ?? [], $code);
+
+            if ($codes === null) {
+                return false;
+            }
+
+            $admin->update(['two_factor_backup_codes' => $codes]);
+
+            return true;
+        });
+    }
+
+    /**
      * Count admins with all access.
      */
     public function countAdminsWithAllAccess(): int

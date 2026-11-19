@@ -7,6 +7,7 @@ return [
             'forget-password-link' => '¿Olvidaste tu Contraseña?',
             'password' => 'Contraseña',
             'powered-by-description' => 'Desarrollado por :bagisto, un proyecto de código abierto de :webkul.',
+            'show-password' => 'Mostrar Contraseña',
             'submit-btn' => 'Iniciar Sesión',
             'title' => 'Iniciar Sesión',
         ],

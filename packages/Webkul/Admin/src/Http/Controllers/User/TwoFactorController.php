@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Admin\Mail\Admin\BackupCodesNotification;
+use Webkul\User\Repositories\AdminRepository;
 
 class TwoFactorController extends Controller
 {
@@ -23,6 +24,8 @@ class TwoFactorController extends Controller
                 ], 401);
             }
 
+            $admin = app(AdminRepository::class)->findOrFail($admin->id);
+
             if (
                 $admin->two_factor_enabled
                 && $admin->two_factor_secret
@@ -36,9 +39,9 @@ class TwoFactorController extends Controller
             if (! $admin->two_factor_secret) {
                 $secret = two_factor_authentication()->generateSecretKey();
 
-                $admin->update([
+                app(AdminRepository::class)->update([
                     'two_factor_secret' => encrypt($secret),
-                ]);
+                ], $admin->id);
             } else {
                 $secret = decrypt($admin->two_factor_secret);
             }
@@ -47,8 +50,10 @@ class TwoFactorController extends Controller
 
             return response()->json($qrCodeData);
         } catch (\Exception $e) {
+            report($e);
+
             return response()->json([
-                'error' => $e->getMessage(),
+                'error' => trans('admin::app.errors.500.title'),
             ], 500);
         }
     }
@@ -62,7 +67,7 @@ class TwoFactorController extends Controller
             'code' => 'required|digits:6',
         ]);
 
-        $admin = auth('admin')->user();
+        $admin = app(AdminRepository::class)->findOrFail(auth('admin')->id());
 
         $decryptedSecret = decrypt($admin->two_factor_secret);
 
@@ -76,28 +81,16 @@ class TwoFactorController extends Controller
             ], 422);
         }
 
-        $admin->forceFill([
+        $backupCodes = two_factor_authentication()->generateBackupCodes();
+
+        app(AdminRepository::class)->update([
             'two_factor_enabled' => true,
             'two_factor_verified_at' => now(),
-        ])->save();
+            'two_factor_backup_codes' => two_factor_authentication()->hashBackupCodes($backupCodes),
+        ], $admin->id);
 
         session()->put('two_factor_passed', true);
 
-        $backupCodes = two_factor_authentication()->generateBackupCodes();
-
-        /**
-         * Persist only the hashed backup codes - the plain codes are shown once
-         * on screen and emailed, but never stored in plain text.
-         */
-        $admin->update([
-            'two_factor_backup_codes' => two_factor_authentication()->hashBackupCodes($backupCodes),
-        ]);
-
-        /**
-         * The backup codes are shown on screen for the admin to download, so a
-         * failed email delivery must not prevent two-factor authentication from
-         * being enabled - it is only a secondary copy of the codes.
-         */
         try {
             Mail::to($admin->email)->send(
                 new BackupCodesNotification($admin, $backupCodes)
@@ -125,12 +118,8 @@ class TwoFactorController extends Controller
             ], 401);
         }
 
-        /**
-         * A session that has two-factor authentication enabled but has not yet
-         * passed verification must not be able to disable it, otherwise 2FA
-         * could be bypassed by simply hitting this endpoint after logging in
-         * with the password only.
-         */
+        $admin = app(AdminRepository::class)->findOrFail($admin->id);
+
         if (
             $admin->two_factor_enabled
             && ! session('two_factor_passed')
@@ -140,8 +129,9 @@ class TwoFactorController extends Controller
             ], 401);
         }
 
-        $admin->update(
-            two_factor_authentication()->getDisableValues()
+        app(AdminRepository::class)->update(
+            two_factor_authentication()->getDisableValues(),
+            $admin->id
         );
 
         $message = trans('admin::app.account.messages.disabled-success');
@@ -166,7 +156,7 @@ class TwoFactorController extends Controller
     {
         $request->validate(['code' => 'required|digits:6']);
 
-        $admin = auth('admin')->user();
+        $admin = app(AdminRepository::class)->findOrFail(auth('admin')->id());
 
         $decryptedSecret = decrypt($admin->two_factor_secret);
 
@@ -174,14 +164,7 @@ class TwoFactorController extends Controller
             return $this->handleSuccessfulVerification();
         }
 
-        $updatedCodes = two_factor_authentication()->verifyBackupCode(
-            $admin->two_factor_backup_codes ?? [],
-            $request->code
-        );
-
-        if ($updatedCodes !== null) {
-            $admin->update(['two_factor_backup_codes' => $updatedCodes]);
-
+        if (app(AdminRepository::class)->consumeTwoFactorBackupCode($admin->id, $request->code)) {
             return $this->handleSuccessfulVerification();
         }
 

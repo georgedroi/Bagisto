@@ -85,7 +85,9 @@ it('checks out a manual payment order and records verified payment and physical 
         ->and($order->invoices)->toHaveCount(0)
         ->and((int) $product->ordered_inventories()->sum('qty'))->toBe(1)
         ->and((int) $product->fresh()->inventory_source_qty($source))->toBe($stock);
-    $success = get(route('shop.checkout.onepage.success'))->assertOk()->assertSeeText('QA payment instructions');
+    $success = get(route('shop.checkout.onepage.success'))->assertOk()->assertSeeText('QA payment instructions')
+        ->assertSeeText(trans('shop::app.checkout.onepage.summary.grand-total'))
+        ->assertDontSee('shop::app.', false);
     $order->checkout_message = '<img src=x onerror="alert(1)">';
     expect(view('shop::checkout.success', compact('order'))->render())->toContain('&lt;img src=x onerror=')->not->toContain('<img src=x onerror=');
     Mail::assertQueued(CreatedNotification::class, function ($mail) use ($product) {
@@ -96,7 +98,7 @@ it('checks out a manual payment order and records verified payment and physical 
             && ! str_contains($html, e($product->sku));
     });
 
-    if (in_array($method, ['duitnowqr_manual', 'banktransfer'], true)) {
+    if (OrderWorkflow::supports($order)) {
         $document = new DOMDocument;
         @$document->loadHTML($success->getContent());
         expect((new DOMXPath($document))->query('//a[contains(@href, "/payment/orders/'.$order->id.'/receipt")]')->length)->toBe(1);
@@ -110,6 +112,7 @@ it('checks out a manual payment order and records verified payment and physical 
     }
 
     expect($order->fresh()->invoices)->toHaveCount(1);
+    $this->withSession(['order_id' => $order->id])->get(route('shop.checkout.onepage.success'))->assertOk()->assertDontSee('data-whatsapp-proof-qr', false);
     Mail::assertQueued(InvoicedNotification::class);
     $invoice = $order->fresh()->invoices->first();
     app(InvoiceItemRepository::class)->update(['additional' => ['attributes' => [['attribute_name' => 'QA option', 'option_label' => 'QA private option']]]], $invoice->items->first()->id);
@@ -157,7 +160,7 @@ it('checks out a manual payment order and records verified payment and physical 
             && ! str_contains($html, e($product->sku));
     });
 
-    if (in_array($method, ['duitnowqr_manual', 'banktransfer'], true)) {
+    if (OrderWorkflow::supports($order)) {
         foreach (['ready_to_ship' => 'handed_to_courier', 'handed_to_courier' => 'in_transit', 'in_transit' => 'out_for_delivery', 'out_for_delivery' => 'delivered'] as $from => $to) {
             post(route('admin.sales.orders.workflow.update', $order->id), ['expected_status' => $from, 'workflow_status' => $to])->assertRedirect();
         }

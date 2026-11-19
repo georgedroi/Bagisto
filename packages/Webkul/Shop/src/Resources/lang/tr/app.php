@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. Tüm hakları saklıdır.',
         'forgot-password' => [
             'already-sent' => 'Şifre sıfırlama e-postası zaten gönderildi.',
             'back' => 'Giriş sayfasına geri dön?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Para Birimi',
                 'customer-service' => 'Müşteri Hizmetleri',
                 'email' => 'E-posta',
-                'footer-content' => 'Alt Bilgi İçeriği',
+                'footer-content' => 'Yardım ve bilgi',
                 'footer-text' => '© Telif Hakkı 2010 - :current_year, Webkul Software. Tüm hakları saklıdır.',
                 'locale' => 'Dil',
                 'newsletter-text' => 'Bültenimize abone olun, fırsatları kaçırmayın!',

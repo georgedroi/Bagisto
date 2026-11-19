@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. All rights reserved.',
         'forgot-password' => [
             'already-sent' => 'Already Password Reset Mail Sent.',
             'back' => 'Back to sign In ?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Currency',
                 'customer-service' => 'Customer Service',
                 'email' => 'Email',
-                'footer-content' => 'Footer Content',
+                'footer-content' => 'Help & information',
                 'footer-text' => '© Copyright 2010 - :current_year, Webkul Software (Registered in India). All rights reserved.',
                 'locale' => 'Locale',
                 'newsletter-text' => 'Get Ready for our Fun Newsletter!',

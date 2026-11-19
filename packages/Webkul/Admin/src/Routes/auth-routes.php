@@ -25,17 +25,17 @@ Route::group(['prefix' => config('app.admin_url')], function () {
         /**
          * Login post route to admin auth controller.
          */
-        Route::post('', 'store')->name('admin.session.store');
+        Route::post('', 'store')->middleware('throttle:admin-login')->name('admin.session.store');
     });
 
     /**
      * Two-factor authentication verification routes.
      */
-    Route::controller(TwoFactorController::class)->prefix('two-factor')->group(function () {
+    Route::controller(TwoFactorController::class)->middleware('admin')->prefix('two-factor')->group(function () {
         Route::get('verify', 'showVerifyForm')->name('admin.two_factor.verify.form');
 
         Route::post('verify', 'verifyTwoFactorCode')
-            ->middleware('throttle:5,1')
+            ->middleware('throttle:admin-two-factor-verify')
             ->name('admin.two_factor.verify.store');
     });
 

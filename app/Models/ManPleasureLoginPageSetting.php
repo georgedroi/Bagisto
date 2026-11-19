@@ -2,12 +2,22 @@
 
 namespace App\Models;
 
+use App\Repositories\LoginPageSettingRepository;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Hold saved branding independently from the admin authentication fields.
+ */
 class ManPleasureLoginPageSetting extends Model
 {
+    /**
+     * The existing single-record settings table.
+     */
     protected $table = 'manpleasure_login_page_settings';
 
+    /**
+     * Editable and published presentation values.
+     */
     protected $fillable = [
         'draft_html',
         'draft_css',
@@ -20,6 +30,9 @@ class ManPleasureLoginPageSetting extends Model
         'updated_by',
     ];
 
+    /**
+     * Cast the publication switch consistently.
+     */
     protected function casts(): array
     {
         return [
@@ -27,11 +40,11 @@ class ManPleasureLoginPageSetting extends Model
         ];
     }
 
+    /**
+     * Preserve existing callers while routing persistence through its repository.
+     */
     public static function current(): self
     {
-        return static::query()->firstOrCreate(
-            ['id' => 1],
-            ['is_published' => false]
-        );
+        return app(LoginPageSettingRepository::class)->current();
     }
 }

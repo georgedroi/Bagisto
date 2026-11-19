@@ -5,10 +5,14 @@ namespace Webkul\Sales\Repositories;
 use Illuminate\Container\Container;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Sales\Contracts\Shipment;
 use Webkul\Sales\Models\Order;
 
+/**
+ * Create shipments and update stock while serializing fulfillment of each order.
+ */
 class ShipmentRepository extends Repository
 {
     /**
@@ -44,9 +48,14 @@ class ShipmentRepository extends Repository
         DB::beginTransaction();
 
         try {
+            $order = $this->orderRepository->scopeQuery(fn ($query) => $query->lockForUpdate())
+                ->findOrFail($data['order_id']);
+
             Event::dispatch('sales.shipment.save.before', $data);
 
-            $order = $this->orderRepository->find($data['order_id']);
+            if (! $order->canShip() || empty($data['shipment']['items'])) {
+                throw ValidationException::withMessages(['shipment' => trans('admin::app.sales.shipments.create.quantity-invalid')]);
+            }
 
             $shipment = $this->model->create([
                 'order_id' => $order->id,
@@ -63,12 +72,13 @@ class ShipmentRepository extends Repository
             $totalQty = $totalWeight = 0;
 
             foreach ($data['shipment']['items'] as $itemId => $inventorySource) {
-                $qty = $inventorySource[$data['shipment']['source']];
+                $qty = $inventorySource[$data['shipment']['source']] ?? null;
 
-                $orderItem = $this->orderItemRepository->find($itemId);
+                $orderItem = $this->orderItemRepository->findOneWhere(['id' => $itemId, 'order_id' => $order->id])
+                    ?? throw ValidationException::withMessages(['shipment' => trans('admin::app.sales.shipments.create.quantity-invalid')]);
 
-                if ($qty > $orderItem->qty_to_ship) {
-                    $qty = $orderItem->qty_to_ship;
+                if (! is_numeric($qty) || $qty <= 0 || $qty > $orderItem->qty_to_ship) {
+                    throw ValidationException::withMessages(['shipment' => trans('admin::app.sales.shipments.create.quantity-invalid')]);
                 }
 
                 $totalQty += $qty;

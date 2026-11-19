@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'İstek tamamlanamadı',
+            'description' => 'Bilgileri kontrol edip tekrar deneyin.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'Template',
         'parents' => 'Parents',

@@ -57,9 +57,7 @@ class NotificationController extends Controller
     public function viewedNotifications($orderId)
     {
         if ($notification = $this->notificationRepository->where('order_id', $orderId)->first()) {
-            $notification->read = 1;
-
-            $notification->save();
+            $this->notificationRepository->update(['read' => 1], $notification->id);
 
             return redirect()->route('admin.sales.orders.view', $orderId);
         }

@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'ඉල්ලීම සම්පූර්ණ කළ නොහැක',
+            'description' => 'තොරතුරු පරීක්ෂා කර නැවත උත්සාහ කරන්න.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'ශැක්කු',
         'parents' => 'මව්වාගේ',

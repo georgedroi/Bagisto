@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. Все права защищены.',
         'forgot-password' => [
             'already-sent' => 'Письмо для сброса пароля уже отправлено.',
             'back' => 'Вернуться к входу?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Валюта',
                 'customer-service' => 'Служба поддержки',
                 'email' => 'Электронная почта',
-                'footer-content' => 'Содержимое футера',
+                'footer-content' => 'Помощь и информация',
                 'footer-text' => '© Авторское право 2010 - :current_year, Webkul Software (зарегистрировано в Индии). Все права защищены.',
                 'locale' => 'Язык',
                 'newsletter-text' => 'Подготовьтесь к нашей интересной рассылке!',

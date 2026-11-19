@@ -63,7 +63,7 @@
                 <span
                     class="mp-category-previous icon-arrow-left-stylish absolute -left-10 top-9 flex h-[50px] w-[50px] cursor-pointer items-center justify-center rounded-full border border-black bg-white text-2xl transition hover:bg-black hover:text-white max-lg:-left-7 max-md:hidden"
                     role="button"
-                    aria-label="@lang('shop::components.carousel.previous')"
+                    aria-label="@lang('shop::app.components.carousel.previous')"
                     tabindex="0"
                     @click="swipeLeft"
                     @keydown.enter.prevent="swipeLeft"
@@ -74,7 +74,7 @@
                 <span
                     class="mp-category-next icon-arrow-right-stylish absolute -right-6 top-9 flex h-[50px] w-[50px] cursor-pointer items-center justify-center rounded-full border border-black bg-white text-2xl transition hover:bg-black hover:text-white max-lg:-right-7 max-md:hidden"
                     role="button"
-                    aria-label="@lang('shop::components.carousel.next')"
+                    aria-label="@lang('shop::app.components.carousel.next')"
                     tabindex="0"
                     @click="swipeRight"
                     @keydown.enter.prevent="swipeRight"

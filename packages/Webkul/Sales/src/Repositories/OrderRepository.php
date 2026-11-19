@@ -39,7 +39,9 @@ class OrderRepository extends Repository
     }
 
     /**
-     * This method will try attempt to a create order.
+     * Create an order, retrying a failed attempt in a fresh transaction up to the maximum attempts.
+     * A failed attempt rolls back only its own transaction, so a caller's open transaction is kept.
+     * A coupon usage limit failure is final and is never retried.
      *
      * @return OrderContract
      */
@@ -90,34 +92,25 @@ class OrderRepository extends Repository
 
             Event::dispatch('checkout.order.save.after', $order);
         } catch (\Exception $e) {
-            /* rolling back first */
             DB::rollBack();
 
-            /**
-             * Do not retry when coupon usage limits are exceeded — this is a
-             * definitive business-logic failure, not a transient DB error.
-             */
             if ($e instanceof CouponUsageLimitExceededException) {
                 throw $e;
             }
 
-            /* storing log for errors */
             Log::error(
                 'OrderRepository:createOrderIfNotThenRetry: '.$e->getMessage(),
                 ['data' => $data, 'attempt' => $attempt, 'max_attempts' => $maxAttempts]
             );
 
-            /* recalling if max attempts not reached */
             if ($attempt < $maxAttempts) {
                 return $this->createOrderIfNotThenRetry($data, $attempt + 1, $maxAttempts);
             }
 
-            /* rethrow the exception if max attempts reached */
             throw $e;
-        } finally {
-            /* commit in each case */
-            DB::commit();
         }
+
+        DB::commit();
 
         return $order;
     }
@@ -143,10 +136,8 @@ class OrderRepository extends Repository
      */
     public function cancel($orderOrId, bool $force = false)
     {
-        /* order */
         $order = $this->resolveOrderInstance($orderOrId);
 
-        /* check wether order can be cancelled or not */
         if (! $order->canCancel($force)) {
             return false;
         }
@@ -209,7 +200,8 @@ class OrderRepository extends Repository
     }
 
     /**
-     * Is order in completed state.
+     * Is order in completed state. A fully cancelled or fully refunded/cancelled order is not completed;
+     * an order already completed stays completed while not everything ordered has been refunded.
      *
      * @param  OrderContract  $order
      * @return bool
@@ -232,23 +224,14 @@ class OrderRepository extends Repository
             $totalQtyCanceled += $item->qty_canceled;
         }
 
-        /**
-         * Canceled state.
-         */
         if ($totalQtyOrdered === $totalQtyCanceled) {
             return false;
         }
 
-        /**
-         * Closed state.
-         */
         if ($totalQtyOrdered === $totalQtyRefunded + $totalQtyCanceled) {
             return false;
         }
 
-        /**
-         * Completed state.
-         */
         if (
             $totalQtyOrdered === $totalQtyInvoiced + $totalQtyCanceled
         ) {
@@ -259,10 +242,6 @@ class OrderRepository extends Repository
             return $totalQtyOrdered === $totalQtyShipped + $totalQtyRefunded;
         }
 
-        /**
-         * If order is already completed and total quantity ordered is not equal to refunded
-         * then it can be considered as completed.
-         */
         if (
             $order->status === Order::STATUS_COMPLETED
             && $totalQtyOrdered != $totalQtyRefunded
@@ -352,7 +331,6 @@ class OrderRepository extends Repository
      */
     public function collectTotals($order)
     {
-        // order invoice total
         $order->sub_total_invoiced = $order->base_sub_total_invoiced = 0;
         $order->shipping_invoiced = $order->base_shipping_invoiced = 0;
         $order->tax_amount_invoiced = $order->base_tax_amount_invoiced = 0;
@@ -375,7 +353,6 @@ class OrderRepository extends Repository
         $order->grand_total_invoiced = $order->sub_total_invoiced + $order->shipping_invoiced + $order->tax_amount_invoiced - $order->discount_invoiced;
         $order->base_grand_total_invoiced = $order->base_sub_total_invoiced + $order->base_shipping_invoiced + $order->base_tax_amount_invoiced - $order->base_discount_invoiced;
 
-        // order refund total
         $order->sub_total_refunded = $order->base_sub_total_refunded = 0;
         $order->shipping_refunded = $order->base_shipping_refunded = 0;
         $order->tax_amount_refunded = $order->base_tax_amount_refunded = 0;

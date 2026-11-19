@@ -34,6 +34,8 @@
         <a
             href="{{ route('shop.home.index') }}"
             target="_blank"
+            rel="noopener"
+            aria-label="{{ trans('admin::app.components.layouts.header.visit-shop') }}"
             class="hidden sm:flex"
         >
             <span
@@ -541,11 +543,13 @@
                 </div>
 
                 <div class="grid">
-                    <a
-                        class="flex items-start gap-1.5 border-b p-3 last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950"
+                    <form
+                        method="POST"
                         v-for="notification in notifications"
-                        :href="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
+                        :action="'{{ route('admin.notification.viewed_notification', ':orderId') }}'.replace(':orderId', notification.order_id)"
                     >
+                        @csrf
+                        <button type="submit" class="flex w-full items-start gap-1.5 border-b p-3 text-left last:border-b-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-950">
                         <span
                             v-if="notification.order.status in notificationStatusIcon"
                             class="h-fit"
@@ -563,7 +567,8 @@
                                 @{{ notification.order.datetime }}
                             </p>
                         </div>
-                    </a>
+                        </button>
+                    </form>
                 </div>
 
                 <div class="flex h-[47px] justify-between gap-1.5 border-t px-6 py-4 dark:border-gray-800">

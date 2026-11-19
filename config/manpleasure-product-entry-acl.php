@@ -39,6 +39,7 @@ return [
         'route' => [
             'admin.media.index',
             'admin.media.assets.store',
+            'admin.media.assets.import',
             'admin.media.assets.delete',
         ],
         'sort' => 6,

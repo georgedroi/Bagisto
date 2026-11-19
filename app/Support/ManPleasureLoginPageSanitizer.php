@@ -5,8 +5,20 @@ namespace App\Support;
 use HTMLPurifier;
 use HTMLPurifier_Config;
 
+/**
+ * Allow presentational branding while excluding executable content and remote resources.
+ */
 class ManPleasureLoginPageSanitizer
 {
+    /**
+     * Ids a design may not use, because the login page, its form, its scripts or its Vue app already rely on them.
+     */
+    protected const RESERVED_IDS = '/^(app|email|password|visibilityIcon|remember|_token|.*csrf.*|.*captcha.*|.*two[-_]?factor.*|.*2fa.*|otp.*)$/i';
+
+    /**
+     * Clean branding HTML without allowing a competing credential form, ids that collide with the login page,
+     * unsafe link targets or template expressions the login page's Vue app would run.
+     */
     public function cleanHtml(?string $html): string
     {
         if (! $html) {
@@ -27,44 +39,63 @@ class ManPleasureLoginPageSanitizer
             .'a[href|target|rel|class|style],'
             .'img[src|alt|title|width|height|class|style],'
             .'ul[class],ol[class],li[class],'
-            .'button[type|class|style|disabled],'
-            .'label[for|class],'
-            .'input[type|name|value|placeholder|class|id|disabled|readonly],'
-            .'textarea[name|placeholder|class|id|rows|disabled|readonly],'
-            .'select[name|class|id|disabled],'
-            .'option[value|selected],'
-            .'form[action|method|class|id],'
             .'table[class],thead,tbody,tr,th,td'
         );
 
         $config->set('URI.AllowedSchemes', [
             'http' => true,
             'https' => true,
-            'data' => false,
         ]);
 
         $config->set('HTML.SafeIframe', false);
         $config->set('CSS.AllowTricky', false);
+        $config->set('Attr.EnableID', true);
+        $config->set('Attr.IDBlacklistRegexp', self::RESERVED_IDS);
+        $config->set('Attr.AllowedFrameTargets', ['_blank', '_self']);
+        $config->set('Attr.AllowedRel', ['noopener', 'noreferrer', 'nofollow']);
+        $config->set('URI.Host', parse_url(config('app.url'), PHP_URL_HOST));
+        $config->set('URI.DisableExternalResources', true);
+        $config->set('Cache.DefinitionImpl', null);
+        $definition = $config->getHTMLDefinition(true);
+
+        foreach (['section', 'header', 'footer', 'main', 'article'] as $element) {
+            $definition->addElement($element, 'Block', 'Flow', 'Common');
+        }
 
         $purifier = new HTMLPurifier($config);
 
-        return $purifier->purify($html);
+        return TemplateExpressionFilter::purify($purifier, $html);
     }
 
+    /**
+     * Refuse executable or remote-loading CSS, accepting only local stored image URLs.
+     */
     public function cleanCss(?string $css): string
     {
         if (! $css) {
             return '';
         }
 
-        // CSS is stored separately. Reject executable or externally imported
-        // content before allowing it to be saved.
-        $css = preg_replace(
-            '~</?style\b|@import\b|expression\s*\(|javascript\s*:|behavior\s*:|-moz-binding\b~i',
-            '',
-            $css
-        );
+        $css = preg_replace('~/\*.*?\*/~s', '', $css) ?? '';
 
-        return $css ?? '';
+        if (str_contains($css, '\\') || preg_match('~[<>]|@import\b|@font-face\b|expression\s*\(|(?:javascript|behavior)\s*:|-moz-binding\b|image(?:-set)?\s*\(|src\s*\(~i', $css)) {
+            return '';
+        }
+
+        preg_match_all('~url\s*\(\s*(?:"([^"]*)"|\'([^\']*)\'|([^)]*))\s*\)~i', $css, $urls, PREG_SET_ORDER);
+
+        if (preg_match_all('~url\s*\(~i', $css) !== count($urls)) {
+            return '';
+        }
+
+        foreach ($urls as $match) {
+            $url = trim(($match[1] ?? '') ?: (($match[2] ?? '') ?: ($match[3] ?? '')));
+
+            if (! preg_match('~^/storage/(?:[a-z0-9_-]+/)*[a-z0-9_.-]+\.(?:png|jpe?g|webp)$~i', $url)) {
+                return '';
+            }
+        }
+
+        return $css;
     }
 }

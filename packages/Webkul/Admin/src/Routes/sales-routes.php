@@ -51,7 +51,7 @@ Route::prefix('sales')->group(function () {
 
         Route::post('cancel/{id}', 'cancel')->name('admin.sales.orders.cancel');
 
-        Route::get('reorder/{id}', 'reorder')->name('admin.sales.orders.reorder');
+        Route::post('reorder/{id}', 'reorder')->name('admin.sales.orders.reorder');
 
         Route::post('comment/{order_id}', 'comment')->name('admin.sales.orders.comment');
 

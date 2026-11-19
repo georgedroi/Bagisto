@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Şifremi Unuttum ?',
             'password' => 'Şifre',
             'powered-by-description' => ':webkul tarafından geliştirilen açık kaynaklı bir proje olan :bagisto tarafından desteklenmektedir.',
+            'show-password' => 'Şifreyi Göster',
             'submit-btn' => 'Giriş Yap',
             'title' => 'Giriş Yap',
         ],

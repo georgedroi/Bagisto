@@ -1447,6 +1447,9 @@ it('should print/download the invoice', function () {
     ]);
 
     $order = Order::factory()->create([
+        'base_currency_code' => core()->getBaseCurrencyCode(),
+        'channel_currency_code' => core()->getBaseCurrencyCode(),
+        'order_currency_code' => core()->getBaseCurrencyCode(),
         'cart_id' => $cart->id,
         'customer_id' => $customer->id,
         'customer_email' => $customer->email,

@@ -11,4 +11,6 @@ return [
     'publishing' => 'Publication du produit…',
     'save-first' => 'Enregistrez le produit avant de l\'afficher en aperçu.',
     'saving-draft' => 'Enregistrement du produit comme brouillon…',
+    'media-in-use' => 'This file is used by saved content. Remove its references before deleting it.',
+    'media-delete-failed' => 'The file could not be deleted. Its media record has been retained.',
 ];

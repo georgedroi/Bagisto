@@ -5,7 +5,9 @@ namespace Webkul\Sales\Repositories;
 use Illuminate\Container\Container;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 use Webkul\Core\Eloquent\Repository;
+use Webkul\Sales\Contracts\Order;
 use Webkul\Sales\Contracts\Refund;
 use Webkul\Sales\Exceptions\InvalidRefundQuantityException;
 
@@ -42,9 +44,14 @@ class RefundRepository extends Repository
         DB::beginTransaction();
 
         try {
+            $order = $this->orderRepository->scopeQuery(fn ($query) => $query->lockForUpdate())
+                ->findOrFail($data['order_id']);
+
             Event::dispatch('sales.refund.save.before', $data);
 
-            $order = $this->orderRepository->find($data['order_id']);
+            $refundable = $this->getRefundableAmount($order);
+
+            $this->validateAmounts($order, $data['refund']);
 
             $totalQty = array_sum($data['refund']['items'] ?? []) ?? 0;
 
@@ -68,10 +75,11 @@ class RefundRepository extends Repository
                     continue;
                 }
 
-                $orderItem = $this->orderItemRepository->find($itemId);
+                $orderItem = $this->orderItemRepository->findOneWhere(['id' => $itemId, 'order_id' => $order->id])
+                    ?? throw ValidationException::withMessages(['refund' => trans('admin::app.sales.refunds.create.invalid-qty')]);
 
                 if ($qty > $orderItem->qty_to_refund) {
-                    $qty = $orderItem->qty_to_refund;
+                    throw ValidationException::withMessages(['refund' => trans('admin::app.sales.refunds.create.invalid-qty')]);
                 }
 
                 $taxAmount = (($orderItem->tax_amount / $orderItem->qty_ordered) * $qty);
@@ -155,6 +163,16 @@ class RefundRepository extends Repository
 
             $this->collectTotals($refund);
 
+            if (round((float) $refund->base_grand_total, 4) <= 0) {
+                throw ValidationException::withMessages(['refund' => trans('admin::app.sales.refunds.create.invalid-refund-amount-error')]);
+            }
+
+            if (round((float) $refund->base_grand_total, 4) > $refundable) {
+                throw ValidationException::withMessages(['refund' => trans('admin::app.sales.refunds.create.refund-limit-error', [
+                    'amount' => core()->formatBasePrice($refund->base_grand_total),
+                ])]);
+            }
+
             $this->orderRepository->collectTotals($order);
 
             $this->orderRepository->updateOrderStatus($order);
@@ -219,6 +237,50 @@ class RefundRepository extends Repository
     }
 
     /**
+     * Get the invoiced amount of the order that has not been refunded yet.
+     *
+     * @param  Order  $order
+     */
+    public function getRefundableAmount($order): float
+    {
+        return round((float) $order->base_grand_total_invoiced - (float) $order->base_grand_total_refunded, 4);
+    }
+
+    /**
+     * Get the invoiced shipping amount of the order that has not been refunded yet.
+     *
+     * @param  Order  $order
+     */
+    public function getRefundableShippingAmount($order): float
+    {
+        return round((float) $order->base_shipping_invoiced - (float) $order->base_shipping_refunded, 4);
+    }
+
+    /**
+     * Refuse negative refund amounts and shipping above the invoiced shipping not yet refunded.
+     *
+     * @param  Order  $order
+     *
+     * @throws ValidationException
+     */
+    protected function validateAmounts($order, array $refund): void
+    {
+        foreach (['shipping', 'adjustment_refund', 'adjustment_fee'] as $field) {
+            if ((float) ($refund[$field] ?? 0) < 0) {
+                throw ValidationException::withMessages(['refund' => trans('admin::app.sales.refunds.create.refund-limit-error', [
+                    'amount' => core()->formatBasePrice((float) $refund[$field]),
+                ])]);
+            }
+        }
+
+        if (round((float) ($refund['shipping'] ?? 0), 4) > $this->getRefundableShippingAmount($order)) {
+            throw ValidationException::withMessages(['refund' => trans('admin::app.sales.refunds.create.refund-limit-error', [
+                'amount' => core()->formatBasePrice((float) $refund['shipping']),
+            ])]);
+        }
+    }
+
+    /**
      * Get order items refund summary.
      *
      * @param  array  $data
@@ -242,9 +304,9 @@ class RefundRepository extends Repository
                 continue;
             }
 
-            $orderItem = $this->orderItemRepository->find($orderItemId);
+            $orderItem = $this->orderItemRepository->findOneWhere(['id' => $orderItemId, 'order_id' => $order->id]);
 
-            if ($qty > $orderItem->qty_to_refund) {
+            if (! $orderItem || $qty > $orderItem->qty_to_refund) {
                 throw new InvalidRefundQuantityException(trans('admin::app.sales.refunds.create.invalid-qty'));
             }
 

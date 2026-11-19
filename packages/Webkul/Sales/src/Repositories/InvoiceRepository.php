@@ -5,6 +5,7 @@ namespace Webkul\Sales\Repositories;
 use Illuminate\Container\Container;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Sales\Generators\InvoiceSequencer;
 use Webkul\Sales\Models\Invoice;
@@ -74,7 +75,8 @@ class InvoiceRepository extends Repository
                     continue;
                 }
 
-                $orderItem = $this->orderItemRepository->find($itemId);
+                $orderItem = $this->findOrderItem($order->id, $itemId)
+                    ?? throw ValidationException::withMessages(['invoice' => trans('admin::app.sales.invoices.create.invalid-qty')]);
 
                 if ($qty > $orderItem->qty_to_invoice) {
                     $qty = $orderItem->qty_to_invoice;
@@ -176,9 +178,6 @@ class InvoiceRepository extends Repository
                 $this->orderRepository->updateOrderStatus($order);
             }
 
-            /**
-             * Temporary property has been used to avoid request helper usage in listener.
-             */
             $invoice->can_create_transaction = request()->has('can_create_transaction') && request()->input('can_create_transaction') == '1';
 
             Event::dispatch('sales.invoice.save.after', $invoice);
@@ -208,19 +207,27 @@ class InvoiceRepository extends Repository
     }
 
     /**
-     * Is valid quantity.
+     * Is valid quantity: every line must belong to the order and fit its quantity still to invoice.
      */
     public function isValidQuantity(array $data): bool
     {
         foreach ($data['invoice']['items'] as $itemId => $qty) {
-            $orderItem = $this->orderItemRepository->find($itemId);
+            $orderItem = $this->findOrderItem($data['order_id'], $itemId);
 
-            if ($qty > $orderItem->qty_to_invoice) {
+            if (! $orderItem || $qty > $orderItem->qty_to_invoice) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Find a line of the given order; null when it does not exist or belongs to another order.
+     */
+    public function findOrderItem(int $orderId, mixed $itemId): mixed
+    {
+        return $this->orderItemRepository->findOneWhere(['id' => $itemId, 'order_id' => $orderId]);
     }
 
     /**

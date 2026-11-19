@@ -28,9 +28,14 @@
             @lang('admin::whatsapp.send-received')
         </a>
 
-        <a href="{{ $links['paid'] }}" target="_blank" rel="noopener noreferrer" style="{{ $buttonStyle }}">
-            @lang('admin::whatsapp.send-paid')
-        </a>
+        @if ($links['paid'])
+            <a href="{{ $links['paid'] }}" target="_blank" rel="noopener noreferrer" style="{{ $buttonStyle }}">
+                @lang('admin::whatsapp.send-paid')
+            </a>
+        @else
+            <span aria-disabled="true" style="{{ $disabledStyle }}">{{ trans('admin::whatsapp.send-paid') }}</span>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ trans('payment::workflow.not-verified') }}</p>
+        @endif
 
         @if ($shipped)
             <a href="{{ $links['shipped'] }}" target="_blank" rel="noopener noreferrer" style="{{ $buttonStyle }}">

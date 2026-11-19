@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Забыли пароль?',
             'password' => 'Пароль',
             'powered-by-description' => 'Работает на :bagisto, проект с открытым исходным кодом от :webkul.',
+            'show-password' => 'Показать пароль',
             'submit-btn' => 'Войти',
             'title' => 'Войти',
         ],

@@ -4,11 +4,15 @@ namespace Webkul\Core\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as BaseHandler;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
+/**
+ * Render private production errors while preserving intentional HTTP response semantics.
+ */
 class Handler extends BaseHandler
 {
     /**
@@ -35,7 +39,7 @@ class Handler extends BaseHandler
     protected function handleAuthenticationException(): void
     {
         $this->renderable(function (AuthenticationException $exception, Request $request) {
-            $namespace = $request->is(config('app.admin_url').'/*') ? 'admin' : 'shop';
+            $namespace = $request->is(config('app.admin_url'), config('app.admin_url').'/*') ? 'admin' : 'shop';
 
             if ($request->wantsJson()) {
                 return response()->json(['error' => trans("{$namespace}::app.errors.401.description")], 401);
@@ -54,18 +58,26 @@ class Handler extends BaseHandler
      */
     protected function handleHttpException(): void
     {
-        $this->renderable(function (HttpException $exception, Request $request) {
-            $namespace = $request->is(config('app.admin_url').'/*') ? 'admin' : 'shop';
+        $this->renderable(function (HttpExceptionInterface $exception, Request $request) {
+            $namespace = $request->is(config('app.admin_url'), config('app.admin_url').'/*') ? 'admin' : 'shop';
+            $errorCode = $exception->getStatusCode();
+            $errorKey = app('translator')->has("{$namespace}::app.errors.{$errorCode}.title")
+                ? "{$namespace}::app.errors.{$errorCode}"
+                : ($errorCode < 500 ? 'core::app.errors.request' : "{$namespace}::app.errors.500");
+            $errorTitle = trans("{$errorKey}.title");
+            $errorDescription = trans("{$errorKey}.description");
 
-            $errorCode = in_array($exception->getStatusCode(), [401, 403, 404, 503])
-                ? $exception->getStatusCode()
-                : 500;
+            if (in_array($errorCode, [409, 422], true)) {
+                $message = trim(strip_tags($exception->getMessage()));
+                $errorDescription = $message !== '' ? $message : $errorDescription;
+            }
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'error' => trans("{$namespace}::app.errors.{$errorCode}.title"),
-                    'description' => trans("{$namespace}::app.errors.{$errorCode}.description"),
-                ], $errorCode);
+                    'error' => $errorTitle,
+                    'description' => $errorDescription,
+                    'message' => $errorDescription,
+                ], $errorCode, $exception->getHeaders());
             }
 
             $viewPath = "{$namespace}::errors.{$errorCode}";
@@ -74,7 +86,7 @@ class Handler extends BaseHandler
                 $viewPath = "{$namespace}::errors.index";
             }
 
-            return response()->view($viewPath, compact('errorCode'), $errorCode);
+            return response()->view($viewPath, compact('errorCode', 'errorTitle', 'errorDescription'), $errorCode, $exception->getHeaders());
         });
     }
 
@@ -94,14 +106,18 @@ class Handler extends BaseHandler
     protected function handleServerException(): void
     {
         $this->renderable(function (Throwable $throwable, Request $request) {
-            $namespace = $request->is(config('app.admin_url').'/*') ? 'admin' : 'shop';
+            if ($throwable instanceof HttpResponseException) {
+                return null;
+            }
+
+            $namespace = $request->is(config('app.admin_url'), config('app.admin_url').'/*') ? 'admin' : 'shop';
 
             $errorCode = 500;
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'error' => trans("{$namespace}::app.errors.{$errorCode}.title"),
-                    'description' => trans("{$namespace}::app.shop.errors.{$errorCode}.description"),
+                    'description' => trans("{$namespace}::app.errors.{$errorCode}.description"),
                 ], $errorCode);
             }
 

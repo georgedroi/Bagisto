@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. Todos los derechos reservados.',
         'forgot-password' => [
             'already-sent' => 'Ya se envió el correo de restablecimiento de contraseña.',
             'back' => 'Volver a iniciar sesión',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Moneda',
                 'customer-service' => 'Servicio al cliente',
                 'email' => 'Correo Electrónico',
-                'footer-content' => 'Contenido del pie de página',
+                'footer-content' => 'Ayuda e información',
                 'footer-text' => '© Derechos de autor 2010 - :current_year, Webkul Software (registrada en India). Todos los derechos reservados.',
                 'locale' => 'Idioma',
                 'newsletter-text' => '¡Prepárate para nuestro divertido boletín!',

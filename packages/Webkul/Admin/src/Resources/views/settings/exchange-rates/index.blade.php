@@ -13,12 +13,12 @@
 
             <div class="flex items-center gap-x-2.5">
                 <!-- Update Exchange Rate Button -->
-                <a
-                    href="{{ route('admin.settings.exchange_rates.update_rates') }}"
-                    class="primary-button"
-                >
-                    @lang('admin::app.settings.exchange-rates.index.update-rates')
-                </a>
+                <form action="{{ route('admin.settings.exchange_rates.update_rates') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="primary-button">
+                        @lang('admin::app.settings.exchange-rates.index.update-rates')
+                    </button>
+                </form>
 
                  <!-- Create Button -->
                 @if (bouncer()->hasPermission('settings.exchange_rates.create'))
@@ -50,9 +50,12 @@
 
                 <div class="flex items-center gap-x-2.5">
                     <!-- Update Exchange Rate Button -->
-                    <a href="{{ route('admin.settings.exchange_rates.update_rates') }}" class="primary-button">
-                        @lang('admin::app.settings.exchange-rates.index.update-rates')
-                    </a>
+                    <form action="{{ route('admin.settings.exchange_rates.update_rates') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="primary-button">
+                            @lang('admin::app.settings.exchange-rates.index.update-rates')
+                        </button>
+                    </form>
 
                      <!-- Create Button -->
                     @if (bouncer()->hasPermission('settings.exchange_rates.create'))

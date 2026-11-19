@@ -6,8 +6,16 @@ use Webkul\Payment\Repositories\PaymentReceiptRepository;
 use Webkul\Sales\Contracts\Order as OrderContract;
 use Webkul\Sales\Models\Order;
 
+/**
+ * Resolve receipt verification and sequential fulfillment for supported manual payments.
+ */
 class OrderWorkflow
 {
+    /**
+     * Payment methods using the shared receipt and fulfillment workflow.
+     */
+    public const PAYMENT_METHODS = ['duitnowqr_manual', 'banktransfer'];
+
     /**
      * Operational steps, separate from Bagisto's invoice and shipment status.
      */
@@ -35,20 +43,11 @@ class OrderWorkflow
     }
 
     /**
-     * Infer the stage of an order saved before the workflow from its invoices, shipments and latest receipt.
+     * Determine whether this order uses the shared manual payment workflow.
      */
-    protected static function inferred(OrderContract $order): string
+    public static function supports(OrderContract $order): bool
     {
-        if ($order->base_grand_total_invoiced > 0 && $order->base_total_due <= 0.01) {
-            return $order->shipments->isNotEmpty() ? 'handed_to_courier' : 'confirmed';
-        }
-
-        return match (app(PaymentReceiptRepository::class)->latestStatus($order->id)) {
-            'pending' => 'awaiting_verification',
-            'rejected' => 'payment_clarification',
-            'approved' => 'confirmed',
-            default => 'awaiting_payment',
-        };
+        return in_array($order->payment?->method, self::PAYMENT_METHODS, true);
     }
 
     /**
@@ -65,5 +64,22 @@ class OrderWorkflow
     public static function paymentVerified(OrderContract $order): bool
     {
         return in_array(self::current($order), [...array_keys(self::TRANSITIONS), 'delivered'], true);
+    }
+
+    /**
+     * Infer the stage of an order saved before the workflow from its invoices, shipments and latest receipt.
+     */
+    protected static function inferred(OrderContract $order): string
+    {
+        if ($order->base_grand_total_invoiced > 0 && $order->base_total_due <= 0.01) {
+            return $order->shipments->isNotEmpty() ? 'handed_to_courier' : 'confirmed';
+        }
+
+        return match (app(PaymentReceiptRepository::class)->latestStatus($order->id)) {
+            'pending' => 'awaiting_verification',
+            'rejected' => 'payment_clarification',
+            'approved' => 'confirmed',
+            default => 'awaiting_payment',
+        };
     }
 }

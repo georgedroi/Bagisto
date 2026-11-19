@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'Het verzoek kon niet worden voltooid',
+            'description' => 'Controleer de gegevens en probeer het opnieuw.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'Sjabloon',
         'parents' => 'Ouders',

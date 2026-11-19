@@ -71,9 +71,9 @@ class UserController extends Controller
         $admin = $this->adminRepository->create($data);
 
         if (request()->hasFile('image')) {
-            $admin->image = current(request()->file('image'))->store('admins/'.$admin->id);
-
-            $admin->save();
+            $admin = $this->adminRepository->update([
+                'image' => current(request()->file('image'))->store('admins/'.$admin->id),
+            ], $admin->id);
         }
 
         Event::dispatch('user.admin.create.after', $admin);
@@ -121,29 +121,21 @@ class UserController extends Controller
 
         Event::dispatch('user.admin.update.before', $id);
 
-        /**
-         * If the request has image.image, it means the request doesn't upload a new image.
-         * So we need to remove it from the data to prevent the image from being overwritten.
-         */
-        if (request()->has('image.image')) {
-            unset($data['image']);
-        }
+        unset($data['image']);
 
         $admin = $this->adminRepository->update($data, $id);
 
         if (request()->hasFile('image')) {
-            $admin->image = current(request()->file('image'))->store('admins/'.$admin->id);
+            $image = current(request()->file('image'))->store('admins/'.$admin->id);
         } else {
-            if (! request()->has('image.image')) {
-                if (! empty(request()->input('image.image'))) {
-                    Storage::delete($admin->image);
-                }
+            $image = request()->has('image.image') ? $admin->image : null;
 
-                $admin->image = null;
+            if ($image === null && $admin->image) {
+                Storage::delete($admin->image);
             }
         }
 
-        $admin->save();
+        $admin = $this->adminRepository->update(['image' => $image], $admin->id);
 
         if (! empty($data['password'])) {
             Event::dispatch('admin.password.update.after', $admin);
@@ -188,6 +180,7 @@ class UserController extends Controller
                 'message' => trans('admin::app.settings.users.delete-success'),
             ], 200);
         } catch (\Exception $e) {
+            report($e);
         }
 
         return new JsonResponse([
@@ -215,6 +208,8 @@ class UserController extends Controller
      */
     public function destroySelf(): JsonResponse
     {
+        $this->validate(request(), ['password' => 'required|string']);
+
         $password = request()->input('password');
 
         if (Hash::check($password, auth()->guard('admin')->user()->password)) {
@@ -273,13 +268,13 @@ class UserController extends Controller
 
         $user = $this->adminRepository->find($id);
 
-        if (! $data['password']) {
+        if (empty($data['password'])) {
             unset($data['password']);
         } else {
             $data['password'] = bcrypt($data['password']);
         }
 
-        $data['status'] = isset($data['status']);
+        $data['status'] = $request->boolean('status');
 
         $isStatusChangedToInactive = ! $data['status'] && (bool) $user->status;
 

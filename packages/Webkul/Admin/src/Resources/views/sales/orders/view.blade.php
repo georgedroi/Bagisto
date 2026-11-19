@@ -1,4 +1,7 @@
 <x-admin::layouts>
+    @php
+        $verifiedForFulfillment = ! \App\Support\OrderWorkflow::supports($order) || \App\Support\OrderWorkflow::paymentVerified($order);
+    @endphp
     <x-slot:title>
         @lang('admin::app.sales.orders.view.title', ['order_id' => $order->increment_id])
     </x-slot>
@@ -34,20 +37,21 @@
                 && bouncer()->hasPermission('sales.orders.create')
                 && core()->getConfigData('sales.order_settings.reorder.admin')
             )
-                <a
-                    href="{{ route('admin.sales.orders.reorder', $order->id) }}"
-                    class="transparent-button px-1 py-1.5 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800"
-                >
-                    <span class="icon-cart text-2xl"></span>
+                <form action="{{ route('admin.sales.orders.reorder', $order->id) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="transparent-button px-1 py-1.5 hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800">
+                        <span class="icon-cart text-2xl"></span>
 
-                    @lang('admin::app.sales.orders.view.reorder')
-                </a>
+                        @lang('admin::app.sales.orders.view.reorder')
+                    </button>
+                </form>
             @endif
 
             @if (
                 $order->canInvoice()
                 && bouncer()->hasPermission('sales.invoices.create')
                 && $order->payment->method !== 'paypal_standard'
+                && $verifiedForFulfillment
             )
                 @include('admin::sales.invoices.create')
             @endif
@@ -55,6 +59,7 @@
             @if (
                 $order->canShip()
                 && bouncer()->hasPermission('sales.shipments.create')
+                && $verifiedForFulfillment
             )
                 @include('admin::sales.shipments.create')
             @endif
@@ -125,13 +130,13 @@
             </div>
         @endif
         <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
-            <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
+            <div class="flex min-w-0 flex-1 flex-col gap-2 max-xl:flex-auto">
                 {!! view_render_event('bagisto.admin.sales.order.left_component.before', ['order' => $order]) !!}
 
                 <div class="box-shadow rounded bg-white dark:bg-gray-900">
-                    <div class="flex justify-between p-4">
+                    <div class="flex flex-wrap justify-between gap-x-2.5 p-4">
                         <p class="mb-4 text-base font-semibold text-gray-800 dark:text-white">
-                            @lang('Order Items') ({{ count($order->items) }})
+                            {{ trans('admin::app.sales.orders.index.datagrid.items') }} ({{ count($order->items) }})
                         </p>
 
                         <p class="text-base font-semibold text-gray-800 dark:text-white">
@@ -144,7 +149,7 @@
                         @foreach ($order->items as $item)
                             {!! view_render_event('bagisto.admin.sales.order.list.item.before', ['order' => $order, 'item' => $item]) !!}
 
-                            <div class="flex justify-between gap-2.5 border-b border-slate-300 px-4 py-6 dark:border-gray-800">
+                            <div class="flex justify-between gap-2.5 border-b border-slate-300 px-4 py-6 dark:border-gray-800 max-sm:flex-wrap">
                                 <div class="flex gap-2.5">
                                     @if($item?->product?->base_image_url)
                                         <img
@@ -493,7 +498,7 @@
                                 </x-admin::form.control-group>
                             </div>
 
-                            <div class="flex items-center justify-between">
+                            <div class="flex flex-wrap items-center justify-between gap-2.5">
                                 <label
                                     class="flex w-max cursor-pointer select-none items-center gap-1 p-1.5"
                                     for="customer_notified"
@@ -503,13 +508,12 @@
                                         name="customer_notified"
                                         id="customer_notified"
                                         value="1"
-                                        class="peer hidden"
+                                        class="peer sr-only"
                                     >
 
                                     <span
-                                        class="icon-uncheckbox peer-checked:icon-checked cursor-pointer rounded-md text-2xl peer-checked:text-blue-600"
-                                        role="button"
-                                        tabindex="0"
+                                        class="icon-uncheckbox peer-checked:icon-checked cursor-pointer rounded-md text-2xl peer-checked:text-blue-600 peer-focus-visible:outline peer-focus-visible:outline-2"
+                                        aria-hidden="true"
                                     >
                                     </span>
 
@@ -530,7 +534,7 @@
                     </x-admin::form>
 
                     <span class="block w-full border-b dark:border-gray-800"></span>
-                    @foreach ($order->comments()->orderBy('id', 'desc')->get() as $comment)
+                    @foreach ($order->comments->sortByDesc('id') as $comment)
                         <div class="grid gap-1.5 p-4">
                             <p 
                                 class="break-all text-base leading-6 text-gray-800 dark:text-white"

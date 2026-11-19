@@ -86,7 +86,7 @@ class InvoiceController extends Controller
             return redirect()->back();
         }
 
-        if (! $this->invoiceRepository->isValidQuantity(request()->all())) {
+        if (! $this->invoiceRepository->isValidQuantity(array_merge(request()->all(), ['order_id' => $order->id]))) {
             session()->flash('error', trans('admin::app.sales.invoices.create.invalid-qty'));
 
             return redirect()->back();

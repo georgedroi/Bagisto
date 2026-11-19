@@ -10,6 +10,9 @@ use Webkul\RMA\Enums\DefaultRMAStatusEnum;
 use Webkul\Sales\Models\Order;
 use Webkul\Sales\Repositories\OrderRepository;
 
+/**
+ * Keep dashboard queues and order filters consistent with manual payment workflow stages.
+ */
 class OrderQueueRepository extends OrderRepository
 {
     /**
@@ -121,7 +124,7 @@ class OrderQueueRepository extends OrderRepository
     }
 
     /**
-     * Resolve legacy DuitNow stages for filtering and counting without loading orders individually.
+     * Resolve legacy manual payment stages for filtering and counting without loading orders individually.
      */
     public function workflowStatusExpression(): string
     {
@@ -130,10 +133,11 @@ class OrderQueueRepository extends OrderRepository
         $payments = $grammar->wrapTable('order_payment');
         $receipts = $grammar->wrapTable('payment_receipts');
         $shipments = $grammar->wrapTable('shipments');
+        $methods = implode(', ', array_map(fn ($method) => "'".$method."'", OrderWorkflow::PAYMENT_METHODS));
 
         return <<<SQL
             COALESCE(NULLIF({$orders}.workflow_status, ''), CASE
-                WHEN EXISTS (SELECT 1 FROM {$payments} WHERE {$payments}.order_id = {$orders}.id AND {$payments}.method IN ('duitnowqr_manual', 'banktransfer')) THEN CASE
+                WHEN EXISTS (SELECT 1 FROM {$payments} WHERE {$payments}.order_id = {$orders}.id AND {$payments}.method IN ({$methods})) THEN CASE
                     WHEN {$orders}.base_grand_total_invoiced > 0 AND {$orders}.base_grand_total - {$orders}.base_grand_total_invoiced <= 0.01 THEN CASE
                         WHEN EXISTS (SELECT 1 FROM {$shipments} WHERE {$shipments}.order_id = {$orders}.id) THEN 'handed_to_courier'
                         ELSE 'confirmed'

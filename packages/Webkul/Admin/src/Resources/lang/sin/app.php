@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'මුර මුදල් අමතකවෙනිද?',
             'password' => 'මුර පදය',
             'powered-by-description' => ':webkul විසින් නිර්මාණය කරන ලද විවෘත මූලාශ්‍ර ව්‍යාපෘතියක් වන :bagisto විසින් බලගැන්වී ඇත.',
+            'show-password' => 'මුරපදය පෙන්වන්න',
             'submit-btn' => 'පිවිසීම',
             'title' => 'පිවිසීම',
         ],

@@ -475,7 +475,7 @@
 
                         this.isLoading = true;
 
-                        this.$axios.get(`{{ route('admin.two_factor.setup') }}`)
+                        this.$axios.post(`{{ route('admin.two_factor.setup') }}`)
                             .then(response => {
                                 this.qrCodeSvg = response.data.qrCodeSvg;
                             })

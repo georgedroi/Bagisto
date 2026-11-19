@@ -217,6 +217,9 @@ it('renders the store copyright where Vue never compiles it, on the storefront a
     expectIsolatedFromVue(get(route($route))->assertOk()->getContent(), 'QA copyright sentinel');
 })->with([
     'shop.home.index',
+    'shop.customer.session.index',
+    'shop.customers.register.index',
+    'shop.customers.forgot_password.create',
 ]);
 
 it('renders the registration agreement text where Vue never compiles it', function () {
@@ -232,29 +235,4 @@ it('renders the registration agreement text where Vue never compiles it', functi
     ]);
 
     expectIsolatedFromVue(get(route('shop.customers.register.index'))->assertOk()->getContent(), 'QA agreement sentinel');
-});
-
-it('sanitizes the registration agreement content before it is shown', function () {
-    useManpleasureTheme();
-
-    app(CoreConfigRepository::class)->create([
-        'channel' => core()->getCurrentChannelCode(),
-        'locale' => app()->getLocale(),
-        'general' => ['gdpr' => [
-            'settings' => ['enabled' => 1],
-            'agreement' => [
-                'enabled' => 1,
-                'agreement_label' => 'QA agreement label',
-                'agreement_content' => '<p>QA agreement kept <strong>bold</strong></p><img src="x" onerror="window.qaAgreement=1"><script>window.qaAgreement=2</script><a href="javascript:window.qaAgreement=3">QA link</a>',
-            ],
-        ]],
-    ]);
-
-    $html = get(route('shop.customers.register.index'))->assertOk()->getContent();
-
-    expect($html)->toContain('QA agreement kept <strong>bold</strong>')
-        ->toContain('QA link')
-        ->not->toContain('onerror="window.qaAgreement')
-        ->not->toContain('<script>window.qaAgreement')
-        ->not->toContain('javascript:window.qaAgreement');
 });

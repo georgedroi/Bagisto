@@ -7,6 +7,7 @@ return [
             'forget-password-link' => 'Забули пароль?',
             'password' => 'Пароль',
             'powered-by-description' => 'Працює на платформі :bagisto, спільний проект :webkul.',
+            'show-password' => 'Показати пароль',
             'submit-btn' => 'Увійти',
             'title' => 'Увійти',
         ],

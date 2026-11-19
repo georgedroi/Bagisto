@@ -164,3 +164,20 @@ it('keeps payment instructions and the checkout message out of Vue compilation',
 
     expectPayloadNeverCompiled(view('shop::checkout.success', compact('order'))->render(), 2);
 });
+
+it('keeps admin-written option notes and labels out of Vue compilation in the option guidance', function () {
+    $product = (new ProductFaker)->getSimpleProductFactory()->create();
+    $product->additional = ['variations' => [[
+        'name' => 'Size '.STOREFRONT_TEMPLATE_PAYLOAD,
+        'options' => [
+            ['label' => 'Small '.STOREFRONT_TEMPLATE_PAYLOAD, 'note' => 'Fits snugly '.STOREFRONT_TEMPLATE_PAYLOAD],
+        ],
+    ]]];
+
+    themes()->set('manpleasure');
+    view()->share('errors', new ViewErrorBag);
+
+    $html = '<div id="app">'.view('manpleasure-storefront::product-option-guidance', compact('product'))->render().'</div>';
+
+    expectPayloadNeverCompiled($html, 2);
+});

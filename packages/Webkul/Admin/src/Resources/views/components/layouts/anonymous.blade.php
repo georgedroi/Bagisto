@@ -34,7 +34,7 @@
 
     @stack('meta')
 
-    @bagistoVite(['src/Resources/assets/css/app.css', 'src/Resources/assets/js/app.js'])
+    @bagistoVite(['src/Resources/assets/css/app.css', 'src/Resources/assets/js/app.js'], 'admin')
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
@@ -56,7 +56,7 @@
     @else
         <link
             type="image/x-icon"
-            href="{{ bagisto_asset('images/favicon.ico') }}"
+            href="{{ bagisto_asset('images/favicon.ico', 'admin') }}"
             rel="shortcut icon"
             sizes="16x16"
         />

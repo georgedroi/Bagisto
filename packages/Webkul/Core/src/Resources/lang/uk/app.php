@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'errors' => [
+        'request' => [
+            'title' => 'Не вдалося виконати запит',
+            'description' => 'Перевірте дані та спробуйте ще раз.',
+        ],
+    ],
+
     'path-hint' => [
         'template' => 'Шаблон',
         'parents' => 'Батьки',

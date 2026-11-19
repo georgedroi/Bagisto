@@ -11,10 +11,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Webkul\Core\Eloquent\Repository;
 use Webkul\Payment\Contracts\PaymentReceipt;
-use Webkul\Payment\PaymentPolicy;
 use Webkul\Sales\Repositories\InvoiceRepository;
+use Webkul\Sales\Repositories\OrderCommentRepository;
 use Webkul\Sales\Repositories\OrderRepository;
 
+/**
+ * Store private receipts and atomically review manual payment evidence.
+ */
 class PaymentReceiptRepository extends Repository
 {
     /**
@@ -23,6 +26,7 @@ class PaymentReceiptRepository extends Repository
     public function __construct(
         protected OrderRepository $orderRepository,
         protected InvoiceRepository $invoiceRepository,
+        protected OrderCommentRepository $orderCommentRepository,
         Container $container
     ) {
         parent::__construct($container);
@@ -47,16 +51,28 @@ class PaymentReceiptRepository extends Repository
     /**
      * Upload and persist payment receipt.
      */
-    public function uploadReceipt(int $orderId, UploadedFile $file): mixed
+    public function uploadReceipt(int $orderId, UploadedFile $file, ?int $recordedBy = null, ?string $expectedStatus = null): mixed
     {
+        $image = @getimagesize($file->getRealPath());
+
+        if ($image === false || ! in_array($image[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
+            throw ValidationException::withMessages(['receipt' => trans('payment::workflow.invalid-receipt')]);
+        }
+
         $path = null;
 
         try {
-            return DB::transaction(function () use ($orderId, $file, &$path) {
+            return DB::transaction(function () use ($orderId, $file, $recordedBy, $expectedStatus, &$path) {
                 $order = $this->orderRepository->scopeQuery(fn ($query) => $query->lockForUpdate())
                     ->with('payment')->findOrFail($orderId);
 
-                if (! PaymentPolicy::allows($order->payment?->method) || ! in_array(OrderWorkflow::current($order), ['awaiting_payment', 'payment_clarification'], true)) {
+                $current = OrderWorkflow::current($order);
+
+                if ($expectedStatus !== null && $expectedStatus !== $current) {
+                    abort(409, trans('admin::order-status.stale-order'));
+                }
+
+                if (! OrderWorkflow::supports($order) || ! in_array($current, ['awaiting_payment', 'payment_clarification'], true)) {
                     throw ValidationException::withMessages(['receipt' => trans('admin::order-status.receipt-upload-unavailable')]);
                 }
 
@@ -69,6 +85,14 @@ class PaymentReceiptRepository extends Repository
                 ]);
 
                 $this->orderRepository->update(['workflow_status' => 'awaiting_verification'], $orderId);
+
+                if ($recordedBy !== null) {
+                    $this->orderCommentRepository->create([
+                        'order_id' => $orderId,
+                        'comment' => trans('payment::workflow.whatsapp-audit', ['admin' => $recordedBy]),
+                        'customer_notified' => false,
+                    ]);
+                }
 
                 return $receipt;
             });
@@ -97,6 +121,9 @@ class PaymentReceiptRepository extends Repository
                 return false;
             }
 
+            $this->update(['status' => 'approved'], $receiptId);
+            $this->orderRepository->update(['workflow_status' => 'confirmed'], $order->id);
+
             if ($order->canInvoice()) {
                 $invoiceData = ['order_id' => $order->id];
 
@@ -106,9 +133,6 @@ class PaymentReceiptRepository extends Repository
 
                 $this->invoiceRepository->create($invoiceData);
             }
-
-            $this->update(['status' => 'approved'], $receiptId);
-            $this->orderRepository->update(['workflow_status' => 'confirmed'], $order->id);
 
             return true;
         });
@@ -145,7 +169,7 @@ class PaymentReceiptRepository extends Repository
         $latest = $this->scopeQuery(fn ($query) => $query->where('order_id', $order->id)->orderByDesc('id'))->first();
         $reviewable = $receipt->status === 'pending'
             && $latest?->id === $receipt->id
-            && PaymentPolicy::allows($order->payment?->method)
+            && OrderWorkflow::supports($order)
             && OrderWorkflow::current($order) === 'awaiting_verification';
 
         return [$receipt, $order, $reviewable];

@@ -2,6 +2,8 @@
 
 return [
     'customers' => [
+        'brand' => 'MANPLEASURE',
+        'copyright' => '© :current_year MAN SECRET PLEASURE. Hak cipta dilindungi.',
         'forgot-password' => [
             'already-sent' => 'Email untuk mengatur ulang kata sandi sudah dikirim.',
             'back' => 'Kembali ke halaman masuk?',
@@ -632,7 +634,7 @@ return [
                 'currency' => 'Mata Uang',
                 'customer-service' => 'Layanan Pelanggan',
                 'email' => 'Email',
-                'footer-content' => 'Konten Footer',
+                'footer-content' => 'Bantuan dan informasi',
                 'footer-text' => '© Hak Cipta 2010 - :current_year, Webkul Software (Terdaftar di India). Seluruh hak cipta dilindungi undang-undang.',
                 'locale' => 'Bahasa',
                 'newsletter-text' => 'Bersiaplah untuk Newsletter Seru Kami!',

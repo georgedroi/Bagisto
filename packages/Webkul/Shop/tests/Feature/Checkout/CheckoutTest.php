@@ -22,6 +22,19 @@ use Webkul\Shop\Mail\Order\CreatedNotification as ShopOrderCreatedNotification;
 
 use function Pest\Laravel\postJson;
 
+/**
+ * Keep payment-list fixtures deterministic using the approved manual QR method.
+ */
+function useManualCheckoutPaymentFixture(): void
+{
+    config(['payment_methods' => Arr::only(config('payment_methods'), ['duitnowqr_manual'])]);
+    app(CoreConfigRepository::class)->create([
+        'locale' => 'en',
+        'channel' => core()->getCurrentChannelCode(),
+        'sales' => ['payment_methods' => ['duitnowqr_manual' => ['active' => 1, 'qr_image' => 'testing/manual-qr.png', 'title' => 'QA manual payment', 'sort' => 1]]],
+    ]);
+}
+
 beforeEach(function () {
     foreach ([
         'banktransfer' => ['active' => '1', 'title' => 'Bank Transfer', 'bank_name' => 'QA Bank', 'account_name' => 'QA Store', 'account_number' => 'QA-000', 'instructions' => 'Transfer the order total with your order reference.', 'sort' => '2'],
@@ -407,6 +420,8 @@ it('should store the billing and shipping address for guest user', function () {
 });
 
 it('should store the billing address for non stockable items for guest user', function () {
+    useManualCheckoutPaymentFixture();
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -471,9 +486,10 @@ it('should store the billing address for non stockable items for guest user', fu
         ],
     ])
         ->assertOk()
-        ->assertJsonCount(2, 'data.payment_methods')
+        ->assertJsonCount(1, 'data.payment_methods')
         ->assertJsonPath('data.payment_methods.0.method', 'duitnowqr_manual')
-        ->assertJsonPath('data.payment_methods.1.method', 'banktransfer');
+        ->assertJsonPath('data.payment_methods.0.method_title', 'QA manual payment')
+        ->assertJsonPath('data.payment_methods.0.sort', '1');
 
     $this->assertModelWise([
         CartAddress::class => [
@@ -720,6 +736,8 @@ it('should store the billing and shipping address for customer', function () {
 });
 
 it('should store the billing address for non stockable items for customer', function () {
+    useManualCheckoutPaymentFixture();
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -789,9 +807,10 @@ it('should store the billing address for non stockable items for customer', func
         ],
     ])
         ->assertOk()
-        ->assertJsonCount(2, 'data.payment_methods')
+        ->assertJsonCount(1, 'data.payment_methods')
         ->assertJsonPath('data.payment_methods.0.method', 'duitnowqr_manual')
-        ->assertJsonPath('data.payment_methods.1.method', 'banktransfer')
+        ->assertJsonPath('data.payment_methods.0.method_title', 'QA manual payment')
+        ->assertJsonPath('data.payment_methods.0.sort', '1')
         ->assertJsonPath('redirect', false);
 
     $this->assertModelWise([
@@ -1184,6 +1203,8 @@ it('should fails the validation error when shipping method not providing when st
 });
 
 it('should store the shipping method for guest user', function () {
+    useManualCheckoutPaymentFixture();
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -1250,12 +1271,15 @@ it('should store the shipping method for guest user', function () {
         'shipping_method' => 'free_free',
     ])
         ->assertOk()
-        ->assertJsonCount(2, 'payment_methods')
+        ->assertJsonCount(1, 'payment_methods')
         ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
-        ->assertJsonPath('payment_methods.1.method', 'banktransfer');
+        ->assertJsonPath('payment_methods.0.method_title', 'QA manual payment')
+        ->assertJsonPath('payment_methods.0.sort', '1');
 });
 
 it('should store the shipping method for customer', function () {
+    useManualCheckoutPaymentFixture();
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -1327,9 +1351,10 @@ it('should store the shipping method for customer', function () {
         'shipping_method' => 'free_free',
     ])
         ->assertOk()
-        ->assertJsonCount(2, 'payment_methods')
+        ->assertJsonCount(1, 'payment_methods')
         ->assertJsonPath('payment_methods.0.method', 'duitnowqr_manual')
-        ->assertJsonPath('payment_methods.1.method', 'banktransfer');
+        ->assertJsonPath('payment_methods.0.method_title', 'QA manual payment')
+        ->assertJsonPath('payment_methods.0.sort', '1');
 });
 
 it('should fails the validation error when store the payment method for guest user', function () {
@@ -4002,6 +4027,8 @@ it('should place a downloadable product order for a customer and send email to t
 });
 
 it('should not return the cash on delivery payment method if product is downloadable', function () {
+    useManualCheckoutPaymentFixture();
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -4099,7 +4126,7 @@ it('should not return the cash on delivery payment method if product is download
     ])
         ->assertOk()
         ->assertJsonPath('redirect', false)
-        ->assertJsonCount(2, 'data.payment_methods')
+        ->assertJsonCount(1, 'data.payment_methods')
         ->assertDontSeeText('cashondelivery');
 });
 
@@ -4205,6 +4232,8 @@ it('should not return the shipping methods if product is downloadable', function
 });
 
 it('should not return the cash on delivery payment method if product is virtual', function () {
+    useManualCheckoutPaymentFixture();
+
     // Arrange.
     $product = (new ProductFaker([
         'attributes' => [
@@ -4302,7 +4331,7 @@ it('should not return the cash on delivery payment method if product is virtual'
     ])
         ->assertOk()
         ->assertJsonPath('redirect', false)
-        ->assertJsonCount(2, 'data.payment_methods')
+        ->assertJsonCount(1, 'data.payment_methods')
         ->assertDontSeeText('cashondelivery');
 });
 

@@ -22,8 +22,19 @@
                 @endif
             </div>
 
-            @if (\Webkul\Payment\PaymentPolicy::allows($order->payment->method))
+            @if (\App\Support\OrderWorkflow::supports($order))
                 <div class="grid gap-3">
+                    @if ($canManage && in_array($workflowStatus, ['awaiting_payment', 'payment_clarification'], true))
+                        <form method="POST" enctype="multipart/form-data" action="{{ route('admin.sales.orders.receipt.whatsapp', $order->id) }}" class="grid min-w-0 gap-2 rounded border border-gray-200 p-3 dark:border-gray-800">
+                            @csrf
+                            <input type="hidden" name="expected_status" value="{{ $workflowStatus }}">
+                            <label for="whatsapp-receipt" class="text-sm font-semibold">{{ trans('payment::workflow.whatsapp-register') }}</label>
+                            <p class="text-sm">{{ trans('payment::workflow.whatsapp-register-help') }}</p>
+                            <input id="whatsapp-receipt" type="file" name="receipt" accept="image/jpeg,image/png,image/webp" required class="max-w-full min-h-[44px]">
+                            @error('receipt')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                            <button class="secondary-button min-h-[44px] w-fit">{{ trans('payment::workflow.whatsapp-register') }}</button>
+                        </form>
+                    @endif
                     <h3 class="font-semibold text-gray-800 dark:text-white">{{ trans('admin::order-status.receipts') }}</h3>
                     @forelse ($receipts as $receipt)
                         <div class="rounded border border-gray-200 p-3 dark:border-gray-800">
