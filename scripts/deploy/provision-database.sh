@@ -39,7 +39,7 @@ for name, value in settings.items():
     pattern = r'(?m)^' + re.escape(name) + r'=.*$'
     text = re.sub(pattern, lambda _: line, text) if re.search(pattern, text) else text.rstrip() + '\n' + line + '\n'
 environment.write_text(text)
-options_file.write_text('[client]\nhost=127.0.0.1\nuser=mansecretpleasure\npassword=' + password + '\ndatabase=mansecretpleasure\n')
+options_file.write_text('[client]\nhost=127.0.0.1\nuser=mansecretpleasure\npassword=' + password + '\n\n[mysql]\ndatabase=mansecretpleasure\n')
 options_file.chmod(0o600)
 PY
 chown mansecret-deploy:mansecret-deploy "$base/shared/.mysql.cnf"

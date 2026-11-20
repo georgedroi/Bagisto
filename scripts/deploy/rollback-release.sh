@@ -18,6 +18,8 @@ runuser -u mansecret-deploy -- php8.3 "$base/current/artisan" optimize:clear
 runuser -u mansecret-deploy -- php8.3 "$base/current/artisan" config:cache
 runuser -u mansecret-deploy -- php8.3 "$base/current/artisan" route:cache
 runuser -u mansecret-deploy -- php8.3 "$base/current/artisan" view:cache
+chown -R mansecret-deploy:www-data "$release/bootstrap/cache"
+find "$release/bootstrap/cache" "$base/shared/storage/framework" -type f -exec chmod 660 {} +
 systemctl reload php8.3-fpm
 runuser -u mansecret-deploy -- php8.3 "$base/current/artisan" up
 systemctl start mansecretpleasure-queue.service mansecretpleasure-scheduler.timer
