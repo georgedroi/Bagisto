@@ -23,6 +23,8 @@
 .mp-brand small{display:block;font-size:8px;letter-spacing:4px;margin-top:1px}
 .mp-brand img{display:block;max-width:220px;width:auto;height:40px;object-fit:contain}
 .mp-header-shell>.mp-header-brand-side>.mp-brand{grid-row:1;grid-column:1;margin:22px 0 18px 30px}
+.mp-brand[data-store-brand]{margin:8px 0 40px}
+@media(max-width:767px){.mp-brand[data-store-brand]{margin:0 auto 28px}}
 .mp-header-actions-side{grid-row:1;grid-column:1;justify-self:end;width:65%;gap:26px!important;padding:20px 30px 18px 0;min-width:0}
 .mp-header-search{flex:1;min-width:0}
 .mp-header-search form{position:relative;width:100%}
